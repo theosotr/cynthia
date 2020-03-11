@@ -17,5 +17,6 @@ ENV HOME /home/orm
 WORKDIR ${HOME}
 
 RUN mkdir ${HOME}/scripts
-ADD ./scripts/setup-postgres.sh ${HOME}/scripts
+ADD ./scripts ${HOME}/scripts
 RUN ${HOME}/scripts/setup-postgres.sh
+RUN ${HOME}/scripts/setup-mysql.sh
