@@ -6,6 +6,7 @@ RUN apt install -y \
     python3-pip \
     sudo \
     sqlite3 \
+    libpq-dev \
     vim
 
 # Create the orm user.
