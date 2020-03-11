@@ -7,6 +7,7 @@ RUN apt install -y \
     sudo \
     sqlite3 \
     libpq-dev \
+    libmysqlclient-dev \
     vim
 
 # Create the orm user.
@@ -22,3 +23,15 @@ RUN mkdir ${HOME}/scripts
 ADD ./scripts ${HOME}/scripts
 RUN ${HOME}/scripts/setup-postgres.sh
 RUN ${HOME}/scripts/setup-mysql.sh
+
+RUN mkdir ${HOME}/cynthia_src
+ADD ./setup.py  ${HOME}/cynthia_src
+ADD ./version.txt  ${HOME}/cynthia_src
+ADD ./requirements.txt  ${HOME}/cynthia_src
+ADD ./cynthia ${HOME}/cynthia_src/cynthia
+WORKDIR ${HOME}/cynthia_src
+RUN sudo pip3 install virtualenv
+RUN virtualenv -p python3 .env
+RUN bash -c "source .env/bin/activate && python3 setup.py install"
+
+WORKDIR ${HOME}

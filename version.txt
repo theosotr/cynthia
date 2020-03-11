@@ -1,1 +1,1 @@
-cynthia 0.1dev
+cynthia 0.1

@@ -26,10 +26,12 @@ def main():
             continue
         print ('Processing {}...'.format(schema))
         dbname, _ = schema.split('.sql')
+        schema = os.path.join(args.schemas, schema)
         for DBClass in [db.MySQL, db.Postgres, db.SQLite3]:
-            dbobj = DBClass(dbname, user=DB_USER, password=DB_PASS)
-            dbobj.createdb()
-            dbobj.setupSchema(schema)
+            with DBClass(None, user=DB_USER, password=DB_PASS) as dbobj:
+                dbobj.createdb(dbname)
+            with DBClass(dbname, user=DB_USER, password=DB_PASS) as dbobj:
+                dbobj.setupSchema(schema)
     exit(0)
 
 if __name__ == '__main__':
