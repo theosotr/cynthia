@@ -5,6 +5,7 @@ RUN apt install -y \
     wget \
     python3-pip \
     sudo \
+    sqlite3 \
     vim
 
 # Create the orm user.
