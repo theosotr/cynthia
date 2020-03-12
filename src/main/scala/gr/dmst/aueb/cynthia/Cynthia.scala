@@ -1,7 +1,7 @@
 package gr.dmst.aueb.cynthia
 
 import scopt.OParser
-import gr.dmst.aueb.cynthia.{BaseDatabase, Postgres, MySQL, SQLite}
+import gr.dmst.aueb.cynthia.{DB, Postgres, MySQL, SQLite, DBSetup}
 import gr.dmst.aueb.cynthia.Utils
 
 
@@ -24,19 +24,7 @@ object Cynthia {
       MySQL(dbUser, dbPass, dbnames._2),
       SQLite(dbnames._3)
     )
-
   }
-
-
-  def applyDBs(dbs: List[BaseDatabase], apply: BaseDatabase => Unit) =
-    dbs.foreach { db =>
-      try {
-        db.connect()
-        apply(db)
-      } finally {
-        db.disconnect()
-      }
-    }
 
   def main(args: Array[String]): Unit = {
     val builder = OParser.builder[Options]
@@ -64,9 +52,10 @@ object Cynthia {
               val schemaPath = Utils.joinPaths(List(options.schemas, schema))
               val workDirDb = Utils.joinPaths(List(
                 Utils.getWorkdir(), dbname))
-              applyDBs(genDBList(None, workDirDb), (db) => db.createdb(dbname))
-              applyDBs(genDBList(Some(dbname), workDirDb),
-                      (db) => db.setupSchema(schemaPath))
+              genDBList(None, workDirDb).foreach { db =>
+                DBSetup.createdb(db, dbname) }
+              genDBList(Some(dbname), workDirDb).foreach { db =>
+                DBSetup.setupSchema(db, schemaPath) }
             }
           }
         }
