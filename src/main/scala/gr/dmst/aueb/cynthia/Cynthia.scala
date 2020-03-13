@@ -26,6 +26,13 @@ object Cynthia {
     )
   }
 
+  def genORMList(dbname: String, workdir: String) =
+    List(
+      Django(dbname,
+             Utils.joinPaths(List(workdir, "django")),
+             "djangoproject")
+    )
+
   def main(args: Array[String]): Unit = {
     val builder = OParser.builder[Options]
     val cliParser = {
@@ -54,8 +61,14 @@ object Cynthia {
                 Utils.getDBDir(), dbname))
               genDBList(None, dbDir).foreach { db =>
                 DBSetup.createdb(db, dbname) }
-              genDBList(Some(dbname), dbDir).foreach { db =>
+              val dbs = genDBList(Some(dbname), dbDir)
+              dbs.foreach { db =>
                 DBSetup.setupSchema(db, schemaPath) }
+              val projectDir = Utils.joinPaths(
+                List(Utils.getProjectDir(), dbname))
+              Utils.createDir(projectDir)
+              genORMList(dbname, projectDir)
+                .foreach { orm => ProjectCreator.createProject(orm, dbs) }
             }
           }
         }

@@ -19,7 +19,7 @@ object DBSetup {
     case MySQL(user, password, dbname) =>
       "jdbc:mysql://localhost:3306/" + dbname +
           "?user=" + user + "&password=" + password
-    case SQLite(dbname) => "jdbc:sqlite:" + dbname + ".sqlite3"
+    case SQLite(dbname) => "jdbc:sqlite:" + dbname
   }
 
   def process(f: (DB, String, Connection) => Unit, db: DB, element: String) = {
