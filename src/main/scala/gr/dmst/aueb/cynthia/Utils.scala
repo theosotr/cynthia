@@ -6,6 +6,8 @@ import java.nio.file.{Files, Paths}
 
 object Utils {
   val cwdDir = ".cynthia"
+  val dbDir = "dbs"
+  val projectDir = "projects"
 
   def listFiles(dir: String): Option[Array[String]] = {
     val file = new File(dir)
@@ -29,11 +31,20 @@ object Utils {
   def getWorkdir() =
     joinPaths(List(".", cwdDir))
 
-  def setWorkDir(): Unit = {
+  def getDBDir() =
+    joinPaths(List(".", cwdDir, dbDir))
+
+  def getProjectDir() =
+    joinPaths(List(".", cwdDir, projectDir))
+
+  def setWorkDir() = {
      val workdir = getWorkdir()
-     val file = new File(workdir)
-     if (!(file.exists && file.isDirectory)) {
-       file.mkdirs()
-     }
+     List(dbDir, projectDir)
+       .foreach { dir =>
+         val file = new File(Utils.joinPaths(List(workdir, dir)))
+         if (!(file.exists && file.isDirectory)) {
+           file.mkdirs()
+         }
+       }
   }
 }

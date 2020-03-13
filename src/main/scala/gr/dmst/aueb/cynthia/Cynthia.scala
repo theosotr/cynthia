@@ -20,8 +20,8 @@ object Cynthia {
       case Some(dbname) => (dbname, dbname, workdir)
     }
     List(
-      Postgres(dbUser, dbPass, dbnames._1),
-      MySQL(dbUser, dbPass, dbnames._2),
+      //Postgres(dbUser, dbPass, dbnames._1),
+      //MySQL(dbUser, dbPass, dbnames._2),
       SQLite(dbnames._3)
     )
   }
@@ -50,11 +50,11 @@ object Cynthia {
             list.foreach { schema => {
               val dbname = schema.replace(".sql", "")
               val schemaPath = Utils.joinPaths(List(options.schemas, schema))
-              val workDirDb = Utils.joinPaths(List(
-                Utils.getWorkdir(), dbname))
-              genDBList(None, workDirDb).foreach { db =>
+              val dbDir = Utils.joinPaths(List(
+                Utils.getDBDir(), dbname))
+              genDBList(None, dbDir).foreach { db =>
                 DBSetup.createdb(db, dbname) }
-              genDBList(Some(dbname), workDirDb).foreach { db =>
+              genDBList(Some(dbname), dbDir).foreach { db =>
                 DBSetup.setupSchema(db, schemaPath) }
             }
           }
