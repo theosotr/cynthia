@@ -26,14 +26,10 @@ case class SQLAlchemy(name: String, pDir: String) extends ORM {
   Utils.createDir(pDir)
 
   def getModelsPath() =
-    // TODO
-    pDir
+    Utils.joinPaths(List(pDir, "models.py"))
 
-  def getSettingsPath() =
-    // TODO
-    pDir
+  def getSettingsPath() = ""
 
   def getDriverPath() =
-    // TODO
-    pDir
+    Utils.joinPaths(List(pDir, "driver.py"))
 }

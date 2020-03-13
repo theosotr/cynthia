@@ -5,23 +5,36 @@ import scala.sys.process._
 
 object ProjectCreator {
 
-  def createProject(orm: ORM, dbs: List[DB]) = {
-    setupProject(orm, dbs)
-    createModels(orm)
+  def createProject(orm: ORM, dbs: List[DB]) = dbs match {
+    case Nil    => ()
+    case h :: _ => {
+      setupProject(orm, dbs)
+      createModels(orm, h)
+    }
   }
 
   def setupProject(orm: ORM, dbs: List[DB]) = orm match {
-    case Django(_, _, _) => createDjangoProject(orm, dbs)
-    case _ =>
+    case Django (_, _, _)   => createDjangoProject(orm, dbs)
+    case SQLAlchemy (_, _) => createSQLAlchemyProject(orm, dbs)
   }
 
-  def createModels(orm: ORM) = orm match {
+  def createModels(orm: ORM, db: DB) = orm match {
     case Django(_, pdir, _) => {
       val models = Utils.runCmd("python3 manage.py inspectdb", Some(pdir))
       Utils.writeToFile(orm.getModelsPath(), models)
     }
-    case _ => ()
+    case SQLAlchemy(_, pdir) => {
+      val models = Utils.runCmd("sqlacodegen " + db.getURI(), Some(pdir))
+      Utils.writeToFile(orm.getModelsPath(), models)
+    } 
+  }
 
+  def createSQLAlchemyProject(orm: ORM, dbs: List[DB]) = orm match {
+    case SQLAlchemy(name, pdir) => {
+      Utils.emptyFile(pdir)
+      Utils.writeToFile(Utils.joinPaths(List(pdir, "__init__.py")), "")
+    }
+    case _ => ()
   }
 
   def createDjangoProject(orm: ORM, dbs: List[DB]) = orm match {

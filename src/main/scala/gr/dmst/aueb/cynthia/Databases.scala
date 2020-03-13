@@ -4,10 +4,24 @@ import java.sql.{Connection, DriverManager, ResultSet}
 import scala.io.Source
 
 
-sealed trait DB
-case class Postgres (user: String, password: String, dbname: String) extends DB
-case class MySQL (user: String, password: String, dbname: String) extends DB
-case class SQLite (dbname: String) extends DB
+sealed trait DB {
+  def getURI(): String
+}
+
+case class Postgres (user: String, password: String, dbname: String) extends DB {
+  def getURI() =
+    "postgres://" + user + ":" + password + "@localhost/" + dbname
+}
+
+case class MySQL (user: String, password: String, dbname: String) extends DB {
+  def getURI() =
+    "mysql://" + user + ":" + password + "@localhost/" + dbname
+}
+
+case class SQLite (dbname: String) extends DB {
+  def getURI() =
+    "sqlite:///" + dbname
+}
 
 
 object DBSetup {

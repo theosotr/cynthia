@@ -30,7 +30,9 @@ object Cynthia {
     List(
       Django(dbname,
              Utils.joinPaths(List(workdir, "django")),
-             "djangoproject")
+             "djangoproject"),
+      SQLAlchemy(dbname,
+                 Utils.joinPaths(List(workdir, "sqlalchemy")))
     )
 
   def main(args: Array[String]): Unit = {
