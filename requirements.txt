@@ -1,2 +1,5 @@
 mysqlclient
 psycopg2
+django
+sqlalchemy
+sqlacodegen

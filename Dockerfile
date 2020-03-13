@@ -32,6 +32,7 @@ RUN ${HOME}/scripts/setup-postgres.sh
 RUN ${HOME}/scripts/setup-mysql.sh
 
 RUN mkdir ${HOME}/cynthia_src
+ADD ./requirements.txt ${HOME}/cynthia_src
 ADD ./build.sbt  ${HOME}/cynthia_src
 ADD ./src  ${HOME}/cynthia_src/src
 ADD ./project  ${HOME}/cynthia_src/project
@@ -40,6 +41,7 @@ WORKDIR ${HOME}/cynthia_src
 # Setup a Python3 virtual environment.
 RUN sudo pip3 install virtualenv
 RUN virtualenv -p python3 .env
+RUN bash -c "source .env/bin/activate && pip install -r requirements.txt"
 
 RUN sudo chown -R orm:orm ${HOME}/cynthia_src
 RUN sbt assembly
