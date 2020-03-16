@@ -6,21 +6,31 @@ import scala.io.Source
 
 sealed trait DB {
   def getURI(): String
+  def getName(): String
 }
 
 case class Postgres (user: String, password: String, dbname: String) extends DB {
-  def getURI() =
+  override def getURI() =
     "postgres://" + user + ":" + password + "@localhost/" + dbname
+
+  override def getName() =
+    "postgres"
 }
 
 case class MySQL (user: String, password: String, dbname: String) extends DB {
-  def getURI() =
+  override def getURI() =
     "mysql://" + user + ":" + password + "@localhost/" + dbname
+
+  override def getName() =
+    "mysql"
 }
 
 case class SQLite (dbname: String) extends DB {
-  def getURI() =
+  override def getURI() =
     "sqlite:///" + dbname
+
+  override def getName() =
+    "sqlite"
 }
 
 

@@ -35,6 +35,9 @@ object Cynthia {
                  Utils.joinPaths(List(workdir, "sqlalchemy")))
     )
 
+  def genAQLQuery() =
+    SetRes(Union(New ("Listings", None), New ("Listings", None)))
+
   def main(args: Array[String]): Unit = {
     val builder = OParser.builder[Options]
     val cliParser = {
@@ -69,8 +72,9 @@ object Cynthia {
               val projectDir = Utils.joinPaths(
                 List(Utils.getProjectDir(), dbname))
               Utils.createDir(projectDir)
-              genORMList(dbname, projectDir)
-                .foreach { orm => ProjectCreator.createProject(orm, dbs) }
+              val orms = genORMList(dbname, projectDir)
+              orms.foreach { orm => ProjectCreator.createProject(orm, dbs) }
+              ORMTranslator.translate (genAQLQuery(), Target(orms.head, dbs.head))
             }
           }
         }
