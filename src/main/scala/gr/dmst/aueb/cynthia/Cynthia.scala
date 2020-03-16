@@ -36,7 +36,7 @@ object Cynthia {
     )
 
   def genAQLQuery() =
-    SetRes(Union(New ("Listings", None), New ("Listings", None)))
+    SetRes(Union(New ("Listing", None), New ("Listing", None)))
 
   def main(args: Array[String]): Unit = {
     val builder = OParser.builder[Options]
@@ -73,8 +73,10 @@ object Cynthia {
                 List(Utils.getProjectDir(), dbname))
               Utils.createDir(projectDir)
               val orms = genORMList(dbname, projectDir)
-              orms.foreach { orm => ProjectCreator.createProject(orm, dbs) }
-              ORMTranslator.translate (genAQLQuery(), Target(orms.head, dbs.head))
+              orms.foreach { orm =>
+                ProjectCreator.createProject(orm, dbs)
+                ORMTranslator.translate(genAQLQuery(), Target(orm, dbs.head))
+              }
             }
           }
         }
