@@ -5,7 +5,7 @@ import scala.sys.process._
 
 object ProjectCreator {
 
-  def createProject(orm: ORM, dbs: List[DB]) = dbs match {
+  def createProject(orm: ORM, dbs: Seq[DB]) = dbs match {
     case Nil    => ()
     case h :: _ => {
       setupProject(orm, dbs)
@@ -13,7 +13,7 @@ object ProjectCreator {
     }
   }
 
-  def setupProject(orm: ORM, dbs: List[DB]) = orm match {
+  def setupProject(orm: ORM, dbs: Seq[DB]) = orm match {
     case Django (_, _, _)   => createDjangoProject(orm, dbs)
     case SQLAlchemy (_, _) => createSQLAlchemyProject(orm, dbs)
   }
@@ -29,7 +29,7 @@ object ProjectCreator {
     } 
   }
 
-  def createSQLAlchemyProject(orm: ORM, dbs: List[DB]) = orm match {
+  def createSQLAlchemyProject(orm: ORM, dbs: Seq[DB]) = orm match {
     case SQLAlchemy(name, pdir) => {
       Utils.emptyFile(pdir)
       Utils.writeToFile(Utils.joinPaths(List(pdir, "__init__.py")), "")
@@ -37,7 +37,7 @@ object ProjectCreator {
     case _ => ()
   }
 
-  def createDjangoProject(orm: ORM, dbs: List[DB]) = orm match {
+  def createDjangoProject(orm: ORM, dbs: Seq[DB]) = orm match {
     case Django(name, pdir, setDir) => {
       Utils.emptyFile(pdir)
       Utils.runCmd("django-admin startproject djangoproject " + pdir, None)

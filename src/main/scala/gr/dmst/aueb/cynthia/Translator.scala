@@ -1,6 +1,5 @@
 package gr.dmst.aueb.cynthia
 
-case class Target (orm: ORM, db: DB)
 
 object PythonPrinter {
   def emitPrint(q: Query, ret: String) = q match {
