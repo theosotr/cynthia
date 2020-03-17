@@ -1,10 +1,20 @@
 package gr.dmst.aueb.cynthia
 
-
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
+import scala.language.postfixOps
 
 
-case class Target(orm: ORM, db: DB)
+case class Target(orm: ORM, db: DB) {
+  def getTargetCommand() = orm match {
+    case Django (_, _, _) | SQLAlchemy (_, _) => "python3 " + orm.getDriverPath(db)
+  }
+
+  override def toString() =
+    orm.getName() + "[" + db.getName() + "]"
+}
 
 object TestRunnerCreator {
   def genBackends(backends: Seq[String], workdir: String,
@@ -75,9 +85,29 @@ class TestRunner(targets: Seq[Target]) {
 
   def start() =
     genQueries()
-      .foreach { q =>
-        targets.foreach { t =>
-          ORMTranslator.translate(q, t)
+      .foreach { q => {
+        val futures = targets.map { t =>
+          Future {
+            (t, QueryExecutor(ORMTranslator(q, t), t))
+          }
         }
+        val f = Future.sequence(futures) map { res =>
+            val comps =
+              res.foldLeft(Map[String, Seq[String]]()) ((acc, x) => {
+                val (target, res) = x
+                acc + (res.toString ->
+                  (acc.getOrElse(res.toString(), Seq()) :+ target.toString()))
+              })
+            if (comps.size > 1) {
+              println("Mismatches\n")
+              comps.foreach {
+                case (_, v) => {
+                  println("Target Group: " + v.mkString(","))
+                }
+              }
+            }
+        }
+        Await.result(f, 5 seconds) 
       }
+    }
 }

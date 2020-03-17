@@ -55,7 +55,6 @@ object Cynthia {
     }
 
     OParser.parse(cliParser, args, Options()) match {
-
       case Some(options) => {
         Utils.listFiles(options.schemas) match {
           case None        => println("No .sql file found in " + options.schemas)

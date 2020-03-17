@@ -9,7 +9,6 @@ object PythonPrinter {
 }
 
 sealed trait Translator {
-  def emitPreamble(q: Query, db: DB): String
   def emitPrint(q: Query): String
   def translatePred(pred: Predicate): String
   def translateQuerySet(qs: QuerySet, db: DB): String
@@ -17,19 +16,7 @@ sealed trait Translator {
 }
 
 
-// TODO: Flatten query for efficiency
-case class DjangoTranslator (orm: Django) extends Translator {
-  override def emitPreamble(q: Query, db: DB) = 
-    new StringBuilder("import os, django\n")
-      .append("os.environ.setdefault('DJANGO_SETTINGS_MODULE', '")
-      .append(orm.setDir)
-      .append(".settings')\n")
-      .append("django.setup()\n")
-      .append("from ")
-      .append(orm.name)
-      .append(".models import *\n")
-      .toString()
-
+object DjangoTranslator extends Translator {
   override def emitPrint(q: Query) =
     PythonPrinter.emitPrint(q, "res")
 
@@ -72,18 +59,7 @@ case class DjangoTranslator (orm: Django) extends Translator {
 }
 
 
-case class SQLAlchemyTranslator (orm: SQLAlchemy) extends Translator {
-  override def emitPreamble(q: Query, db: DB) =
-    new StringBuilder("from sqlalchemy import create_engine\n")
-      .append("from sqlalchemy.orm import sessionmaker\n")
-      .append("from models import *\n")
-      .append("engine = create_engine('")
-      .append(db.getURI())
-      .append("')\n")
-      .append("Session = sessionmaker(bind=engine)\n")
-      .append("session = Session()\n")
-      .toString()
-
+object SQLAlchemyTranslator extends Translator {
   override def emitPrint(q: Query) =
     PythonPrinter.emitPrint(q, "res")
 
@@ -117,12 +93,12 @@ case class SQLAlchemyTranslator (orm: SQLAlchemy) extends Translator {
 
 
 object ORMTranslator {
-  def translate(q: Query, target: Target): Unit = {
+
+  def apply(q: Query, target: Target): String = {
     val t = target.orm match {
-      case Django(_, _, _)   => DjangoTranslator (target.orm.asInstanceOf[Django])
-      case SQLAlchemy (_, _) => SQLAlchemyTranslator (target.orm.asInstanceOf[SQLAlchemy])
+      case Django(_, _, _)   => DjangoTranslator
+      case SQLAlchemy (_, _) => SQLAlchemyTranslator
     }
-    val str = t.emitPreamble(q, target.db) + t.translateQuery(q, target.db) + t.emitPrint(q)
-    Utils.writeToFile(target.orm.getDriverPath(), str)
+    t.translateQuery(q, target.db) + t.emitPrint(q)
   }
 }

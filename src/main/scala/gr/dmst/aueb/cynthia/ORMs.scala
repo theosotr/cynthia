@@ -6,30 +6,38 @@ sealed trait ORM {
 
   def getSettingsPath(): String
 
-  def getDriverPath(): String
+  def getDriverPath(db: DB): String
+
+  def getName(): String
 }
 
 case class Django(name: String, pDir: String, setDir: String) extends ORM {
   Utils.createDir(pDir)
 
-  def getModelsPath() =
+  override def getModelsPath() =
     Utils.joinPaths(List(pDir, name, "models.py"))
 
-  def getSettingsPath() =
+  override def getSettingsPath() =
     Utils.joinPaths(List(pDir, setDir, "settings.py"))
 
-  def getDriverPath() =
-    Utils.joinPaths(List(pDir, "driver.py"))
+  override def getDriverPath(db: DB) =
+    Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".py"))
+
+  override def getName() =
+    "django"
 }
 
 case class SQLAlchemy(name: String, pDir: String) extends ORM {
   Utils.createDir(pDir)
 
-  def getModelsPath() =
+  override def getModelsPath() =
     Utils.joinPaths(List(pDir, "models.py"))
 
-  def getSettingsPath() = ""
+  override def getSettingsPath() = ""
 
-  def getDriverPath() =
-    Utils.joinPaths(List(pDir, "driver.py"))
+  override def getDriverPath(db: DB) =
+    Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".py"))
+
+  override def getName() =
+    "sqlalchemy"
 }
