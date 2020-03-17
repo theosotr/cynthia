@@ -80,7 +80,9 @@ class TestRunner(targets: Seq[Target]) {
 
   def genQueries() =
     List(
-      SetRes(Union(New ("Listing", None), New ("Listing", None)))
+      SetRes(Union(New ("Listing", None), New ("Listing", None))),
+      AggrRes(Count, New ("Listing", None)),
+      AggrRes(Count, Union(New("Listing", None), Union(New("Listing", None), New("Listing", None))))
     )
 
   def start() =
