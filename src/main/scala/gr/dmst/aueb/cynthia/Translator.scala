@@ -57,6 +57,15 @@ object DjangoTranslator extends Translator {
       val qsStr = translateQuerySet(qs, db)
       qsStr + ".filter(" + predStr + ")"
     }
+    case Apply(Sort(spec), qs) => {
+      val orderSpec = spec.foldLeft (Seq[String]()) { (acc, x) =>
+        x match {
+          case (k, Desc) => acc :+ Utils.quoteStr("-" + getDjangoFieldName(k))
+          case (k, Asc)  => acc :+ Utils.quoteStr(getDjangoFieldName(k))
+        }
+      } mkString(",")
+      translateQuerySet(qs, db) + ".order_by(" + orderSpec + ")"
+    }
     case Union (qs1, qs2) =>
       new StringBuilder(translateQuerySet(qs1, db))
         .append(".union(")
@@ -104,6 +113,15 @@ object SQLAlchemyTranslator extends Translator {
     case New (m, f)              => "session.query(" + m + ")"
     case Apply (Filter (pred), qs) =>
       translateQuerySet(qs, db) + ".filter(" + translatePred(pred) + ")"
+    case Apply (Sort (spec), qs) => {
+      val orderSpec = spec.foldLeft (Seq[String]()) { (acc, x) =>
+        x match {
+          case (k, Desc) => acc :+ (k + ".desc()")
+          case (k, Asc)  => acc :+ (k + ".asc()")
+        }
+      } mkString(",")
+      translateQuerySet(qs, db) + ".order_by(" + orderSpec + ")"
+    }
     case Union (qs1, qs2) =>
       new StringBuilder(translateQuerySet(qs1, db))
         .append(".union(")

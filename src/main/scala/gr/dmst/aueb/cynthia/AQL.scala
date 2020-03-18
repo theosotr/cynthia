@@ -23,7 +23,7 @@ case object Desc extends Order
 
 sealed trait Operation
 case class Filter (pred: Predicate) extends Operation
-case class Sort(key: String, order: Order) extends Operation
+case class Sort(spec: Seq[(String, Order)]) extends Operation
 
 sealed trait QuerySet
 case class New(model: String, fields: Option[Array[String]]) extends QuerySet
