@@ -10,6 +10,7 @@ import scala.language.postfixOps
 case class Target(orm: ORM, db: DB) {
   def getTargetCommand() = orm match {
     case Django (_, _, _) | SQLAlchemy (_, _) => "python3 " + orm.getDriverPath(db)
+    case Sequelize(_, _) => "node " + orm.getDriverPath(db)
   }
 
   override def toString() =
@@ -41,6 +42,8 @@ object TestRunnerCreator {
                                    "djangoproject")
         case "sqlalchemy" => SQLAlchemy(dbname,
                                         Utils.joinPaths(List(workdir, "sqlalchemy")))
+        case "sequelize"  => Sequelize(dbname,
+                                       Utils.joinPaths(List(workdir, "sequelize")))
         case _            => ???
       }
     }

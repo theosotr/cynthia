@@ -37,6 +37,35 @@ object QueryExecutor {
         .append("Session = sessionmaker(bind=engine)\n")
         .append("session = Session()\n")
         .toString()
+    case Sequelize(_, _) => {
+      val dbsettings = target.db match {
+        case Postgres(user, password, dbname) =>
+          new StringBuilder("new Sequelize(")
+            .append(Utils.quoteStr(dbname) + ", ")
+            .append(Utils.quoteStr(user) + ", ")
+            .append(Utils.quoteStr(password) + ", {\n")
+            .append("dialect: " + Utils.quoteStr(target.db.getName()) + ",\n")
+        case MySQL(user, password, dbname) =>
+          new StringBuilder("new Sequelize(")
+            .append(Utils.quoteStr(dbname) + ", ")
+            .append(Utils.quoteStr(user) + ", ")
+            .append(Utils.quoteStr(password) + ", {\n")
+            .append("dialect: " + Utils.quoteStr(target.db.getName()) + ",\n")
+        case SQLite(dbname) =>
+          new StringBuilder("new Sequelize(")
+            .append(Utils.quoteStr(dbname) + ",")
+            .append("'user', 'password', {\n")
+            .append("dialect: " + Utils.quoteStr(target.db.getName()) + ",\n")
+            .append("storage: '")
+            .append(dbname + "',\n")
+      }
+      val setstr = dbsettings.append("logging: false,\n")
+        .append("define: { timestamps: false }\n});")
+        .toString
+      new StringBuilder("const Sequelize = require('sequelize');\n")
+        .append("const sequelize = " + setstr)
+        .toString
+    }
   }
   
   def apply(q: String, target: Target) = {

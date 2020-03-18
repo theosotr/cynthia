@@ -41,3 +41,18 @@ case class SQLAlchemy(name: String, pDir: String) extends ORM {
   override def getName() =
     "sqlalchemy"
 }
+
+case class Sequelize(name: String, pDir: String) extends ORM {
+  Utils.createDir(pDir)
+
+  override def getModelsPath() =
+    Utils.joinPaths(List(pDir, "models"))
+
+  override def getSettingsPath() = ""
+
+  override def getDriverPath(db: DB) =
+    Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".js"))
+
+  override def getName() =
+    "sequelize"
+}

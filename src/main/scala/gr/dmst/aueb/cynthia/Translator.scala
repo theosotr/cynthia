@@ -144,12 +144,25 @@ object SQLAlchemyTranslator extends Translator {
 }
 
 
+object SequelizeTranslator extends Translator {
+  override def emitPrint(q: Query) =
+    ""
+
+  override def translatePred(pred: Predicate) = ""
+
+  override def translateQuerySet(qs: QuerySet, db: DB) = ""
+
+  override def translateQuery(q: Query, db: DB) = ""
+}
+
+
 object ORMTranslator {
 
   def apply(q: Query, target: Target): String = {
     val t = target.orm match {
       case Django(_, _, _)   => DjangoTranslator
       case SQLAlchemy (_, _) => SQLAlchemyTranslator
+      case Sequelize(_, _)   => SequelizeTranslator 
     }
     t.translateQuery(q, target.db) + t.emitPrint(q)
   }

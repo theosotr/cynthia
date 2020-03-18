@@ -14,8 +14,9 @@ object ProjectCreator {
   }
 
   def setupProject(orm: ORM, dbs: Seq[DB]) = orm match {
-    case Django (_, _, _)   => createDjangoProject(orm, dbs)
+    case Django (_, _, _)  => createDjangoProject(orm, dbs)
     case SQLAlchemy (_, _) => createSQLAlchemyProject(orm, dbs)
+    case Sequelize (_, _)  => createSequelizeProject(orm, dbs)
   }
 
   def createModels(orm: ORM, db: DB) = orm match {
@@ -26,7 +27,39 @@ object ProjectCreator {
     case SQLAlchemy(_, pdir) => {
       val models = Utils.runCmd("sqlacodegen " + db.getURI(), Some(pdir))
       Utils.writeToFile(orm.getModelsPath(), models)
-    } 
+    }
+    case Sequelize(_, pdir) => {
+      val bcmd = "node_modules/sequelize-auto/bin/sequelize-auto"
+      val cmd = db match {
+        case Postgres(user, password, dbname) =>
+          Seq(
+            bcmd, "-h", "localhost",
+            "-u", user, "-x", password, "-d",
+            dbname, "--dialect", db.getName(),
+            "-o", pdir
+          ).mkString(" ")
+        case MySQL(user, password, dbname) =>
+          Seq(
+            bcmd, "-h", "localhost",
+            "-u", user, "-x", password, "-d",
+            dbname, "--dialect", db.getName(),
+            "-o", pdir
+          ).mkString(" ")
+        case SQLite(dbname) =>
+          Seq(
+            bcmd, "-h", "localhost",
+            "-u", "foo", "-d",
+            dbname, "--dialect", db.getName(),
+            "-o", pdir
+          ).mkString(" ")
+      }
+      Utils.runCmd(cmd, None)
+    }
+  }
+
+  def createSequelizeProject(orm: ORM, dbs: Seq[DB]) = orm match {
+    case Sequelize(name, pdir) => Utils.emptyFile(pdir)
+    case _                     => ()
   }
 
   def createSQLAlchemyProject(orm: ORM, dbs: Seq[DB]) = orm match {

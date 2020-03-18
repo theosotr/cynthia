@@ -32,6 +32,7 @@ object Cynthia {
           .validate(_.foldLeft (success) { (acc, x) => x match {
               case "django"     => acc
               case "sqlalchemy" => acc
+              case "sequelize"  => acc
               case _            => failure("ORM '" + x + "' is not supported")
             }
           })
