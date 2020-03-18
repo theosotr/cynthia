@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia
 
 object PythonPrinter {
   def emitPrint(q: Query, ret: String) = q match {
-    case SetRes (_)     => "for r in res:\n\tprint (r.id)"
+    case SetRes (_)     => "for r in res:\n\tprint (int(r.id))"
     case AggrRes (_, _) => "print(res)"
   }
 }
@@ -17,11 +17,31 @@ sealed trait Translator {
 
 
 object DjangoTranslator extends Translator {
+  def getDjangoFieldName(field: String) =
+    field.split('.').toList match {
+      case Nil | _ :: Nil => field
+      case _ :: t         => t.mkString("__")
+    }
+
   override def emitPrint(q: Query) =
     PythonPrinter.emitPrint(q, "res")
 
-  override def translatePred(pred: Predicate) =
-    ""
+  override def translatePred(pred: Predicate) = pred match {
+    case Eq(k, Value(v, Quoted))    => getDjangoFieldName(k) + "=" + Utils.quoteStr(v)
+    case Eq(k, Value(v, UnQuoted))  => getDjangoFieldName(k) + "=" + v
+    case Gt(k, Value(v, Quoted))    => getDjangoFieldName(k) + "__gt=" + Utils.quoteStr(v)
+    case Gt(k, Value(v, UnQuoted))  => getDjangoFieldName(k) + "__gt=" + v
+    case Gte(k, Value(v, Quoted))   => getDjangoFieldName(k) + "__gte=" + Utils.quoteStr(v)
+    case Gte(k, Value(v, UnQuoted)) => getDjangoFieldName(k) + "__gte=" + v
+    case Lt(k, Value(v, Quoted))    => getDjangoFieldName(k) + "__lt=" + Utils.quoteStr(v)
+    case Lt(k, Value(v, UnQuoted))  => getDjangoFieldName(k) + "__le=" + v
+    case Lte(k, Value(v, Quoted))   => getDjangoFieldName(k) + "__lte=" + Utils.quoteStr(v)
+    case Lte(k, Value(v, UnQuoted)) => getDjangoFieldName(k) + "__lte=" + v
+    case Contains(k, v)             => getDjangoFieldName(k) + "__contains=" + Utils.quoteStr(v)
+    case Not(pred)                  => "~Q(" + translatePred(pred) + ")"
+    case Or(p1, p2)                 => "Q(" + translatePred(p1) + ") | Q(" + translatePred(p2) + ")" 
+    case And(p1, p2)                => "Q(" + translatePred(p1) + "), Q(" + translatePred(p2) + ")"
+  }
 
   override def translateQuerySet(qs: QuerySet, db: DB) = qs match {
     case New(m, f) => {
@@ -63,8 +83,22 @@ object SQLAlchemyTranslator extends Translator {
   override def emitPrint(q: Query) =
     PythonPrinter.emitPrint(q, "res")
 
-  override def translatePred(pred: Predicate) =
-    ""
+  override def translatePred(pred: Predicate) = pred match {
+    case Eq(k, Value(v, Quoted))    => k + "==" + Utils.quoteStr(v)
+    case Eq(k, Value(v, UnQuoted))  => k + "==" + v
+    case Gt(k, Value(v, Quoted))    => k + " > " + Utils.quoteStr(v)
+    case Gt(k, Value(v, UnQuoted))  => k + " > " + v
+    case Gte(k, Value(v, Quoted))   => k + " >= " + Utils.quoteStr(v)
+    case Gte(k, Value(v, UnQuoted)) => k + " >= " + v
+    case Lt(k, Value(v, Quoted))    => k + " < " + Utils.quoteStr(v)
+    case Lt(k, Value(v, UnQuoted))  => k + " < " + v
+    case Lte(k, Value(v, Quoted))   => k + " <= " + Utils.quoteStr(v)
+    case Lte(k, Value(v, UnQuoted)) => k + " <= " + v
+    case Contains(k, v)             => k + ".contains(" + Utils.quoteStr(v) + ")"
+    case Not(pred)                  => "not_(" + translatePred(pred) + ")"
+    case Or(p1, p2)                 => "or_(" + translatePred(p1) + ", " + translatePred(p2) + ")" 
+    case And(p1, p2)                => "and_(" + translatePred(p1) + ", " + translatePred(p2) + ")"
+  }
 
   override def translateQuerySet(qs: QuerySet, db: DB) = qs match {
     case New (m, f)              => "session.query(" + m + ")"

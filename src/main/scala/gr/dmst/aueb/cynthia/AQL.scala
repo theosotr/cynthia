@@ -8,7 +8,6 @@ case class Value(v: String, vt: ValueType)
 
 sealed trait Predicate
 case class Eq(key: String, value: Value) extends Predicate
-case class Neq(key: String, value: Value) extends Predicate
 case class Gt(key: String, value: Value) extends Predicate
 case class Lt(key: String, value: Value) extends Predicate
 case class Gte(key: String, value: Value) extends Predicate

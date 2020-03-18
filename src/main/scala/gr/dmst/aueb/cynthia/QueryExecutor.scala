@@ -18,6 +18,7 @@ object QueryExecutor {
   def emitPreamble(target: Target) = target.orm match {
     case Django (name, _, setDir) =>
       new StringBuilder("import os, django\n")
+        .append("from django.db.models import Q\n")
         .append("os.environ.setdefault('DJANGO_SETTINGS_MODULE', '")
         .append(setDir)
         .append(".settings')\n")
@@ -27,7 +28,7 @@ object QueryExecutor {
         .append(".models import *\n")
         .toString()
     case SQLAlchemy(_, _) =>
-      new StringBuilder("from sqlalchemy import create_engine\n")
+      new StringBuilder("from sqlalchemy import create_engine, or_, and_, not_\n")
         .append("from sqlalchemy.orm import sessionmaker\n")
         .append("from models import *\n")
         .append("engine = create_engine('")

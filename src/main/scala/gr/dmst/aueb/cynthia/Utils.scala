@@ -82,4 +82,7 @@ object Utils {
     case None      => cmd.!!
     case Some(dir) => Process(cmd, new File(dir)).!!
   }
+
+  def quoteStr(str: String, quotes: String = "'") =
+    quotes + str + quotes
 }
