@@ -110,7 +110,7 @@ object DjangoTranslator extends Translator {
     PythonPrinter.emitPrint(q, ret)
 
   def constructFilter(preds: Set[Predicate]) =
-    preds.map { x =>
+    preds map { x =>
       (Str("filter(") << translatePred(x) << ")").!
     } mkString(".")
 
@@ -118,11 +118,11 @@ object DjangoTranslator extends Translator {
     case Seq() => ""
     case _     =>
       (
-          Str("order_by(") << (
-            spec.foldLeft (Seq[String]()) { (acc, x) =>
+        Str("order_by(") << (
+          spec map { x =>
             x match {
-              case (k, Desc) => acc :+ Utils.quoteStr("-" + getDjangoFieldName(k))
-              case (k, Asc)  => acc :+ Utils.quoteStr(getDjangoFieldName(k))
+              case (k, Desc) => Utils.quoteStr("-" + getDjangoFieldName(k))
+              case (k, Asc)  => Utils.quoteStr(getDjangoFieldName(k))
             }
           } mkString(",")
         ) << ")"
@@ -216,7 +216,7 @@ object SQLAlchemyTranslator extends Translator {
     PythonPrinter.emitPrint(q, ret)
 
   def constructFilter(preds: Set[Predicate]) =
-    preds.map { x =>
+    preds map { x =>
       (Str("filter(") << translatePred(x) << ")").!
     } mkString(".")
 
@@ -225,10 +225,10 @@ object SQLAlchemyTranslator extends Translator {
     case _     =>
       (
         Str("order_by(") << (
-          spec.foldLeft (Seq[String]()) { (acc, x) =>
+          spec map { x =>
             x match {
-              case (k, Desc) => acc :+ (k + ".desc()")
-              case (k, Asc)  => acc :+ (k + ".asc()")
+              case (k, Desc) => k + ".desc()"
+              case (k, Asc)  => k + ".asc()"
             }
           } mkString(",")
         ) << ")"
