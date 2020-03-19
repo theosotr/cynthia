@@ -380,14 +380,14 @@ object SequelizeTranslator extends Translator {
         case Some(Count) => "count"
         case Some(Sum)   => "sum"
       }
-      val q = h + "." + method + "({\n" +
+      val q = (Str(h) << "." << method << "({\n" <<
         (
           Seq(constructWhere(state.preds), constructOrderBy(state.orders))
           filter (x => x match {
             case "" => false
             case _  => true
           }) mkString(",\n")
-        ) + "\n})"
+        ) << "\n})").!
       qStr >> QueryStr("ret" + state.numGen.next(), Some(q))
     }
     case _ => ???
