@@ -84,12 +84,13 @@ class TestRunner(targets: Seq[Target]) {
   def genQueries() =
     List(
       SetRes(Union(New ("Listing", None), New ("Listing", None))),
-      AggrRes(Count, New ("Listing", None)),
       AggrRes(Count, Union(New("Listing", None), Union(New("Listing", None), New("Listing", None)))),
       SetRes(Apply(Filter(Not(Eq("Listing.foo", Value("bar", Quoted)))), New ("Listing", None))),
-      SetRes(Apply(Filter(And(Not(Eq("Listing.foo", Value("bar", Quoted))), Gte("Listing.sale_price", Value("100", UnQuoted)))), New ("Listing", None))),
+      SetRes(Apply(Sort(Seq(("Listing.yearly_rent", Asc))), Union(New("Listing", None), New("Listing", None)))),
       SetRes(Apply(Sort(Seq(("Listing.foo", Desc), ("Listing.sale_price", Asc))), New("Listing", None))),
-      SetRes(Apply(Sort(Seq(("Listing.yearly_rent", Asc))), Union(New("Listing", None), New("Listing", None))))
+      AggrRes(Count, Union(New("Listing", None), Union(New("Listing", None), New("Listing", None)))),
+      SetRes(Apply(Filter(And(Not(Eq("Listing.foo", Value("bar", Quoted))), Gte("Listing.sale_price", Value("100", UnQuoted)))), New ("Listing", None))),
+      AggrRes(Count, New ("Listing", None))
     )
 
   def start() =
