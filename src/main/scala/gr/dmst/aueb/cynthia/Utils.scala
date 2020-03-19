@@ -6,6 +6,19 @@ import scala.reflect.io.Directory
 import scala.sys.process._
 
 
+case class Str(str: String) {
+  val buff: StringBuilder = new StringBuilder(str)
+
+  def <<(obj: Object) = {
+    buff.append(obj.toString)
+    this
+  }
+
+  def !() =
+    buff.toString
+}
+
+
 object Utils {
   val cwdDir = ".cynthia"
   val dbDir = "dbs"
