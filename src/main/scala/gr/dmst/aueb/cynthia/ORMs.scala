@@ -1,17 +1,20 @@
 package gr.dmst.aueb.cynthia
 
 
-sealed trait ORM {
+sealed abstract class ORM(
+  val ormName: String,
+  val projectName: String,
+  val projectDir: String) {
+
   def getModelsPath(): String
 
   def getSettingsPath(): String
 
   def getDriverPath(db: DB): String
-
-  def getName(): String
 }
 
-case class Django(name: String, pDir: String, setDir: String) extends ORM {
+case class Django(name: String, pDir: String, setDir: String)
+extends ORM("django", name, pDir) {
   Utils.createDir(pDir)
 
   override def getModelsPath() =
@@ -22,12 +25,10 @@ case class Django(name: String, pDir: String, setDir: String) extends ORM {
 
   override def getDriverPath(db: DB) =
     Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".py"))
-
-  override def getName() =
-    "django"
 }
 
-case class SQLAlchemy(name: String, pDir: String) extends ORM {
+case class SQLAlchemy(name: String, pDir: String)
+extends ORM("sqlalchemy", name, pDir) {
   Utils.createDir(pDir)
 
   override def getModelsPath() =
@@ -37,12 +38,10 @@ case class SQLAlchemy(name: String, pDir: String) extends ORM {
 
   override def getDriverPath(db: DB) =
     Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".py"))
-
-  override def getName() =
-    "sqlalchemy"
 }
 
-case class Sequelize(name: String, pDir: String) extends ORM {
+case class Sequelize(name: String, pDir: String)
+extends ORM("sequelize", name, pDir) {
   Utils.createDir(pDir)
 
   override def getModelsPath() =
@@ -52,7 +51,4 @@ case class Sequelize(name: String, pDir: String) extends ORM {
 
   override def getDriverPath(db: DB) =
     Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".js"))
-
-  override def getName() =
-    "sequelize"
 }

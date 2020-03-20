@@ -6,6 +6,8 @@ import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
 import scala.language.postfixOps
 
+import gr.dmst.aueb.cynthia.translators.ORMTranslator
+
 
 case class Target(orm: ORM, db: DB) {
   def getTargetCommand() = orm match {
@@ -14,7 +16,7 @@ case class Target(orm: ORM, db: DB) {
   }
 
   override def toString() =
-    orm.getName() + "[" + db.getName() + "]"
+    orm.projectName + "[" + db.getName() + "]"
 }
 
 object TestRunnerCreator {
