@@ -292,17 +292,24 @@ object SQLAlchemyTranslator extends Translator {
     }
   }
 
-  def constructAggr(aggr: Aggregate): String = aggr match {
-    case Add(a1, a2, None)    => "(" + constructAggr(a1) + " + " + constructAggr(a2) + ")"
-    case Add(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " + " + constructAggr(a2)
-    case Sub(a1, a2, None)    => "(" + constructAggr(a1) + " - " + constructAggr(a2) + ")"
-    case Sub(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " - " + constructAggr(a2)
-    case Mul(a1, a2, None)    => "(" + constructAggr(a1) + " * " + constructAggr(a2) + ")"
-    case Mul(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " * " + constructAggr(a2)
-    case Div(a1, a2, None)    => "(" + constructAggr(a1) + " / " + constructAggr(a2) + ")"
-    case Div(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " / " + constructAggr(a2)
-    case _                    => constructPrimAggr(aggr)
+  def constructCompoundAggr(aggr: Aggregate) = {
+    val (a1, a2, op, l) = aggr match {
+      case Add(a1, a2, l) => (a1, a2, " + ", l)
+      case Sub(a1, a2, l) => (a1, a2, " - ", l)
+      case Mul(a1, a2, l) => (a1, a2, " * ", l)
+      case Div(a1, a2, l) => (a1, a2, " / ", l)
+      case _ => ??? // Unreachable case
+    }
+    val str = Str("(") << constructAggr(a1) << op << constructAggr(a2) << ")"
+    l match {
+      case None    => str.!
+      case Some(l) => (str << ".label(" << Utils.quoteStr(l) << ")").!
+    }
   }
+
+  def constructAggr(aggr: Aggregate): String =
+    if (!aggr.compound) constructPrimAggr(aggr)
+    else constructCompoundAggr(aggr)
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>

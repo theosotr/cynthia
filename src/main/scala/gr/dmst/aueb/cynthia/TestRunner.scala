@@ -172,8 +172,47 @@ class TestRunner(targets: Seq[Target]) {
       AggrRes(
         Seq(Count(Some("count"))),
         New("Listing", None)
+      ),
+
+      // Query 9
+      AggrRes(
+        Seq(
+          Sum("Listing.sale_price", Some("sum_sale")),
+          Max("Listing.sale_price", Some("max_sale")),
+          Min("Listing.sale_price", Some("min_sale")),
+          Avg("Listing.sale_price", Some("avg_sale"))
+        ),
+        New("Listing", None)
+      ),
+
+      // Query 10
+      AggrRes(
+        Seq(
+          Add(
+            Mul(
+              Sum("Listing.sale_price", None),
+              Avg("Listing.yearly_rent", None)
+            ),
+            Div(
+              Max("Listing.sale_price", None),
+              Min("Listing.sale_price", None)
+            ),
+            Some("complex_add")
+          ),
+          Sum("Listing.yearly_rent", Some("yearly")),
+          Sub(
+            Min("Listing.yearly_rent"),
+            Add(
+              Avg("Listing.sale_price"),
+              Max("Listing.sale_price")
+            ),
+            Some("complex_sub")
+          )
+        ),
+        New("Listing", None)
       )
     )
+
 
   def start() =
     genQueries()

@@ -31,16 +31,18 @@ case class Apply(op: Operation, q: QuerySet) extends QuerySet
 case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet
 case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet
 
-sealed abstract class Aggregate (val label: Option[String]) {}
-case class Count(l: Option[String]) extends Aggregate(l)
-case class Sum(field: String, l: Option[String] = None) extends Aggregate(l)
-case class Avg(field: String, l: Option[String] = None) extends Aggregate(l)
-case class Max(field: String, l: Option[String] = None) extends Aggregate(l)
-case class Min(field: String, l: Option[String] = None) extends Aggregate(l)
-case class Add(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l)
-case class Sub(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l)
-case class Mul(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l)
-case class Div(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l)
+sealed abstract class Aggregate (
+  val label: Option[String],
+  val compound: Boolean) {  }
+case class Count(l: Option[String]) extends Aggregate(l, false)
+case class Sum(field: String, l: Option[String] = None) extends Aggregate(l, false)
+case class Avg(field: String, l: Option[String] = None) extends Aggregate(l, false)
+case class Max(field: String, l: Option[String] = None) extends Aggregate(l, false)
+case class Min(field: String, l: Option[String] = None) extends Aggregate(l, false)
+case class Add(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l, true)
+case class Sub(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l, true)
+case class Mul(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l, true)
+case class Div(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l, true)
 
 sealed trait Query
 case class SetRes (qs: QuerySet) extends Query
