@@ -160,7 +160,7 @@ object DjangoTranslator extends Translator {
     val k = Utils.quoteStr(getDjangoFieldName(field))
     label match {
       case None    => op + "(" + k + ", output_field=FloatField())"
-      case Some(l) => l + "=" + op + "(" + k + ", output_field=FloatField())"
+      case Some(l) => l + "=" + op + "(" + k + ", output_field=TextField())"
     }
   }
 

@@ -210,6 +210,15 @@ class TestRunner(targets: Seq[Target]) {
           )
         ),
         New("Listing", None)
+      ),
+
+      // Query 11
+      AggrRes(
+        Seq(
+          Max("Listing.foo", Some("max")),
+          Min("Listing.foo", Some("min"))
+        ),
+        New("Listing", None)
       )
     )
 
