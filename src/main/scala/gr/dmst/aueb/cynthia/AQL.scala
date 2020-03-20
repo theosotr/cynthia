@@ -31,10 +31,17 @@ case class Apply(op: Operation, q: QuerySet) extends QuerySet
 case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet
 case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet
 
-sealed trait Aggr
-case object Count extends Aggr
-case object Sum extends Aggr
+sealed trait Aggregate
+case class Count(label: Option[String]) extends Aggregate
+case class Sum(field: String, label: Option[String] = None) extends Aggregate
+case class Avg(field: String, label: Option[String] = None) extends Aggregate
+case class Max(field: String, label: Option[String] = None) extends Aggregate
+case class Min(field: String, label: Option[String] = None) extends Aggregate
+case class Add(ag1: Aggregate, ag2: Aggregate, label: Option[String] = None) extends Aggregate
+case class Sub(ag1: Aggregate, ag2: Aggregate, label: Option[String] = None) extends Aggregate
+case class Mul(ag1: Aggregate, ag2: Aggregate, label: Option[String] = None) extends Aggregate
+case class Div(ag1: Aggregate, ag2: Aggregate, label: Option[String] = None) extends Aggregate
 
 sealed trait Query
 case class SetRes (qs: QuerySet) extends Query
-case class AggrRes (aggr: Aggr, qs: QuerySet) extends Query
+case class AggrRes (aggrs: Seq[Aggregate], qs: QuerySet) extends Query

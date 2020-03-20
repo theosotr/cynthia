@@ -34,27 +34,28 @@ case class State(
   sources: Set[String] = Set(),
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
-  aggr: Option[Aggr] = None,
+  aggrs: Seq[Aggregate] = Seq(),
   query: Option[QueryStr] = None,
   numGen: Iterator[Int] = Stream.from(1).iterator
   ) {
 
   def +(source: String) =
-    State(db, sources + source, preds, orders, aggr, query, numGen)
+    State(db, sources + source, preds, orders, aggrs, query, numGen)
 
   def ++(pred: Predicate): State =
-    State(db, sources, preds + pred, orders, aggr, query, numGen)
+    State(db, sources, preds + pred, orders, aggrs, query, numGen)
 
   def :+(o: (String, Order)): State =
-    State(db, sources, preds, orders :+ o, aggr, query, numGen)
+    State(db, sources, preds, orders :+ o, aggrs, query, numGen)
 
-  def :-(a: Aggr): State =
-    State(db, sources, preds, orders, Some(a), query, numGen)
+  def :-(a: Seq[Aggregate]): State =
+    State(db, sources, preds, orders, aggrs ++ a, query, numGen)
 
   def >>(qstr: QueryStr): State = query match {
-    case None        => State(db, sources, preds, orders, aggr, Some(qstr), numGen)
-    case Some(query) => State(db, sources, preds, orders, aggr, Some(query >> qstr),
-                              numGen)
+    case None        =>
+      State(db, sources, preds, orders, aggrs, Some(qstr), numGen)
+    case Some(query) =>
+      State(db, sources, preds, orders, aggrs, Some(query >> qstr), numGen)
   }
 }
 
@@ -72,7 +73,7 @@ sealed abstract class Translator {
   }
 
   def evalAggrQuery(s: State)(q: Query): State = q match {
-    case AggrRes(aggr, qs) => evalQuerySet(s)(qs) :- aggr
+    case AggrRes(aggrs, qs) => evalQuerySet(s)(qs) :- aggrs
     case _ => ???
   }
 
@@ -145,10 +146,37 @@ object DjangoTranslator extends Translator {
     case Some(q) => q
   }
 
-  def constructAggr(a: Option[Aggr]) = a match {
-    case None => ""
-    case Some(Count) => "count()"
-    case Some(Sum)   => "sum()"
+  def constructPrimAggr(aggr: Aggregate) = {
+    val (field, op, label) = aggr match {
+      case Count(l)      => ("*", "Count", l)
+      case Sum(field, l) => (field, "Sum", l)
+      case Avg(field, l) => (field, "Avg", l)
+      case Min(field, l) => (field, "Min", l)
+      case Max(field, l) => (field, "Max", l)
+      case _             => ??? // Unreachable case
+    }
+    val k = Utils.quoteStr(getDjangoFieldName(field))
+    label match {
+      case None    => op + "(" + field + ", output_field=FloatField())"
+      case Some(l) => l + "=" + op + "(" + field + ", output_field=FloatField())"
+    }
+  }
+
+  def constructAggr(aggr: Aggregate): String = aggr match {
+    case Add(a1, a2, None)    => "(" + constructAggr(a1) + " + " + constructAggr(a2) + ")"
+    case Add(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " + " + constructAggr(a2)
+    case Sub(a1, a2, None)    => "(" + constructAggr(a1) + " - " + constructAggr(a2) + ")"
+    case Sub(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " - " + constructAggr(a2)
+    case Mul(a1, a2, None)    => "(" + constructAggr(a1) + " * " + constructAggr(a2) + ")"
+    case Mul(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " * " + constructAggr(a2)
+    case Div(a1, a2, None)    => "(" + constructAggr(a1) + " / " + constructAggr(a2) + ")"
+    case Div(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " / " + constructAggr(a2)
+    case _                    => constructPrimAggr(aggr)
+  }
+
+  def constructAggrs(aggrs: Seq[Aggregate]) = aggrs match {
+    case Seq() => ""
+    case _     => "aggregate(" + (aggrs map { constructAggr } mkString (",")) + ")"
   }
 
   override def constructQuery(s: State) = {
@@ -158,7 +186,7 @@ object DjangoTranslator extends Translator {
         qStr.ret,
         constructFilter(s.preds),
         constructOrderBy(s.orders),
-        constructAggr(s.aggr)
+        constructAggrs(s.aggrs)
       ) filter {
         case "" => false
         case _  => true
@@ -235,20 +263,45 @@ object SQLAlchemyTranslator extends Translator {
       ).!
   }
 
-  def constructAggr(a: Option[Aggr]) = a match {
-    case None => ""
-    case Some(Count) => "count()"
-    case Some(Sum)   => "sum()"
+  def constructPrimAggr(aggr: Aggregate) = {
+    val (field, op, label) = aggr match {
+      case Count(l)      => ("", "func.count", l)
+      case Sum(field, l) => (field, "func.sum", l)
+      case Avg(field, l) => (field, "func.avg", l)
+      case Min(field, l) => (field, "func.min", l)
+      case Max(field, l) => (field, "func.max", l)
+      case _             => ??? // Unreachable case
+    }
+    label match {
+      case None    => op + "(" + field + ")"
+      case Some(l) => op + "(" + field + ").label(" + Utils.quoteStr(l) + ")" 
+    }
+  }
+
+  def constructAggr(aggr: Aggregate): String = aggr match {
+    case Add(a1, a2, None)    => "(" + constructAggr(a1) + " + " + constructAggr(a2) + ")"
+    case Add(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " + " + constructAggr(a2)
+    case Sub(a1, a2, None)    => "(" + constructAggr(a1) + " - " + constructAggr(a2) + ")"
+    case Sub(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " - " + constructAggr(a2)
+    case Mul(a1, a2, None)    => "(" + constructAggr(a1) + " * " + constructAggr(a2) + ")"
+    case Mul(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " * " + constructAggr(a2)
+    case Div(a1, a2, None)    => "(" + constructAggr(a1) + " / " + constructAggr(a2) + ")"
+    case Div(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " / " + constructAggr(a2)
+    case _                    => constructPrimAggr(aggr)
   }
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>
       s.sources.toList match {
-        case Nil => ???
-        case _   =>
-          QueryStr(
+        case Nil => ??? // Unreachable case
+        case _   => s.aggrs match {
+          case Seq() => QueryStr(
             "ret" + s.numGen.next().toString,
             Some("session.query(" + s.sources.mkString(",") + ")"))
+          case _ => QueryStr(
+            "ret" + s.numGen.next().toString,
+            Some("session.query(" + (s.aggrs map { constructAggr } mkString ",") + ")"))
+        }
       }
     case Some(q) => q
   }
@@ -260,7 +313,10 @@ object SQLAlchemyTranslator extends Translator {
         qStr.ret,
         constructFilter(s.preds),
         constructOrderBy(s.orders),
-        constructAggr(s.aggr)
+        s.aggrs match {
+          case Seq() => ""
+          case _     => "first()"
+        }
       ) filter {
         case "" => false
         case _  => true
@@ -375,10 +431,9 @@ object SequelizeTranslator extends Translator {
     case h :: Nil => {
       val qStr = QueryStr(h, Some("sequelize.import(" +
         Utils.quoteStr(h.toLowerCase + ".js") + ")"))
-      val method = state.aggr match {
-        case None        => "findAll"
-        case Some(Count) => "count"
-        case Some(Sum)   => "sum"
+      val method = state.aggrs match {
+        case Seq()       => "findAll"
+        case _           => "count"
       }
       val q = (Str(h) << "." << method << "({\n" <<
         (

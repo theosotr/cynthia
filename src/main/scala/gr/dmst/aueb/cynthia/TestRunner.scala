@@ -83,14 +83,96 @@ class TestRunner(targets: Seq[Target]) {
 
   def genQueries() =
     List(
-      SetRes(Union(New ("Listing", None), New ("Listing", None))),
-      AggrRes(Count, Union(New("Listing", None), Union(New("Listing", None), New("Listing", None)))),
-      SetRes(Apply(Filter(Not(Eq("Listing.foo", Value("bar", Quoted)))), New ("Listing", None))),
-      SetRes(Apply(Sort(Seq(("Listing.yearly_rent", Asc))), Union(New("Listing", None), New("Listing", None)))),
-      SetRes(Apply(Sort(Seq(("Listing.foo", Desc), ("Listing.sale_price", Asc))), New("Listing", None))),
-      AggrRes(Count, Union(New("Listing", None), Union(New("Listing", None), New("Listing", None)))),
-      SetRes(Apply(Filter(And(Not(Eq("Listing.foo", Value("bar", Quoted))), Gte("Listing.sale_price", Value("100", UnQuoted)))), New ("Listing", None))),
-      AggrRes(Count, New ("Listing", None))
+      // Query 1
+      SetRes(
+        Union(
+          New("Listing", None),
+          New("Listing", None)
+        )
+      ),
+
+      // Query 2
+      AggrRes(
+        Seq(Count(Some("count"))),
+        Union(
+          New("Listing", None),
+          Union(
+            New("Listing", None),
+            New("Listing", None)
+          )
+        )
+      ),
+
+      // Query3
+      SetRes(
+        Apply(
+          Filter(
+            Not(
+              Eq("Listing.foo", Value("bar", Quoted))
+            )
+          ),
+          New("Listing", None)
+        )
+      ),
+
+      // Query 4
+      SetRes(
+        Apply(
+          Sort(
+            Seq(("Listing.yearly_rent", Asc))
+          ),
+          Union(
+            New("Listing", None),
+            New("Listing", None)
+          )
+        )
+      ),
+ 
+      // Query 5
+      SetRes(
+        Apply(
+          Sort(
+            Seq(
+              ("Listing.foo", Desc),
+              ("Listing.sale_price", Asc)
+            )
+          ),
+          New("Listing", None)
+        )
+      ),
+
+      // Query 6
+      AggrRes(
+        Seq(Count(Some("count"))),
+        Union(
+          New("Listing", None),
+          Union(
+            New("Listing", None),
+            New("Listing", None)
+          )
+        )
+      ),
+
+      // Query 7
+      SetRes(
+        Apply(
+          Filter(
+            And(
+              Not(
+                Eq("Listing.foo", Value("bar", Quoted))
+              ),
+              Gte("Listing.sale_price", Value("100", UnQuoted))
+            )
+          ),
+          New ("Listing", None)
+        )
+      ),
+
+      // Query 8
+      AggrRes(
+        Seq(Count(Some("count"))),
+        New("Listing", None)
+      )
     )
 
   def start() =
