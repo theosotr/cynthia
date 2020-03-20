@@ -1,14 +1,6 @@
 package gr.dmst.aueb.cynthia
 
 
-object PythonPrinter {
-  def emitPrint(q: Query, ret: String) = q match {
-    case SetRes (_)     => s"for r in $ret:\n  print(int(r.id))"
-    case AggrRes (_, _) => s"print($ret)"
-  }
-}
-
-
 case class QueryStr(
   ret: String,
   q: Option[String],
@@ -107,8 +99,18 @@ object DjangoTranslator extends Translator {
       case _ :: t         => t.mkString("__")
     }
 
-  override def emitPrint(q: Query, ret: String) =
-    PythonPrinter.emitPrint(q, ret)
+  override def emitPrint(q: Query, ret: String) = q match {
+    case SetRes (_)         => s"for r in $ret:\n  dump(r.id)"
+    case AggrRes (aggrs, _) => aggrs map { x => {
+        val label = x.label match {
+          case None => throw new Exception(
+            "You must provide a label for root aggregates")
+          case Some(l) => l
+        }
+        s"dump($ret['$label'])"
+      }
+    } mkString ("\n")
+  }
 
   def constructFilter(preds: Set[Predicate]) =
     preds map { x =>
@@ -157,8 +159,8 @@ object DjangoTranslator extends Translator {
     }
     val k = Utils.quoteStr(getDjangoFieldName(field))
     label match {
-      case None    => op + "(" + field + ", output_field=FloatField())"
-      case Some(l) => l + "=" + op + "(" + field + ", output_field=FloatField())"
+      case None    => op + "(" + k + ", output_field=FloatField())"
+      case Some(l) => l + "=" + op + "(" + k + ", output_field=FloatField())"
     }
   }
 
@@ -240,8 +242,20 @@ object DjangoTranslator extends Translator {
 
 
 object SQLAlchemyTranslator extends Translator {
-  override def emitPrint(q: Query, ret: String) =
-    PythonPrinter.emitPrint(q, ret)
+  override def emitPrint(q: Query, ret: String) = q match {
+    case SetRes(_)         => s"for r in $ret:\n  dump(r.id)"
+    case AggrRes(aggrs, _) => aggrs match {
+      case Seq(Count(_)) => s"dump($ret)"
+      case _ => aggrs map { x => {
+        val label = x.label match {
+          case None => throw new Exception(
+            "You must provide a label for root aggregates")
+          case Some(l) => l
+        }
+        s"dump($ret.$label)"
+        }} mkString ("\n")
+      }
+    }
 
   def constructFilter(preds: Set[Predicate]) =
     preds map { x =>
@@ -295,7 +309,7 @@ object SQLAlchemyTranslator extends Translator {
       s.sources.toList match {
         case Nil => ??? // Unreachable case
         case _   => s.aggrs match {
-          case Seq() => QueryStr(
+          case Seq() | Seq(Count(_)) => QueryStr(
             "ret" + s.numGen.next().toString,
             Some("session.query(" + s.sources.mkString(",") + ")"))
           case _ => QueryStr(
@@ -314,8 +328,9 @@ object SQLAlchemyTranslator extends Translator {
         constructFilter(s.preds),
         constructOrderBy(s.orders),
         s.aggrs match {
-          case Seq() => ""
-          case _     => "first()"
+          case Seq()         => ""
+          case Seq(Count(_)) => "count()"
+          case _             => "first()"
         }
       ) filter {
         case "" => false

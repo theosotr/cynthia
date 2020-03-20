@@ -14,11 +14,18 @@ case class Fail(msg: String) extends QueryRes {
 }
 
 object QueryExecutor {
+  val pythonDump =
+    """import numbers, decimal
+    |def dump(x):
+    |    if isinstance(x, numbers.Number):
+    |       print(round(decimal.Decimal(x), 2))
+    |    else:
+    |       print(x)""".stripMargin
 
   def emitPreamble(target: Target) = target.orm match {
     case Django (name, _, setDir) =>
       new StringBuilder("import os, django\n")
-        .append("from django.db.models import Q\n")
+        .append("from django.db.models import *\n")
         .append("os.environ.setdefault('DJANGO_SETTINGS_MODULE', '")
         .append(setDir)
         .append(".settings')\n")
@@ -26,9 +33,10 @@ object QueryExecutor {
         .append("from ")
         .append(name)
         .append(".models import *\n")
+        .append(pythonDump + "\n")
         .toString()
     case SQLAlchemy(_, _) =>
-      new StringBuilder("from sqlalchemy import create_engine, or_, and_, not_\n")
+      new StringBuilder("from sqlalchemy import create_engine, or_, and_, not_, func\n")
         .append("from sqlalchemy.orm import sessionmaker\n")
         .append("from models import *\n")
         .append("engine = create_engine('")
@@ -36,6 +44,7 @@ object QueryExecutor {
         .append("')\n")
         .append("Session = sessionmaker(bind=engine)\n")
         .append("session = Session()\n")
+        .append(pythonDump + "\n")
         .toString()
     case Sequelize(_, _) => {
       val dbsettings = target.db match {
