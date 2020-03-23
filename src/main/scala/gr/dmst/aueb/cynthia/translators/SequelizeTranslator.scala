@@ -31,11 +31,30 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     s"""const {Op, Sequelize} = require('sequelize');
     |const sequelize = ${setstr.!}
     |
+    |function dump(x) {
+    |  if (typeof x === 'number') {
+    |    console.log(x.toFixed(2))
+    |  } else {
+    |    console.log(x)
+    |  }
+    |}
+    |
     """.stripMargin
 
   override def emitPrint(q: Query, ret: String) = q match {
-    case SetRes (_)     => s"$ret.then((x) => { x.forEach((x) => console.log(x.id)) })"
-    case AggrRes (_, _) => s"$ret.then((x) => console.log(x))"
+    case SetRes (_) =>
+      s"$ret.then((x) => { x.forEach((x) => dump(x.id)) })"
+    case AggrRes (aggrs, _) => {
+      val prints = aggrs map { x =>
+        val label = x.label match {
+          case None => throw new Exception(
+            "You must provide a label for root aggregates")
+          case Some(l) => l
+        }
+        s"dump(x[0].dataValues.$label)"
+      } mkString ("\n  ")
+      s"$ret.then((x) =>{\n  $prints})"
+    }
   }
 
   def getSeqFieldName(field: String) =
@@ -79,11 +98,13 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def constructWhere(preds: Set[Predicate]) =
-    (
-      Str("where: {\n  [Op.and]: [\n") << (
-        preds map { x => "    {" + translatePred(x) + "}" } mkString(",")
-      ) << "  ]\n}"
-    ).!
+    if (preds.isEmpty) ""
+    else
+      (
+        Str("where: {\n  [Op.and]: [\n") << (
+          preds map { x => "    {" + translatePred(x) + "}" } mkString(",")
+        ) << "  ]\n}"
+      ).!
 
   def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
     case Seq() => ""
@@ -99,19 +120,46 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
+  def constructAggr(aggr: Aggregate) = {
+    val (field, op, label) = aggr match {
+      case Count(l)      => ("", "'count'", l)
+      case Sum(field, l) => (field, "'sum'", l)
+      case Avg(field, l) => (field, "'avg'", l)
+      case Min(field, l) => (field, "'min'", l)
+      case Max(field, l) => (field, "'max'", l)
+      case _             => throw new UnsupportedException(
+        "Complex aggregations are not supported")
+    }
+    val k = Utils.quoteStr(getSeqFieldName(field))
+    val str = Str("[sequelize.fn(") << op
+    (label, k) match {
+      case (None, "")    => (str << "), 0]").!
+      case (None, _)     => (str << ", sequelize.col(" << k << ")), 0]").!
+      case (Some(l), "") => (str << "), " << Utils.quoteStr(l) << "]").!
+      case (Some(l), _)  =>
+        (str << ", sequelize.col(" << k << ")), " << Utils.quoteStr(l) << "]").!
+    }
+  }
+
+  def constructAttributes(state: State) = {
+    val attrStr = state.aggrs map { constructAggr } mkString(",\n")
+    attrStr match {
+      case "" => ""
+      case _  => "attributes: [\n" + attrStr + "]"
+    }
+  }
 
   override def constructQuery(state: State): QueryStr = state.sources.toList match {
     case h :: Nil => {
       val qStr = QueryStr(h, Some("sequelize.import(" +
         Utils.quoteStr(h.toLowerCase + ".js") + ")"))
-      val method = state.aggrs match {
-        case Seq()       => "findAll"
-        case _           => "count"
-      }
-      val q = (Str(h) << "." << method << "({\n" <<
+      val q = (Str(h) << ".findAll({\n" <<
         (
-          Seq(constructWhere(state.preds), constructOrderBy(state.orders))
-          filter (x => x match {
+          Seq(
+            constructAttributes(state),
+            constructWhere(state.preds),
+            constructOrderBy(state.orders)
+          ) filter (x => x match {
             case "" => false
             case _  => true
           }) mkString(",\n")

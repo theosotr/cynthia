@@ -3,6 +3,10 @@ package gr.dmst.aueb.cynthia.translators
 import gr.dmst.aueb.cynthia._
 
 
+final case class UnsupportedException(private val message: String)
+extends Exception(message)
+
+
 case class QueryStr(
   ret: String,
   q: Option[String],
