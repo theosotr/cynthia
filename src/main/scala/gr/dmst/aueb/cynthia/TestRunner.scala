@@ -16,7 +16,7 @@ case class Target(orm: ORM, db: DB) {
   }
 
   override def toString() =
-    orm.projectName + "[" + db.getName() + "]"
+    orm.ormName + "[" + db.getName() + "]"
 }
 
 object TestRunnerCreator {
