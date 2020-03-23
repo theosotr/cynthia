@@ -133,10 +133,10 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     val k = Utils.quoteStr(getSeqFieldName(field))
     val str = Str("[sequelize.fn(") << op
     (label, k) match {
-      case (None, "")    => (str << "), 0]").!
-      case (None, _)     => (str << ", sequelize.col(" << k << ")), 0]").!
-      case (Some(l), "") => (str << "), " << Utils.quoteStr(l) << "]").!
-      case (Some(l), _)  =>
+      case (None, "''")    => (str << "), 0]").!
+      case (None, _)       => (str << ", sequelize.col(" << k << ")), 0]").!
+      case (Some(l), "''") => (str << "), " << Utils.quoteStr(l) << "]").!
+      case (Some(l), _)    =>
         (str << ", sequelize.col(" << k << ")), " << Utils.quoteStr(l) << "]").!
     }
   }
@@ -168,6 +168,10 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     }
     case _ => ???
   }
-  override def unionQueries(s1: State, s2: State): State = s1
-  override def intersectQueries(s1: State, s2: State): State = s1
+
+  override def unionQueries(s1: State, s2: State): State =
+    throw new UnsupportedException("unions are not supported")
+
+  override def intersectQueries(s1: State, s2: State): State =
+    throw new UnsupportedException("intersections are not supported")
 }

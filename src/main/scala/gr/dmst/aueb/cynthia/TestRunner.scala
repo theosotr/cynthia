@@ -230,21 +230,27 @@ class TestRunner(targets: Seq[Target]) {
       .foreach { q => {
         val futures = targets.map { t =>
           Future {
-            (t, QueryExecutor(ORMTranslator(q, t), t))
+            (t, QueryExecutor(q, t))
           }
         }
         val f = Future.sequence(futures) map { res =>
             val comps =
               res.foldLeft(Map[String, Seq[String]]()) ((acc, x) => {
-                val (target, res) = x
-                acc + (res.toString ->
-                  (acc.getOrElse(res.toString(), Seq()) :+ target.toString()))
+                x match {
+                  case (target, Unsupported(_)) => acc
+                  case (target, res) => {
+                    // We ignore comparisons involving ORMs that
+                    // do not support the current query.
+                    val targets = acc getOrElse(res.toString, Seq())
+                    acc + (res.toString -> (targets :+ target.toString))
+                  }
+                }
               })
             if (comps.size > 1) {
               println("Mismatches\n")
               comps.foreach {
-                case (_, v) => {
-                  println("Target Group: " + v.mkString(","))
+                case (k, v) => {
+                  println(k + " Target Group: " + v.mkString(","))
                 }
               }
             }
