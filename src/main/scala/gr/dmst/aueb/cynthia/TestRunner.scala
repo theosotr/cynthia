@@ -72,16 +72,16 @@ object TestRunnerCreator {
           orms.foreach { orm => ProjectCreator.createProject(orm, dbs) })
         }
     } match {
-      case Success(_) => Success(new TestRunner(genTargets(orms, dbs)))
+      case Success(_) => Success(new TestRunner(dbname, genTargets(orms, dbs)))
       case Failure(e) => Failure(e)
     }
   }
 }
 
 
-class TestRunner(targets: Seq[Target]) {
+class TestRunner(schema: String, targets: Seq[Target]) {
 
-  def genQueries() =
+  def genListingQueries() =
     List(
       // Query 1
       SetRes(
@@ -221,6 +221,35 @@ class TestRunner(targets: Seq[Target]) {
         New("Listing", None)
       )
     )
+
+  def genBooksQueries() =
+    Seq(
+
+      // Query 1
+      SetRes(New("Book", None)),
+
+      // Query 2
+      SetRes(
+        Apply(
+          Sort(Seq(("Review.rating", Desc))),
+          New("Review", None)
+        )
+      ),
+
+      // Query 3
+      SetRes(
+        Apply(
+          Filter(Eq("Review.book.author", Value("Joe Coecker", Quoted))),
+          New("Review", None)
+        )
+      )
+    )
+
+  def genQueries() = schema match {
+    case "listing" => genListingQueries()
+    case "books"   => genBooksQueries()
+    case _         => genListingQueries()
+  }
 
 
   def start() =

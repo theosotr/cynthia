@@ -33,27 +33,32 @@ case class State(
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
   aggrs: Seq[Aggregate] = Seq(),
+  joins: Set[(String, String)] = Set(),
   query: Option[QueryStr] = None,
   numGen: Iterator[Int] = Stream.from(1).iterator
   ) {
 
   def +(source: String) =
-    State(db, sources + source, preds, orders, aggrs, query, numGen)
+    State(db, sources + source, preds, orders, aggrs, joins, query, numGen)
 
   def ++(pred: Predicate): State =
-    State(db, sources, preds + pred, orders, aggrs, query, numGen)
+    State(db, sources, preds + pred, orders, aggrs, joins, query, numGen)
 
   def :+(o: (String, Order)): State =
-    State(db, sources, preds, orders :+ o, aggrs, query, numGen)
+    State(db, sources, preds, orders :+ o, aggrs, joins, query, numGen)
 
   def :-(a: Seq[Aggregate]): State =
-    State(db, sources, preds, orders, aggrs ++ a, query, numGen)
+    State(db, sources, preds, orders, aggrs ++ a, joins, query, numGen)
+
+  def :>(j: (String, String)): State =
+    State(db, sources, preds, orders, aggrs, joins + j, query, numGen)
 
   def >>(qstr: QueryStr): State = query match {
     case None        =>
-      State(db, sources, preds, orders, aggrs, Some(qstr), numGen)
+      State(db, sources, preds, orders, aggrs, joins, Some(qstr), numGen)
     case Some(query) =>
-      State(db, sources, preds, orders, aggrs, Some(query >> qstr), numGen)
+      State(db, sources, preds, orders, aggrs, joins, Some(query >> qstr),
+            numGen)
   }
 }
 
@@ -61,9 +66,35 @@ case class State(
 abstract class Translator(val target: Target) {
   val preamble: String
 
+  def updateJoins(field: String, s: State) = {
+    def _updateJoins(segs: List[String], s: State): State = segs match {
+      case Nil | _ :: Nil | _ :: (_ :: Nil) => s
+      case h1 :: (h2 :: t) => {
+        val cap = h2.capitalize
+        _updateJoins(cap :: t, s :> (h1, cap))
+      }
+    }
+    _updateJoins(field.split('.').toList, s)
+  }
+
+  def traversePredicate(s: State, pred: Predicate): State = pred match {
+    case Eq(k, _)       => updateJoins(k, s)
+    case Gt(k, _)       => updateJoins(k, s)
+    case Gte(k, _)      => updateJoins(k, s)
+    case Lt(k, _)       => updateJoins(k, s)
+    case Lte(k, _)      => updateJoins(k, s)
+    case Contains(k, _) => updateJoins(k, s)
+    case Not(pred)      => traversePredicate(s, pred)
+    case Or(p1, p2)     => traversePredicate(traversePredicate(s, p1), p2)
+    case And(p1, p2)    => traversePredicate(traversePredicate(s, p1), p2)
+  }
+
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
     case New(m, f)               => s + m // Add source to state
-    case Apply(Filter(pred), qs) => evalQuerySet(s)(qs) ++ pred // Add predicate to state
+    case Apply(Filter(pred), qs) => {
+      val s1 = evalQuerySet(s)(qs) ++ pred // Add predicate to state
+      traversePredicate(s1, pred) // update joins
+    }
     case Apply(Sort(spec), qs)   =>
       spec.foldLeft(evalQuerySet(s)(qs)) { (s, x) => s :+ x } // Add order spec to state
     case Union (qs1, qs2) =>
