@@ -2,10 +2,10 @@
 
 ## Setup
 
-Install Scala compiler and Sqlite
+Install Scala compiler, Sqlite and other necessary libraries
 
 ```
-sudo apt install scala sqlite3
+sudo apt install scala sqlite3 libpq-dev libmysqlclient-dev
 ```
 
 Install [sbt](https://www.scala-sbt.org/) which is the
