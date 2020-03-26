@@ -87,7 +87,7 @@ produced
 3.00
 ```
 
-while `sqlalchemy` produced
+while SQLAlchemy produced
 
 ```bash
 3.00
