@@ -59,8 +59,9 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
 
   def getSeqFieldName(field: String) =
     field.split('.').toList match {
-      case Nil | _ :: Nil => field
-      case _ :: t         => t.mkString(".")
+      case Nil | _ :: Nil  => field
+      case _ :: (h :: Nil) => h
+      case _ :: t          => "'$" + t.mkString(".") + "$'"
     }
 
   def getSeqOrderSpec(field: String) = {
@@ -172,14 +173,43 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     }
   }
 
+  def createAssociations(joinedModels: Map[String, Set[String]]) =
+    joinedModels.foldLeft(QueryStr()) { case (acc, (k, v)) =>
+      v.foldLeft(acc) { (acc, x) => {
+        val fk = s"{foreignKey: '${x.toLowerCase}_id'}"
+        acc >>
+          QueryStr(None, Some(s"$x.hasMany($k, ${fk})")) >>
+          QueryStr(None, Some(s"$k.belongsTo($x, ${fk})"))
+        }
+      }
+    }
+
+
+  def constructIncludes(source: String, joinedModels: Map[String, Set[String]]) = {
+    def _findIncludes(n: String): String = {
+      val str = s"model: $n, as: $n.tableName"
+      joinedModels.get(n) match {
+        case None     => s"{$str}"
+        case Some(e)  => {
+          val includes = e map { _findIncludes } mkString (",\n")
+          if (source.equals(n)) includes
+          else s"{$str, include: [\n${includes}\n]}"
+        }
+      }
+    }
+    if (joinedModels.isEmpty) ""
+    else "include: [\n" + _findIncludes(source) + "\n]"
+  }
+
   override def constructQuery(state: State): QueryStr = state.sources.toList match {
     case h :: Nil => {
       // Coverts set of pairs to map of lists.
       val joinMap = state.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
-      val qStr = importModels(joinMap, Set(h))
+      val qStr = importModels(joinMap, Set(h)) << createAssociations(joinMap)
       val q = (Str(h) << ".findAll({\n" <<
         (
           Seq(
+            constructIncludes(h, joinMap),
             constructAttributes(state),
             constructWhere(state.preds),
             constructOrderBy(state.orders)
