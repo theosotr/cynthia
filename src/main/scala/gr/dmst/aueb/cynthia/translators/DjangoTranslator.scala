@@ -70,7 +70,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
             case MySQL (_, _, _)    => "mysql"
             case SQLite (_)         => "default"
           }
-          QueryStr("ret" + s.numGen.next().toString,
+          QueryStr(Some("ret" + s.numGen.next().toString),
                    Some(h + ".objects.using('" + dbname + "')"))
       }
     case Some(q) => q
@@ -111,9 +111,9 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
 
   override def constructQuery(s: State) = {
     val qStr = constructQueryPrefix(s)
-    qStr >> QueryStr("ret" + s.numGen.next().toString,
+    qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
-        qStr.ret,
+        qStr.ret.get,
         constructFilter(s.preds),
         constructOrderBy(s.orders),
         constructAggrs(s.aggrs)
@@ -126,14 +126,14 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
 
   override def unionQueries(s1: State, s2: State) = {
     val (q1, q2) = (constructQuery(s1), constructQuery(s2))
-    s1 >> (q1 << q2 >> QueryStr("ret" + s1.numGen.next().toString,
-                                Some(q1.ret + ".union(" + q2.ret + ")")))
+    s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
+                                Some(q1.ret.get + ".union(" + q2.ret.get + ")")))
   }
 
   override def intersectQueries(s1: State, s2: State) = {
     val (q1, q2) = (constructQuery(s1), constructQuery(s2))
-    s1 >> (q1 << q2 >> QueryStr("ret" + s1.numGen.next().toString,
-                                Some(q1.ret + ".intersect(" + q2.ret + ")")))
+    s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
+                                Some(q1.ret.get + ".intersect(" + q2.ret.get + ")")))
   }
 
   def translatePred(pred: Predicate): String = pred match {

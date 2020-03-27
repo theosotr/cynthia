@@ -166,8 +166,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     val models = joinedModels.foldLeft(sourceModels) {
       case (acc, (k, v)) => (acc + k) ++ v
     }
-    models.foldLeft(QueryStr("", None)) { (acc, x) =>
-      acc >> QueryStr(x,
+    models.foldLeft(QueryStr()) { (acc, x) =>
+      acc >> QueryStr(Some(x),
         Some("sequelize.import(" + Utils.quoteStr(x.toLowerCase + ".js") + ")"))
     }
   }
@@ -188,7 +188,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
             case _  => true
           }) mkString(",\n")
         ) << "\n})").!
-      qStr >> QueryStr("ret" + state.numGen.next(), Some(q))
+      qStr >> QueryStr(Some("ret" + state.numGen.next()), Some(q))
     }
     case _ => ???
   }

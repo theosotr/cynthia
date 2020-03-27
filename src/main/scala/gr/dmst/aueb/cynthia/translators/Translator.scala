@@ -8,8 +8,8 @@ extends Exception(message)
 
 
 case class QueryStr(
-  ret: String,
-  q: Option[String],
+  ret: Option[String] = None,
+  q: Option[String] = None,
   builtQ: Seq[String] = Seq()) {
 
   def >>(qstr: QueryStr) =
@@ -18,9 +18,10 @@ case class QueryStr(
   def <<(qstr: QueryStr) =
     QueryStr(ret, None, toBuiltQ() ++ qstr.toBuiltQ())
 
-  def toBuiltQ() = q match {
-    case None    => builtQ
-    case Some(q) => builtQ :+ (ret + " = " + q)
+  def toBuiltQ() = (ret, q) match {
+    case (None, None) | (Some(_), None) => builtQ
+    case (Some(r), Some(q)) => builtQ :+ (r + " = " + q)
+    case (None, Some(q)) => builtQ :+ q
   }
 
   override def toString() =
@@ -113,12 +114,12 @@ abstract class Translator(val target: Target) {
       case SetRes (qs) => {
         val f = evalQuerySet(State(target.db)) _ andThen constructQuery _
         val qStr = f(qs)
-        preamble + "\n" + qStr.toString + "\n" + emitPrint(q, qStr.ret)
+        preamble + "\n" + qStr.toString + "\n" + emitPrint(q, qStr.ret.get)
       }
       case _ => {
         val f = evalAggrQuery(State(target.db)) _ andThen constructQuery _
         val qStr = f(q)
-        preamble + "\n" + qStr.toString + "\n" + emitPrint(q, qStr.ret)
+        preamble + "\n" + qStr.toString + "\n" + emitPrint(q, qStr.ret.get)
       }
     }
   }

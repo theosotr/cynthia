@@ -108,10 +108,10 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         case Nil => ??? // Unreachable case
         case _   => s.aggrs match {
           case Seq() | Seq(Count(_)) => QueryStr(
-            "ret" + s.numGen.next().toString,
+            Some("ret" + s.numGen.next().toString),
             Some("session.query(" + s.sources.mkString(",") + ")"))
           case _ => QueryStr(
-            "ret" + s.numGen.next().toString,
+            Some("ret" + s.numGen.next().toString),
             Some("session.query(" + (s.aggrs map { constructAggr } mkString ",") + ")"))
         }
       }
@@ -120,9 +120,9 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   override def constructQuery(s: State) = {
     val qStr = constructQueryPrefix(s)
-    qStr >> QueryStr("ret" + s.numGen.next().toString,
+    qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
-        qStr.ret,
+        qStr.ret.get,
         constructJoins(s.joins),
         constructFilter(s.preds),
         constructOrderBy(s.orders),
@@ -140,14 +140,14 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   override def unionQueries(s1: State, s2: State) = {
     val (q1, q2) = (constructQuery(s1), constructQuery(s2))
-    s1 >> (q1 << q2 >> QueryStr("ret" + s1.numGen.next().toString,
-                                Some(q1.ret + ".union(" + q2.ret + ")")))
+    s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
+                                Some(q1.ret.get + ".union(" + q2.ret.get + ")")))
   }
 
   override def intersectQueries(s1: State, s2: State) = {
     val (q1, q2) = (constructQuery(s1), constructQuery(s2))
-    s1 >> (q1 << q2 >> QueryStr("ret" + s1.numGen.next().toString,
-                                Some(q1.ret + ".intersect(" + q2.ret + ")")))
+    s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
+                                Some(q1.ret.get + ".intersect(" + q2.ret.get + ")")))
   }
 
   def getSQLAlchemyFieldName(field: String) = {
