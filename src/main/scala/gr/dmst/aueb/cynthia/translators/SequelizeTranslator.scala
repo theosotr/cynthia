@@ -63,6 +63,19 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       case _ :: t         => t.mkString(".")
     }
 
+  def getSeqOrderSpec(field: String) = {
+    def _getSeqOrderSpec(segs: List[String], acc: List[String]): List[String] =
+      segs match {
+        case Nil       => acc
+        case h :: Nil => h :: acc
+        case h :: t    => _getSeqOrderSpec(t, h.capitalize :: acc)
+      }
+    field.split('.').toList match {
+      case Nil | _ :: Nil => field
+      case _ :: t         => _getSeqOrderSpec(t, List()).reverse mkString "."
+    }
+  }
+
   def translatePred(pred: Predicate): String = pred match {
     case Eq(k, Value(v, Quoted))    =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << Utils.quoteStr(v) << "}").!
@@ -112,8 +125,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       (
         Str("order: [\n") << (
           spec map { x => x match {
-            case (k, Asc)  => "  [" + Utils.quoteStr(getSeqFieldName(k)) + ", 'ASC']"
-            case (k, Desc) => "  [" + Utils.quoteStr(getSeqFieldName(k)) + ", 'DESC']"
+            case (k, Asc)  => "  [" + Utils.quoteStr(getSeqOrderSpec(k)) + ", 'ASC']"
+            case (k, Desc) => "  [" + Utils.quoteStr(getSeqOrderSpec(k)) + ", 'DESC']"
             }
           } mkString(",")
         ) << "]"
@@ -149,10 +162,21 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     }
   }
 
+  def importModels(joinedModels: Map[String, Set[String]], sourceModels: Set[String]) = {
+    val models = joinedModels.foldLeft(sourceModels) {
+      case (acc, (k, v)) => (acc + k) ++ v
+    }
+    models.foldLeft(QueryStr("", None)) { (acc, x) =>
+      acc >> QueryStr(x,
+        Some("sequelize.import(" + Utils.quoteStr(x.toLowerCase + ".js") + ")"))
+    }
+  }
+
   override def constructQuery(state: State): QueryStr = state.sources.toList match {
     case h :: Nil => {
-      val qStr = QueryStr(h, Some("sequelize.import(" +
-        Utils.quoteStr(h.toLowerCase + ".js") + ")"))
+      // Coverts set of pairs to map of lists.
+      val joinMap = state.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
+      val qStr = importModels(joinMap, Set(h))
       val q = (Str(h) << ".findAll({\n" <<
         (
           Seq(
