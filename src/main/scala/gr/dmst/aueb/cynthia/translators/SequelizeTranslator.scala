@@ -42,8 +42,9 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     """.stripMargin
 
   override def emitPrint(q: Query, ret: String) = q match {
-    case SetRes (_) =>
+    case SetRes(_)  | SubsetRes(_, _, _) =>
       s"$ret.then((x) => { x.forEach((x) => dump(x.id)) })"
+    case FirstRes(_) => s"$ret.then(x => dump(x.id))"
     case AggrRes (aggrs, _) => {
       val prints = aggrs map { x =>
         val label = x.label match {
@@ -205,26 +206,34 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     else "include: [\n" + _findIncludes(source) + "\n]"
   }
 
-  override def constructQuery(state: State): QueryStr = state.sources.toList match {
-    case h :: Nil => {
-      // Coverts set of pairs to map of lists.
-      val joinMap = state.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
-      val qStr = importModels(joinMap, Set(h)) << createAssociations(joinMap)
-      val q = (Str(h) << ".findAll({\n" <<
-        (
-          Seq(
-            constructIncludes(h, joinMap),
-            constructAttributes(state),
-            constructWhere(state.preds),
-            constructOrderBy(state.orders)
-          ) filter (x => x match {
-            case "" => false
-            case _  => true
-          }) mkString(",\n")
-        ) << "\n})").!
-      qStr >> QueryStr(Some("ret" + state.numGen.next()), Some(q))
-    }
-    case _ => ???
+  override def constructQuery(first: Boolean = false, offset: Int = 0,
+      limit: Option[Int] = None)(state: State): QueryStr =
+    state.sources.toList match {
+      case h :: Nil => {
+        val method = if (first) ".findOne" else ".findAll"
+        // Coverts set of pairs to map of lists.
+        val joinMap = state.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
+        val qStr = importModels(joinMap, Set(h)) << createAssociations(joinMap)
+        val q = (Str(h) << method << "({\n" <<
+          (
+            Seq(
+              constructIncludes(h, joinMap),
+              constructAttributes(state),
+              constructWhere(state.preds),
+              constructOrderBy(state.orders),
+              if (offset >= 0) s"offset: $offset" else "",
+              limit match {
+                case None        => ""
+                case Some(limit) => s"limit: $limit"
+              }
+            ) filter (x => x match {
+              case "" => false
+              case _  => true
+            }) mkString(",\n")
+          ) << "\n})").!
+        qStr >> QueryStr(Some("ret" + state.numGen.next()), Some(q))
+      }
+      case _ => ???
   }
 
   override def unionQueries(s1: State, s2: State): State =

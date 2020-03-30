@@ -111,26 +111,36 @@ abstract class Translator(val target: Target) {
 
   def evalAggrQuery(s: State)(q: Query): State = q match {
     case AggrRes(aggrs, qs) => evalQuerySet(s)(qs) :- aggrs
-    case _ => ???
+    case _ => ??? // Unreachable case
   }
 
   def apply(q: Query): String = {
-    q match {
-      case SetRes (qs) => {
-        val f = evalQuerySet(State(target.db)) _ andThen constructQuery _
-        val qStr = f(qs)
-        preamble + "\n" + qStr.toString + "\n" + emitPrint(q, qStr.ret.get)
+    val qStr = q match {
+      case FirstRes(qs) => {
+        val f = evalQuerySet(State(target.db)) _ andThen constructQuery(
+          first = true)
+        f(qs)
       }
-      case _ => {
-        val f = evalAggrQuery(State(target.db)) _ andThen constructQuery _
-        val qStr = f(q)
-        preamble + "\n" + qStr.toString + "\n" + emitPrint(q, qStr.ret.get)
+      case SetRes(qs) => {
+        val f = evalQuerySet(State(target.db)) _ andThen constructQuery() _
+        f(qs)
+      }
+      case AggrRes(_, _) => {
+        val f = evalAggrQuery(State(target.db)) _ andThen constructQuery() _
+        f(q)
+      }
+      case SubsetRes(offset, limit, qs) => {
+        val f = evalQuerySet(State(target.db)) _ andThen constructQuery(
+          offset = offset, limit = limit)
+        f(qs)
       }
     }
+    preamble + "\n" + qStr.toString + "\n" + emitPrint(q, qStr.ret.get)
   }
 
   def emitPrint(q: Query, ret: String): String
-  def constructQuery(state: State): QueryStr
+  def constructQuery(first: Boolean = false, offset: Int = 0,
+    limit: Option[Int] = None)(state: State): QueryStr
   def unionQueries(s1: State, s2: State): State
   def intersectQueries(s1: State, s2: State): State
 }

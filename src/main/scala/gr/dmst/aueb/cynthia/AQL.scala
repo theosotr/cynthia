@@ -45,5 +45,7 @@ case class Mul(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends
 case class Div(ag1: Aggregate, ag2: Aggregate, l: Option[String] = None) extends Aggregate(l, true)
 
 sealed trait Query
+case class FirstRes(qs: QuerySet) extends Query
+case class SubsetRes(offset: Int = 0, limit: Option[Int], qs: QuerySet) extends Query
 case class SetRes (qs: QuerySet) extends Query
 case class AggrRes (aggrs: Seq[Aggregate], qs: QuerySet) extends Query

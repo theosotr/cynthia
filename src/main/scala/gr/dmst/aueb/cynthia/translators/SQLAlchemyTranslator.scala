@@ -23,7 +23,8 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     |""".stripMargin
 
   override def emitPrint(q: Query, ret: String) = q match {
-    case SetRes(_)         => s"for r in $ret:\n  dump(r.id)"
+    case SetRes(_) | SubsetRes(_, _, _) => s"for r in $ret:\n  dump(r.id)"
+    case FirstRes(_) => s"dump($ret.id)"
     case AggrRes(aggrs, _) => aggrs match {
       case Seq(Count(_)) => s"dump($ret)"
       case _ => aggrs map { x => {
@@ -157,7 +158,21 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case Some(q) => q
   }
 
-  override def constructQuery(s: State) = {
+  def constructFirst(first: Boolean) =
+    if (first) "first()"
+    else ""
+
+  def constructOffsetLimit(offset: Int, limit: Option[Int]) = limit match {
+    case None =>
+      if (offset > 0) s"offset($offset)"
+      else ""
+    case Some(limit) =>
+      if (offset > 0) s"offset($offset).limit($limit)"
+      else s"limit($limit)"
+  }
+
+  override def constructQuery(first: Boolean = false, offset: Int = 0,
+      limit: Option[Int] = None)(s: State) = {
     val qStr = constructQueryPrefix(s)
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
@@ -169,7 +184,9 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
           case Seq()         => ""
           case Seq(Count(_)) => "count()"
           case _             => "first()"
-        }
+        },
+        constructFirst(first),
+        constructOffsetLimit(offset, limit)
       ) filter {
         case "" => false
         case _  => true
@@ -178,13 +195,13 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   }
 
   override def unionQueries(s1: State, s2: State) = {
-    val (q1, q2) = (constructQuery(s1), constructQuery(s2))
+    val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))
     s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
                                 Some(q1.ret.get + ".union(" + q2.ret.get + ")")))
   }
 
   override def intersectQueries(s1: State, s2: State) = {
-    val (q1, q2) = (constructQuery(s1), constructQuery(s2))
+    val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))
     s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
                                 Some(q1.ret.get + ".intersect(" + q2.ret.get + ")")))
   }
