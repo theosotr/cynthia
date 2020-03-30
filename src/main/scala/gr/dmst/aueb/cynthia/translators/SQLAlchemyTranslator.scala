@@ -167,7 +167,11 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       if (offset > 0) s"offset($offset)"
       else ""
     case Some(limit) =>
-      if (offset > 0) s"offset($offset).limit($limit)"
+      if (offset > 0)
+        RUtils.chooseFrom(Seq(
+          s"offset($offset).limit($limit)",
+          s"slice($offset, $offset + $limit)")
+        )
       else s"limit($limit)"
   }
 
