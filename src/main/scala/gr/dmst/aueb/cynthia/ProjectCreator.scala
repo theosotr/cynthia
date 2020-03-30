@@ -25,7 +25,7 @@ object ProjectCreator {
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case SQLAlchemy(_, pdir) => {
-      val models = Utils.runCmd("sqlacodegen " + db.getURI(), Some(pdir))
+      val models = Utils.runCmd("sqlacodegen " + db.getURI, None)
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case Sequelize(_, pdir) => {
