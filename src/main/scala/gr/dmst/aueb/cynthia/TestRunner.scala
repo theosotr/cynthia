@@ -250,6 +250,16 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           Filter(Eq("Review.book.author.surname", Value("Coecker", Quoted))),
           New("Review", None)
         )
+      ),
+
+      // Query 4
+      SetRes(
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc))
+          ),
+          New("Review", None)
+        )
       )
     )
 

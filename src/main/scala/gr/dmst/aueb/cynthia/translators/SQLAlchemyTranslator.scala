@@ -37,6 +37,45 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       }
     }
 
+  def getSQLAlchemyFieldName(field: String) = {
+    def _getSQLAlchemyFieldName(segs: List[String]): String = segs match {
+      case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString "."
+      case _ :: (h :: t) => _getSQLAlchemyFieldName(h.capitalize :: t)
+    }
+    _getSQLAlchemyFieldName(field.split('.').toList)
+  }
+
+  def translatePred(pred: Predicate): String = pred match {
+    case Eq(k, Value(v, Quoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << "==" << Utils.quoteStr(v)).!
+    case Eq(k, Value(v, UnQuoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << "==" << v).!
+    case Gt(k, Value(v, Quoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << " > " << Utils.quoteStr(v)).!
+    case Gt(k, Value(v, UnQuoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << " > " << v).!
+    case Gte(k, Value(v, Quoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << " >= " << Utils.quoteStr(v)).!
+    case Gte(k, Value(v, UnQuoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << " >= " << v).!
+    case Lt(k, Value(v, Quoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << " < " << Utils.quoteStr(v)).!
+    case Lt(k, Value(v, UnQuoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << " < " << v).!
+    case Lte(k, Value(v, Quoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << " <= " << Utils.quoteStr(v)).!
+    case Lte(k, Value(v, UnQuoted)) =>
+      (Str(getSQLAlchemyFieldName(k)) << " <= " << v).!
+    case Contains(k, v) =>
+      (Str(getSQLAlchemyFieldName(k)) << ".contains(" << Utils.quoteStr(v) << ")").!
+    case Not(pred)                  =>
+      (Str("not_(") << translatePred(pred) << ")").!
+    case Or(p1, p2)                 =>
+      (Str("or_(") << translatePred(p1) << ", " << translatePred(p2) << ")").!
+    case And(p1, p2)                =>
+      (Str("and_(") << translatePred(p1) << ", " << translatePred(p2) << ")").!
+  }
+
   def constructFilter(preds: Set[Predicate]) =
     preds map { x =>
       (Str("filter(") << translatePred(x) << ")").!
@@ -49,10 +88,10 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         Str("order_by(") << (
           spec map { x =>
             x match {
-              case (k, Desc) => k + ".desc()"
-              case (k, Asc)  => k + ".asc()"
+              case (k, Desc) => getSQLAlchemyFieldName(k) + ".desc()"
+              case (k, Asc)  => getSQLAlchemyFieldName(k) + ".asc()"
             }
-          } mkString(",")
+          } mkString ","
         ) << ")"
       ).!
   }
@@ -148,44 +187,5 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     val (q1, q2) = (constructQuery(s1), constructQuery(s2))
     s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
                                 Some(q1.ret.get + ".intersect(" + q2.ret.get + ")")))
-  }
-
-  def getSQLAlchemyFieldName(field: String) = {
-    def _getSQLAlchemyFieldName(segs: List[String]): String = segs match {
-      case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString (".")
-      case _ :: (h :: t) => _getSQLAlchemyFieldName(h.capitalize :: t)
-    }
-    _getSQLAlchemyFieldName(field.split('.').toList)
-  }
-
-  def translatePred(pred: Predicate): String = pred match {
-    case Eq(k, Value(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << "==" << Utils.quoteStr(v)).!
-    case Eq(k, Value(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << "==" << v).!
-    case Gt(k, Value(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " > " << Utils.quoteStr(v)).!
-    case Gt(k, Value(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " > " << v).!
-    case Gte(k, Value(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " >= " << Utils.quoteStr(v)).!
-    case Gte(k, Value(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " >= " << v).!
-    case Lt(k, Value(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " < " << Utils.quoteStr(v)).!
-    case Lt(k, Value(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " < " << v).!
-    case Lte(k, Value(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " <= " << Utils.quoteStr(v)).!
-    case Lte(k, Value(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " <= " << v).!
-    case Contains(k, v) =>
-      (Str(getSQLAlchemyFieldName(k)) << ".contains(" << Utils.quoteStr(v) << ")").!
-    case Not(pred)                  =>
-      (Str("not_(") << translatePred(pred) << ")").!
-    case Or(p1, p2)                 =>
-      (Str("or_(") << translatePred(p1) << ", " << translatePred(p2) << ")").! 
-    case And(p1, p2)                =>
-      (Str("and_(") << translatePred(p1) << ", " << translatePred(p2) << ")").!
   }
 }

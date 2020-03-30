@@ -90,14 +90,19 @@ abstract class Translator(val target: Target) {
     case And(p1, p2)    => traversePredicate(traversePredicate(s, p1), p2)
   }
 
+  def traverseOrderSpec(s: State, oSpec: Seq[(String, Order)]): State =
+    oSpec.map{_._1}.foldLeft (s) { (acc, x) => updateJoins(x, acc) }
+
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
     case New(m, f)               => s + m // Add source to state
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) ++ pred // Add predicate to state
       traversePredicate(s1, pred) // update joins
     }
-    case Apply(Sort(spec), qs)   =>
-      spec.foldLeft(evalQuerySet(s)(qs)) { (s, x) => s :+ x } // Add order spec to state
+    case Apply(Sort(spec), qs) => {
+      val s1 = traverseOrderSpec(s, spec)
+      spec.foldLeft(evalQuerySet(s1)(qs)) { (s, x) => s :+ x } // Add order spec to state
+    }
     case Union (qs1, qs2) =>
       unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)) // Merge queries
     case Intersect (qs1, qs2) =>
