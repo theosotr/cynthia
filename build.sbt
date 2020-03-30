@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "42.2.10",
   "mysql" % "mysql-connector-java" % "8.0.19",
   "org.xerial" % "sqlite-jdbc" % "3.30.1",
-  "org.scala-lang" % "scala-reflect" % "2.13.1"
+  "org.scala-lang" % "scala-reflect" % "2.13.1",
+  "com.lihaoyi" %% "pprint" % "0.5.9"
 )
 scalacOptions := Seq("-unchecked", "-deprecation")
