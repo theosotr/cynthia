@@ -260,6 +260,55 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           ),
           New("Review", None)
         )
+      ),
+
+      // Query 5
+      SetRes(
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc),
+            ("Review.reviewer_name", Asc))
+          ),
+          New("Review", None)
+        )
+      ),
+
+      // Query 6
+      SetRes(
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc),
+            ("Review.reviewer_name", Asc))
+          ),
+          Apply(
+            Filter(
+              And(
+                Gte("Review.rating", Value("2", UnQuoted)),
+                Lte("Review.rating", Value("4", UnQuoted))
+              )
+            ),
+            New("Review", None)
+          )
+        )
+      ),
+
+      // Query 7
+      SetRes(
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc),
+            ("Review.reviewer_name", Asc))
+          ),
+          Apply(
+            Filter(
+              And(
+                Gte("Review.rating", Value("2", UnQuoted)),
+                Contains("Review.book.author.surname", "o")
+              )
+            ),
+            New("Review", None)
+          )
+        )
       )
     )
 

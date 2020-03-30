@@ -72,7 +72,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         case h :: t    => _getSeqOrderSpec(t, h.capitalize :: acc)
       }
     field.split('.').toList match {
-      case Nil | _ :: Nil => field
+      case Nil | _ :: Nil => Utils.quoteStr(field)
       case _ :: t         => {
         val head :: tail = _getSeqOrderSpec(t, List())
         // Quote the first element, reverse the list and create the string.
