@@ -68,12 +68,16 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     def _getSeqOrderSpec(segs: List[String], acc: List[String]): List[String] =
       segs match {
         case Nil       => acc
-        case h :: Nil => h :: acc
+        case h :: Nil  => h :: acc
         case h :: t    => _getSeqOrderSpec(t, h.capitalize :: acc)
       }
     field.split('.').toList match {
       case Nil | _ :: Nil => field
-      case _ :: t         => _getSeqOrderSpec(t, List()).reverse mkString "."
+      case _ :: t         => {
+        val head :: tail = _getSeqOrderSpec(t, List())
+        // Quote the first element, reverse the list and create the string.
+        (Utils.quoteStr(head) :: tail).reverse mkString ","
+      } 
     }
   }
 
@@ -126,8 +130,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       (
         Str("order: [\n") << (
           spec map { x => x match {
-            case (k, Asc)  => "  [" + Utils.quoteStr(getSeqOrderSpec(k)) + ", 'ASC']"
-            case (k, Desc) => "  [" + Utils.quoteStr(getSeqOrderSpec(k)) + ", 'DESC']"
+            case (k, Asc)  => "  [" + getSeqOrderSpec(k) + ", 'ASC']"
+            case (k, Desc) => "  [" + getSeqOrderSpec(k) + ", 'DESC']"
             }
           } mkString(",")
         ) << "]"
