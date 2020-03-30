@@ -18,7 +18,7 @@ case class Unsupported(res: String) extends QueryRes {
 
 case class Fail(msg: String) extends QueryRes {
   override def toString() =
-    "Fail"
+    "Fail[" + msg + "]"
 }
 
 object QueryExecutor {
@@ -29,7 +29,7 @@ object QueryExecutor {
         Utils.writeToFile(target.orm.getDriverPath(target.db), q)
         val (stdout, stderr) = (new StringBuilder, new StringBuilder)
         target.getTargetCommand() !
-        ProcessLogger(stdout append _, stderr append _) match {
+        ProcessLogger(stdout append _ + "\n", stderr append _ + "\n") match {
           case 0 => Ok(stdout.toString)
           case _ => Fail(stderr.toString)
         }

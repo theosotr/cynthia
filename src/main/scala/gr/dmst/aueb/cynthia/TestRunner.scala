@@ -1,10 +1,13 @@
 package gr.dmst.aueb.cynthia
 
+import java.io.File
 import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
 import scala.language.postfixOps
+
+import pprint.PPrinter.BlackWhite
 
 
 case class Target(orm: ORM, db: DB) {
@@ -80,6 +83,7 @@ object TestRunnerCreator {
 
 
 class TestRunner(schema: String, targets: Seq[Target]) {
+  val mismatchEnumerator = Stream.from(1).iterator
 
   def genListingQueries() =
     List(
@@ -318,6 +322,24 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     case _         => genListingQueries()
   }
 
+  def getReportDir(i: Int) =
+    Utils.joinPaths(List(
+      Utils.getMismatchesDir(),
+      schema,
+      i.toString)
+    )
+
+  def storeMismatch(q: Query, mismatches: Map[String, Seq[Target]],
+                    reportDir: String) = {
+    new File(reportDir).mkdirs
+    val queryFile = Utils.joinPaths(List(reportDir, "query.aql"))
+    Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
+    mismatches.foreach { case (k, v) => v.foreach { x =>
+        val filename = s"${x.orm.ormName}_${x.db.getName}.out"
+        Utils.writeToFile(Utils.joinPaths(List(reportDir, filename)), k)
+      }
+    }
+  }
 
   def start() =
     genQueries()
@@ -328,25 +350,38 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           }
         }
         val f = Future.sequence(futures) map { res =>
-            val comps =
-              res.foldLeft(Map[String, Seq[String]]()) ((acc, x) => {
+            val results = (
+              Map[String, Seq[Target]](),
+              Map[String, Seq[Target]]()
+            )
+            val (oks, failed) =
+              res.foldLeft(results) { case ((oks, failed), x) => {
                 x match {
-                  case (target, Unsupported(_)) => acc
-                  case (target, res) => {
-                    // We ignore comparisons involving ORMs that
-                    // do not support the current query.
-                    val targets = acc getOrElse(res.toString, Seq())
-                    acc + (res.toString -> (targets :+ target.toString))
+                  case (target, Unsupported(_)) => (oks, failed)
+                  case (target, Ok(res)) => {
+                    val targets = oks getOrElse(res, Seq())
+                    (oks + (res -> (targets :+ target)), failed)
+                  }
+                  case (target, Fail(err)) => {
+                    val targets = failed getOrElse(err, Seq())
+                    (oks, failed + (err -> (targets :+ target)))
                   }
                 }
-              })
-            if (comps.size > 1) {
-              println("Mismatches\n")
-              comps.foreach {
-                case (k, v) => {
-                  println(k + " Target Group: " + v.mkString(","))
-                }
-              }
+              }}
+            if (failed.size >= 1 || oks.size > 1) {
+              val qid = mismatchEnumerator.next()
+              val reportDir = getReportDir(qid)
+              val msg =
+                s"""${Console.GREEN}[INFO]: Mismatch found in schema '$schema':${Console.WHITE}
+                |  - Query ID: $qid
+                |  - Report Directory: $reportDir
+                |  - OK Target Groups:\n${oks.map { case (_, v) =>
+                    "    * " + (v.map {_.toString} mkString ", ")
+                  } mkString "\n"}
+                |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
+                """.stripMargin
+              storeMismatch(q, oks ++ failed, reportDir)
+              println(msg)
             }
         }
         Await.result(f, 5 seconds) 
