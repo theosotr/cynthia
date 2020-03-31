@@ -97,7 +97,9 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 2
       AggrRes(
-        Seq(Count(Some("count"))),
+        Seq(
+          CompoundField(Count(None), "count")
+        ),
         Union(
           New("Listing", None),
           Union(
@@ -147,7 +149,9 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 6
       AggrRes(
-        Seq(Count(Some("count"))),
+        Seq(
+          CompoundField(Count(None), "count")
+        ),
         Union(
           New("Listing", None),
           Union(
@@ -174,17 +178,19 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 8
       AggrRes(
-        Seq(Count(Some("count"))),
+        Seq(
+          CompoundField(Count(None), "count")
+        ),
         New("Listing", None)
       ),
 
       // Query 9
       AggrRes(
         Seq(
-          Sum("Listing.sale_price", Some("sum_sale")),
-          Max("Listing.sale_price", Some("max_sale")),
-          Min("Listing.sale_price", Some("min_sale")),
-          Avg("Listing.sale_price", Some("avg_sale"))
+          CompoundField(Sum("Listing.sale_price"), "sum_sale"),
+          CompoundField(Max("Listing.sale_price"), "max_sale"),
+          CompoundField(Min("Listing.sale_price"), "min_sale"),
+          CompoundField(Avg("Listing.sale_price"), "avg_sale")
         ),
         New("Listing", None)
       ),
@@ -192,25 +198,25 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 10
       AggrRes(
         Seq(
-          Add(
+          CompoundField(Add(
             Mul(
-              Sum("Listing.sale_price", None),
-              Avg("Listing.yearly_rent", None)
+              Sum("Listing.sale_price"),
+              Avg("Listing.yearly_rent")
             ),
             Div(
-              Max("Listing.sale_price", None),
-              Min("Listing.sale_price", None)
-            ),
-            Some("complex_add")
+              Max("Listing.sale_price"),
+              Min("Listing.sale_price")
+            )),
+            "complex_add"
           ),
-          Sum("Listing.yearly_rent", Some("yearly")),
-          Sub(
+          CompoundField(Sum("Listing.yearly_rent"), "yearly"),
+          CompoundField(Sub(
             Min("Listing.yearly_rent"),
             Add(
               Avg("Listing.sale_price"),
               Max("Listing.sale_price")
-            ),
-            Some("complex_sub")
+            )),
+            "complex_sub"
           )
         ),
         New("Listing", None)
@@ -219,8 +225,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 11
       AggrRes(
         Seq(
-          Max("Listing.foo", Some("max")),
-          Min("Listing.foo", Some("min"))
+          CompoundField(Max("Listing.foo"), "max"),
+          CompoundField(Min("Listing.foo"), "min")
         ),
         New("Listing", None)
       )

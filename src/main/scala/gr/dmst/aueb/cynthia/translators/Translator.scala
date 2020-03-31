@@ -33,7 +33,7 @@ case class State(
   sources: Set[String] = Set(),
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
-  aggrs: Seq[Aggregate] = Seq(),
+  aggrs: Seq[CompoundField] = Seq(),
   joins: Set[(String, String)] = Set(),
   query: Option[QueryStr] = None,
   numGen: Iterator[Int] = Stream.from(1).iterator
@@ -48,7 +48,7 @@ case class State(
   def :+(o: (String, Order)): State =
     State(db, sources, preds, orders :+ o, aggrs, joins, query, numGen)
 
-  def :-(a: Seq[Aggregate]): State =
+  def :-(a: Seq[CompoundField]): State =
     State(db, sources, preds, orders, aggrs ++ a, joins, query, numGen)
 
   def :>(j: (String, String)): State =

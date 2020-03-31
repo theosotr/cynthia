@@ -26,17 +26,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case SetRes(_) | SubsetRes(_, _, _) => s"for r in $ret:\n  dump(r.id)"
     case FirstRes(_) => s"dump($ret.id)"
     case AggrRes(aggrs, _) => aggrs match {
-      case Seq(Count(_)) => s"dump($ret)"
-      case _ => aggrs map { x => {
-        val label = x.label match {
-          case None => throw new Exception(
-            "You must provide a label for root aggregates")
-          case Some(l) => l
-        }
-        s"dump($ret.$label)"
-        }} mkString ("\n")
-      }
+      case Seq(CompoundField(Count(_), _)) => s"dump($ret)"
+      case _ => aggrs map { case CompoundField(_, as) =>
+        s"dump($ret.$as)"
+      } mkString ("\n")
     }
+  }
 
   def getSQLAlchemyFieldName(field: String) = {
     def _getSQLAlchemyFieldName(segs: List[String]): String = segs match {
@@ -98,33 +93,28 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   }
 
   def constructPrimAggr(aggr: Aggregate) = {
-    val (field, op, label) = aggr match {
-      case Count(l)      => ("", "func.count", l)
-      case Sum(field, l) => (field, "func.sum", l)
-      case Avg(field, l) => (field, "func.avg", l)
-      case Min(field, l) => (field, "func.min", l)
-      case Max(field, l) => (field, "func.max", l)
-      case _             => ??? // Unreachable case
+    val (field, op) = aggr match {
+      case Count(None)        => ("", "func.count")
+      case Count(Some(field)) => (field, "func.count")
+      case Sum(field)         => (field, "func.sum")
+      case Avg(field)         => (field, "func.avg")
+      case Min(field)         => (field, "func.min")
+      case Max(field)         => (field, "func.max")
+      case _                  => ??? // Unreachable case
     }
-    label match {
-      case None    => op + "(" + field + ")"
-      case Some(l) => op + "(" + field + ").label(" + Utils.quoteStr(l) + ")" 
-    }
+    op + "(" + field + ")"
   }
 
   def constructCompoundAggr(aggr: Aggregate) = {
-    val (a1, a2, op, l) = aggr match {
-      case Add(a1, a2, l) => (a1, a2, " + ", l)
-      case Sub(a1, a2, l) => (a1, a2, " - ", l)
-      case Mul(a1, a2, l) => (a1, a2, " * ", l)
-      case Div(a1, a2, l) => (a1, a2, " / ", l)
+    val (a1, a2, op) = aggr match {
+      case Add(a1, a2) => (a1, a2, " + ")
+      case Sub(a1, a2) => (a1, a2, " - ")
+      case Mul(a1, a2) => (a1, a2, " * ")
+      case Div(a1, a2) => (a1, a2, " / ")
       case _ => ??? // Unreachable case
     }
     val str = Str("(") << constructAggr(a1) << op << constructAggr(a2) << ")"
-    l match {
-      case None    => str.!
-      case Some(l) => (str << ".label(" << Utils.quoteStr(l) << ")").!
-    }
+    str.!
   }
 
   def constructAggr(aggr: Aggregate): String =
@@ -147,12 +137,14 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       s.sources.toList match {
         case Nil => ??? // Unreachable case
         case _   => s.aggrs match {
-          case Seq() | Seq(Count(_)) => QueryStr(
+          case Seq() | Seq(CompoundField(Count(_), _)) => QueryStr(
             Some("ret" + s.numGen.next().toString),
             Some("session.query(" + s.sources.mkString(",") + ")"))
           case _ => QueryStr(
             Some("ret" + s.numGen.next().toString),
-            Some("session.query(" + (s.aggrs map { constructAggr } mkString ",") + ")"))
+            Some("session.query(" + (s.aggrs map { case CompoundField(a, l) =>
+              s"${constructAggr(a)}.label('$l')"
+            } mkString ",") + ")"))
         }
       }
     case Some(q) => q
@@ -185,9 +177,9 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         constructFilter(s.preds),
         constructOrderBy(s.orders),
         s.aggrs match {
-          case Seq()         => ""
-          case Seq(Count(_)) => "count()"
-          case _             => "first()"
+          case Seq() => ""
+          case Seq(CompoundField(Count(_), _)) => "count()"
+          case _ => "first()"
         },
         constructFirst(first),
         constructOffsetLimit(offset, limit)

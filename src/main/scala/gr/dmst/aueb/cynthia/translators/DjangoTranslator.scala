@@ -30,13 +30,8 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   override def emitPrint(q: Query, ret: String) = q match {
     case SetRes (_) | SubsetRes(_, _, _) => s"for r in $ret:\n  dump(r.id)"
     case FirstRes(_) => s"dump($ret.id)"
-    case AggrRes (aggrs, _) => aggrs map { x => {
-        val label = x.label match {
-          case None => throw new Exception(
-            "You must provide a label for root aggregates")
-          case Some(l) => l
-        }
-        s"dump($ret['$label'])"
+    case AggrRes (aggrs, _) => aggrs map { case CompoundField(_, as) => {
+        s"dump($ret['$as'])"
       }
     } mkString ("\n")
   }
@@ -77,37 +72,34 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     case Some(q) => q
   }
 
-  def constructPrimAggr(aggr: Aggregate) = {
-    val (field, op, label) = aggr match {
-      case Count(l)      => ("*", "Count", l)
-      case Sum(field, l) => (field, "Sum", l)
-      case Avg(field, l) => (field, "Avg", l)
-      case Min(field, l) => (field, "Min", l)
-      case Max(field, l) => (field, "Max", l)
-      case _             => ??? // Unreachable case
+  def constructPrimAggr(aggr: Aggregate, fieldType: String) = {
+    val (field, op) = aggr match {
+      case Count(None)        => ("*", "Count")
+      case Count(Some(field)) => (field, "Count")
+      case Sum(field)         => (field, "Sum")
+      case Avg(field)         => (field, "Avg")
+      case Min(field)         => (field, "Min")
+      case Max(field)         => (field, "Max")
+      case _                  => ??? // Unreachable case
     }
     val k = Utils.quoteStr(getDjangoFieldName(field))
-    label match {
-      case None    => op + "(" + k + ", output_field=FloatField())"
-      case Some(l) => l + "=" + op + "(" + k + ", output_field=TextField())"
-    }
+    op + "(" + k + ", output_field=" + fieldType + ")"
   }
 
-  def constructAggr(aggr: Aggregate): String = aggr match {
-    case Add(a1, a2, None)    => "(" + constructAggr(a1) + " + " + constructAggr(a2) + ")"
-    case Add(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " + " + constructAggr(a2)
-    case Sub(a1, a2, None)    => "(" + constructAggr(a1) + " - " + constructAggr(a2) + ")"
-    case Sub(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " - " + constructAggr(a2)
-    case Mul(a1, a2, None)    => "(" + constructAggr(a1) + " * " + constructAggr(a2) + ")"
-    case Mul(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " * " + constructAggr(a2)
-    case Div(a1, a2, None)    => "(" + constructAggr(a1) + " / " + constructAggr(a2) + ")"
-    case Div(a1, a2, Some(l)) => l + "=" + constructAggr(a1) + " / " + constructAggr(a2)
-    case _                    => constructPrimAggr(aggr)
+  def constructAggr(aggr: Aggregate,
+      fieldType: String = "FloatField()"): String = aggr match {
+    case Add(a1, a2) => "(" + constructAggr(a1) + " + " + constructAggr(a2) + ")"
+    case Sub(a1, a2) => "(" + constructAggr(a1) + " - " + constructAggr(a2) + ")"
+    case Mul(a1, a2) => "(" + constructAggr(a1) + " * " + constructAggr(a2) + ")"
+    case Div(a1, a2) => "(" + constructAggr(a1) + " / " + constructAggr(a2) + ")"
+    case _           => constructPrimAggr(aggr, fieldType)
   }
 
-  def constructAggrs(aggrs: Seq[Aggregate]) = aggrs match {
+  def constructAggrs(aggrs: Seq[CompoundField]) = aggrs match {
     case Seq() => ""
-    case _     => "aggregate(" + (aggrs map { constructAggr } mkString (",")) + ")"
+    case _     => "aggregate(" + (aggrs map { case CompoundField(a, l) =>
+      l + "=" + constructAggr(a, fieldType = "TextField()")
+    } mkString ",") + ")"
   }
 
   def constructFirst(first: Boolean) =
