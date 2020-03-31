@@ -46,7 +46,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       s"$ret.then((x) => { x.forEach((x) => dump(x.id)) })"
     case FirstRes(_) => s"$ret.then(x => dump(x.id))"
     case AggrRes (aggrs, _) => {
-      val prints = aggrs map { case CompoundField(_, as) =>
+      val prints = aggrs map { case FieldDecl(_, as) =>
         s"dump(x[0].dataValues.$as)"
       } mkString ("\n  ")
       s"$ret.then((x) =>{\n  $prints})"
@@ -134,24 +134,24 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
-  def constructAggr(cfield: CompoundField) = {
-    val (aggr, label) = cfield match { case CompoundField(a, l) => (a, l) }
-    val (field, op) = aggr match {
-      case Count(None)        => ("", "'count'")
-      case Count(Some(field)) => (field, "'count'")
-      case Sum(field)         => (field, "'sum'")
-      case Avg(field)         => (field, "'avg'")
-      case Min(field)         => (field, "'min'")
-      case Max(field)         => (field, "'max'")
+  def constructAggr(fdecl: FieldDecl) = {
+    val (qfield, as) = fdecl match { case FieldDecl(f, l) => (f, l) }
+    val (field, op) = qfield match {
+      case CompoundField(Count(None))                     => ("", "'count'")
+      case CompoundField(Count(Some(NativeField(field)))) => (field, "'count'")
+      case CompoundField(Sum(NativeField(field)))         => (field, "'sum'")
+      case CompoundField(Avg(NativeField(field)))         => (field, "'avg'")
+      case CompoundField(Min(NativeField(field)))         => (field, "'min'")
+      case CompoundField(Max(NativeField(field)))         => (field, "'max'")
       case _                  => throw new UnsupportedException(
         "Complex aggregations are not supported")
     }
     val k = Utils.quoteStr(getSeqFieldName(field))
     val str = Str("[sequelize.fn(") << op
     k match {
-      case "''" => (str << "), " << Utils.quoteStr(label) << "]").!
+      case "''" => (str << "), " << Utils.quoteStr(as) << "]").!
       case _    =>
-        (str << ", sequelize.col(" << k << ")), " << Utils.quoteStr(label) << "]").!
+        (str << ", sequelize.col(" << k << ")), " << Utils.quoteStr(as) << "]").!
     }
   }
 
