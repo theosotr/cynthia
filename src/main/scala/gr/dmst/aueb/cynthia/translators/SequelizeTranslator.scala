@@ -137,12 +137,12 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   def constructAggr(fdecl: FieldDecl) = {
     val (qfield, as) = fdecl match { case FieldDecl(f, l) => (f, l) }
     val (field, op) = qfield match {
-      case CompoundField(Count(None))                     => ("", "'count'")
-      case CompoundField(Count(Some(NativeField(field)))) => (field, "'count'")
-      case CompoundField(Sum(NativeField(field)))         => (field, "'sum'")
-      case CompoundField(Avg(NativeField(field)))         => (field, "'avg'")
-      case CompoundField(Min(NativeField(field)))         => (field, "'min'")
-      case CompoundField(Max(NativeField(field)))         => (field, "'max'")
+      case Count(None)                     => ("", "'count'")
+      case Count(Some(F(field))) => (field, "'count'")
+      case Sum(F(field))         => (field, "'sum'")
+      case Avg(F(field))         => (field, "'avg'")
+      case Min(F(field))         => (field, "'min'")
+      case Max(F(field))         => (field, "'max'")
       case _                  => throw new UnsupportedException(
         "Complex aggregations are not supported")
     }

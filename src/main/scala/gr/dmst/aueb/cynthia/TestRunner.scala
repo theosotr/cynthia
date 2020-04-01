@@ -98,7 +98,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 2
       AggrRes(
         Seq(
-          FieldDecl(CompoundField(Count(None)), "count")
+          FieldDecl(Count(None), "count")
         ),
         Union(
           New("Listing", None),
@@ -150,7 +150,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 6
       AggrRes(
         Seq(
-          FieldDecl(CompoundField(Count(None)), "count")
+          FieldDecl(Count(None), "count")
         ),
         Union(
           New("Listing", None),
@@ -179,7 +179,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 8
       AggrRes(
         Seq(
-          FieldDecl(CompoundField(Count(None)), "count")
+          FieldDecl(Count(None), "count")
         ),
         New("Listing", None)
       ),
@@ -187,10 +187,10 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 9
       AggrRes(
         Seq(
-          FieldDecl(CompoundField(Sum(NativeField("Listing.sale_price"))), "sum_sale"),
-          FieldDecl(CompoundField(Max(NativeField("Listing.sale_price"))), "max_sale"),
-          FieldDecl(CompoundField(Min(NativeField("Listing.sale_price"))), "min_sale"),
-          FieldDecl(CompoundField(Avg(NativeField("Listing.sale_price"))), "avg_sale")
+          FieldDecl(Sum(F("Listing.sale_price")), "sum_sale"),
+          FieldDecl(Max(F("Listing.sale_price")), "max_sale"),
+          FieldDecl(Min(F("Listing.sale_price")), "min_sale"),
+          FieldDecl(Avg(F("Listing.sale_price")), "avg_sale")
         ),
         New("Listing", None)
       ),
@@ -199,27 +199,27 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       AggrRes(
         Seq(
           FieldDecl(
-            CompoundField(Add(
-              CompoundField(Mul(
-                CompoundField(Sum(NativeField("Listing.sale_price"))),
-                CompoundField(Avg(NativeField("Listing.yearly_rent")))
-              )),
-              CompoundField(Div(
-                CompoundField(Max(NativeField("Listing.sale_price"))),
-                CompoundField(Min(NativeField("Listing.sale_price")))
+            Add(
+              Mul(
+                Sum(F("Listing.sale_price")),
+                Avg(F("Listing.yearly_rent"))
+              ),
+              Div(
+                Max(F("Listing.sale_price")),
+                Min(F("Listing.sale_price"))
               )
-            ))),
+            ),
             "complex_add"
           ),
-          FieldDecl(CompoundField(Sum(NativeField("Listing.yearly_rent"))), "yearly"),
+          FieldDecl(Sum(F("Listing.yearly_rent")), "yearly"),
           FieldDecl(
-            CompoundField(Sub(
-              CompoundField(Min(NativeField("Listing.yearly_rent"))),
-              CompoundField(Add(
-                CompoundField(Avg(NativeField("Listing.sale_price"))),
-                CompoundField(Max(NativeField("Listing.sale_price")))
+            Sub(
+              Min(F("Listing.yearly_rent")),
+              Add(
+                Avg(F("Listing.sale_price")),
+                Max(F("Listing.sale_price"))
               )
-            ))),
+            ),
             "complex_sub"
           )
         ),
@@ -229,8 +229,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 11
       AggrRes(
         Seq(
-          FieldDecl(CompoundField(Max(NativeField("Listing.foo"))), "max"),
-          FieldDecl(CompoundField(Min(NativeField("Listing.foo"))), "min")
+          FieldDecl(Max(F("Listing.foo")), "max"),
+          FieldDecl(Min(F("Listing.foo")), "min")
         ),
         New("Listing", None)
       )

@@ -71,8 +71,8 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     case Some(q) => q
   }
 
-  def constructPrimAggr(aggr: Aggregate, fieldType: String) = {
-    val (field, op) = aggr match {
+  def constructPrimAggr(fexpr: FieldExpr, fieldType: String) = {
+    val (field, op) = fexpr match {
       case Count(None)        => ("'*'", "Count")
       case Count(Some(field)) => (constructFieldExpr(field), "Count")
       case Sum(field)         => (constructFieldExpr(field), "Sum")
@@ -84,19 +84,14 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     op + "(" + field + ", output_field=" + fieldType + ")"
   }
 
-  def constructAggr(aggr: Aggregate, fieldType: String): String = aggr match {
+  def constructFieldExpr(fexpr: FieldExpr,
+      fieldType: String = "FloatField()"): String = fexpr match {
+    case F(f)        => "F(" + Utils.quoteStr(getDjangoFieldName(f)) + ")"
     case Add(a1, a2) => "(" + constructFieldExpr(a1) + " + " + constructFieldExpr(a2) + ")"
     case Sub(a1, a2) => "(" + constructFieldExpr(a1) + " - " + constructFieldExpr(a2) + ")"
     case Mul(a1, a2) => "(" + constructFieldExpr(a1) + " * " + constructFieldExpr(a2) + ")"
     case Div(a1, a2) => "(" + constructFieldExpr(a1) + " / " + constructFieldExpr(a2) + ")"
-    case _           => constructPrimAggr(aggr, fieldType)
-  }
-
-  def constructFieldExpr(qfield: FieldExpr,
-      fieldType: String = "FloatField()"): String = qfield match {
-    case NativeField(field) =>
-      "F(" + Utils.quoteStr(getDjangoFieldName(field)) + ")"
-    case CompoundField(aggr) => constructAggr(aggr, fieldType)
+    case _           => constructPrimAggr(fexpr, fieldType)
   }
 
   def constructAggrs(aggrs: Seq[FieldDecl]) = aggrs match {

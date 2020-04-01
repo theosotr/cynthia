@@ -26,7 +26,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case SetRes(_) | SubsetRes(_, _, _) => s"for r in $ret:\n  dump(r.id)"
     case FirstRes(_) => s"dump($ret.id)"
     case AggrRes(aggrs, _) => aggrs match {
-      case Seq(FieldDecl(CompoundField(Count(_)), _)) => s"dump($ret)"
+      case Seq(FieldDecl(Count(_), _)) => s"dump($ret)"
       case _ => aggrs map { case FieldDecl(_, as) =>
         s"dump($ret.$as)"
       } mkString ("\n")
@@ -92,8 +92,8 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
-  def constructPrimAggr(aggr: Aggregate) = {
-    val (field, op) = aggr match {
+  def constructPrimAggr(fexpr: FieldExpr) = {
+    val (field, op) = fexpr match {
       case Count(None)        => ("", "func.count")
       case Count(Some(field)) => (constructFieldExpr(field), "func.count")
       case Sum(field)         => (constructFieldExpr(field), "func.sum")
@@ -105,8 +105,8 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     op + "(" + field + ")"
   }
 
-  def constructCompoundAggr(aggr: Aggregate) = {
-    val (a1, a2, op) = aggr match {
+  def constructCompoundAggr(fexpr: FieldExpr) = {
+    val (a1, a2, op) = fexpr match {
       case Add(a1, a2) => (a1, a2, " + ")
       case Sub(a1, a2) => (a1, a2, " - ")
       case Mul(a1, a2) => (a1, a2, " * ")
@@ -117,13 +117,11 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     str.!
   }
 
-  def constructAggr(aggr: Aggregate): String =
-    if (!aggr.compound) constructPrimAggr(aggr)
-    else constructCompoundAggr(aggr)
-
-  def constructFieldExpr(qfield: FieldExpr): String = qfield match {
-    case NativeField(field)  => getSQLAlchemyFieldName(field)
-    case CompoundField(aggr) => constructAggr(aggr)
+  def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {
+    case F(f) => getSQLAlchemyFieldName(f)
+    case _    =>
+      if (!fexpr.compound) constructPrimAggr(fexpr)
+      else constructCompoundAggr(fexpr)
   }
 
   def toField(x: String, y: String) = {
@@ -142,7 +140,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       s.sources.toList match {
         case Nil => ??? // Unreachable case
         case _   => s.aggrs match {
-          case Seq() | Seq(FieldDecl(CompoundField(Count(_)), _)) => QueryStr(
+          case Seq() | Seq(FieldDecl(Count(_), _)) => QueryStr(
             Some("ret" + s.numGen.next().toString),
             Some("session.query(" + s.sources.mkString(",") + ")"))
           case _ => QueryStr(
@@ -183,7 +181,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         constructOrderBy(s.orders),
         s.aggrs match {
           case Seq() => ""
-          case Seq(FieldDecl(CompoundField(Count(_)), _)) => "count()"
+          case Seq(FieldDecl(Count(_), _)) => "count()"
           case _ => "first()"
         },
         constructFirst(first),

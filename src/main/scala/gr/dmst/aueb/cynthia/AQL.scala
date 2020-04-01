@@ -25,22 +25,19 @@ sealed trait Operation
 case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
 
-sealed trait FieldExpr
-case class NativeField(name: String) extends FieldExpr
-case class CompoundField(aggr: Aggregate) extends FieldExpr
+sealed abstract class FieldExpr (val compound: Boolean) {  }
+case class F(f: String) extends FieldExpr(false)
+case class Count(f: Option[FieldExpr]) extends FieldExpr(false)
+case class Sum(f: FieldExpr) extends FieldExpr(false)
+case class Avg(f: FieldExpr) extends FieldExpr(false)
+case class Max(f: FieldExpr) extends FieldExpr(false)
+case class Min(f: FieldExpr) extends FieldExpr(false)
+case class Add(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
+case class Sub(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
+case class Mul(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
+case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
 
 case class FieldDecl(f: FieldExpr, as: String)
-
-sealed abstract class Aggregate (val compound: Boolean) {  }
-case class Count(f: Option[FieldExpr]) extends Aggregate(false)
-case class Sum(f: FieldExpr) extends Aggregate(false)
-case class Avg(f: FieldExpr) extends Aggregate(false)
-case class Max(f: FieldExpr) extends Aggregate(false)
-case class Min(f: FieldExpr) extends Aggregate(false)
-case class Add(f1: FieldExpr, f2: FieldExpr) extends Aggregate(true)
-case class Sub(f1: FieldExpr, f2: FieldExpr) extends Aggregate(true)
-case class Mul(f1: FieldExpr, f2: FieldExpr) extends Aggregate(true)
-case class Div(f1: FieldExpr, f2: FieldExpr) extends Aggregate(true)
 
 sealed trait QuerySet
 case class New(model: String, fields: Option[Array[String]]) extends QuerySet
