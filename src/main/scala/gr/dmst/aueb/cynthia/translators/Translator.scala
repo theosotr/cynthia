@@ -13,10 +13,10 @@ case class QueryStr(
   builtQ: Seq[String] = Seq()) {
 
   def >>(qstr: QueryStr) =
-    QueryStr(qstr.ret, qstr.q, toBuiltQ())
+    QueryStr(qstr.ret, None, toBuiltQ ++ qstr.toBuiltQ)
 
   def <<(qstr: QueryStr) =
-    QueryStr(ret, None, toBuiltQ() ++ qstr.toBuiltQ())
+    QueryStr(ret, None, toBuiltQ ++ qstr.toBuiltQ)
 
   def toBuiltQ() = (ret, q) match {
     case (None, None) | (Some(_), None) => builtQ
@@ -31,6 +31,7 @@ case class QueryStr(
 case class State(
   db: DB,
   sources: Set[String] = Set(),
+  fields: Set[FieldDecl] = Set(),
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
   aggrs: Seq[FieldDecl] = Seq(),
@@ -40,25 +41,28 @@ case class State(
   ) {
 
   def +(source: String) =
-    State(db, sources + source, preds, orders, aggrs, joins, query, numGen)
+    State(db, sources + source, fields, preds, orders, aggrs, joins, query, numGen)
+
+  def f(f: Set[FieldDecl]) =
+    State(db, sources, fields ++ f, preds, orders, aggrs, joins, query, numGen)
 
   def ++(pred: Predicate): State =
-    State(db, sources, preds + pred, orders, aggrs, joins, query, numGen)
+    State(db, sources, fields, preds + pred, orders, aggrs, joins, query, numGen)
 
   def :+(o: (String, Order)): State =
-    State(db, sources, preds, orders :+ o, aggrs, joins, query, numGen)
+    State(db, sources, fields, preds, orders :+ o, aggrs, joins, query, numGen)
 
   def :-(a: Seq[FieldDecl]): State =
-    State(db, sources, preds, orders, aggrs ++ a, joins, query, numGen)
+    State(db, sources, fields, preds, orders, aggrs ++ a, joins, query, numGen)
 
   def :>(j: (String, String)): State =
-    State(db, sources, preds, orders, aggrs, joins + j, query, numGen)
+    State(db, sources, fields, preds, orders, aggrs, joins + j, query, numGen)
 
   def >>(qstr: QueryStr): State = query match {
-    case None        =>
-      State(db, sources, preds, orders, aggrs, joins, Some(qstr), numGen)
+    case None =>
+      State(db, sources, fields, preds, orders, aggrs, joins, Some(qstr), numGen)
     case Some(query) =>
-      State(db, sources, preds, orders, aggrs, joins, Some(query >> qstr),
+      State(db, sources, fields, preds, orders, aggrs, joins, Some(query >> qstr),
             numGen)
   }
 }
@@ -94,7 +98,7 @@ abstract class Translator(val target: Target) {
     oSpec.map{_._1}.foldLeft (s) { (acc, x) => updateJoins(x, acc) }
 
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
-    case New(m, f)               => s + m // Add source to state
+    case New(m, f)               => (s + m) f (f) // Add source and fields to state
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) ++ pred // Add predicate to state
       traversePredicate(s1, pred) // update joins
