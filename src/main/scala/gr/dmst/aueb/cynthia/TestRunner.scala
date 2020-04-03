@@ -233,6 +233,22 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Min(F("Listing.foo")), "min")
         ),
         New("Listing", None)
+      ),
+
+      // Query 12
+      AggrRes(
+        Seq(
+          FieldDecl(
+            Sum(
+              Sub(
+                F("Listing.yearly_rent"),
+                F("Listing.sale_price")
+              )
+            ),
+            "sum"
+          )
+        ),
+        New("Listing", None)
       )
     )
 
