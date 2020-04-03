@@ -46,7 +46,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       s"$ret.then((x) => { x.forEach((x) => dump(x.id)) })"
     case FirstRes(_) => s"$ret.then(x => dump(x.id))"
     case AggrRes (aggrs, _) => {
-      val prints = aggrs map { case FieldDecl(_, as) =>
+      val prints = aggrs map { case FieldDecl(_, as, _) =>
         s"dump(x[0].dataValues.$as)"
       } mkString ("\n  ")
       s"$ret.then((x) =>{\n  $prints})"
@@ -152,8 +152,19 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       "Unsupported field expression: " + fexpr.toString)
   }
 
+  def getType(ftype: FieldType) = ftype match {
+    case StringF   => "'varchar'"
+    case IntF      => "'int'"
+    case DoubleF   => "'double'"
+    case BooleanF  => "'boolean'"
+    case DateTimeF => "'datetime'"
+  }
+
   def constructFieldDecl(fdecl: FieldDecl) = {
-    val (qfield, as) = fdecl match { case FieldDecl(f, l) => (f, l) }
+    def castField(f: String, t: String) =
+      (Str("sequelize.cast(") << f << "," << t << ")").!
+
+    val (qfield, as, t) = fdecl match { case FieldDecl(f, l, t) => (f, l, t) }
     val (f, op) = qfield match {
       case Count(None)        => ("", Some("'count'"))
       case Count(Some(fexpr)) => (constructNestedFieldExpr(fexpr), Some("'count'"))
@@ -164,13 +175,15 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       case _                  => (constructNestedFieldExpr(qfield), None)
     }
     op match {
-      case None     => (Str("[") << f << ", " << Utils.quoteStr(as) << "]").!
+      case None     => (Str("[") << castField(f, getType(t)) << ", " <<
+        Utils.quoteStr(as) << "]").!
       case Some(op) =>
         val str = Str("[sequelize.fn(") << op
+        val k = castField(f, getType(t))
         f match {
-          case "''" => (str << "), " << Utils.quoteStr(as) << "]").!
+          case "" => (str << "), " << Utils.quoteStr(as) << "]").!
           case _    =>
-            (str << ", " << f << "), " << Utils.quoteStr(as) << "]").!
+            (str << ", " << k << "), " << Utils.quoteStr(as) << "]").!
         }
     }
   }

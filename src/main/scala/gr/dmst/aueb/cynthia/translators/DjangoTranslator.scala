@@ -30,7 +30,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   override def emitPrint(q: Query, ret: String) = q match {
     case SetRes (_) | SubsetRes(_, _, _) => s"for r in $ret:\n  dump(r.id)"
     case FirstRes(_) => s"dump($ret.id)"
-    case AggrRes (aggrs, _) => aggrs map { case FieldDecl(_, as) =>
+    case AggrRes (aggrs, _) => aggrs map { case FieldDecl(_, as, _) =>
       s"dump($ret['$as'])"
     } mkString ("\n")
   }
@@ -53,6 +53,14 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
           } mkString(",")
         ) << ")"
       ).!
+  }
+
+  def getType(ftype: FieldType) = ftype match {
+    case StringF   => "TextField()"
+    case IntF      => "IntegerField()"
+    case DoubleF   => "FloatField()"
+    case BooleanF  => "BooleanField()"
+    case DateTimeF => "DateTimeField()"
   }
 
   def constructQueryPrefix(s: State) =  s.query match {
@@ -97,8 +105,9 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   def constructAggrs(aggrs: Seq[FieldDecl]) = aggrs match {
     case Seq() => ""
     case _     =>
-      "aggregate(" + (aggrs map { case FieldDecl(f, as) =>
-        as + "=" + constructFieldExpr(f, fieldType = "TextField()")
+      "aggregate(" + (aggrs map { case FieldDecl(f, as, t) =>
+        as + "=ExpressionWrapper(" + constructFieldExpr(f, fieldType = getType(t)) +
+          ", output_field=" + getType(t) + ")"
       } mkString ",") + ")"
   }
 
@@ -118,8 +127,9 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   def constructFieldDecls(fields: Set[FieldDecl]) =
     if (fields.isEmpty) ""
     else
-      "annotate("+ (fields map { case FieldDecl(f, as) =>
-        as + "=" + constructFieldExpr(f, fieldType = "FloatField()")
+      "annotate("+ (fields map { case FieldDecl(f, as, t) =>
+        as + "=ExpressionWrapper(" + constructFieldExpr(f) +
+          ", output_field=" + getType(t) + ")"
       } mkString ",") + ")"
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,

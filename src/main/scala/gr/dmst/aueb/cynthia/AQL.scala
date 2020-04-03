@@ -37,7 +37,15 @@ case class Sub(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
 case class Mul(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
 case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
 
-case class FieldDecl(f: FieldExpr, as: String)
+
+sealed trait FieldType
+case object StringF extends FieldType
+case object IntF extends FieldType
+case object DoubleF extends FieldType
+case object BooleanF extends FieldType
+case object DateTimeF extends FieldType
+
+case class FieldDecl(f: FieldExpr, as: String, ftype: FieldType)
 
 sealed trait QuerySet
 case class New(model: String, fields: Set[FieldDecl]) extends QuerySet

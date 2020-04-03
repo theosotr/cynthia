@@ -6,7 +6,7 @@ import gr.dmst.aueb.cynthia._
 case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   override val preamble =
-    s"""from sqlalchemy import create_engine, or_, and_, not_, func
+    s"""from sqlalchemy import create_engine, or_, and_, not_, func, cast, types
     |from sqlalchemy.orm import sessionmaker
     |from models import *
     |import numbers, decimal
@@ -26,8 +26,8 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case SetRes(_) | SubsetRes(_, _, _) => s"for r in $ret:\n  dump(r.id)"
     case FirstRes(_) => s"dump($ret.id)"
     case AggrRes(aggrs, _) => aggrs match {
-      case Seq(FieldDecl(Count(_), _)) => s"dump($ret)"
-      case _ => aggrs map { case FieldDecl(_, as) =>
+      case Seq(FieldDecl(Count(_), _, _)) => s"dump($ret)"
+      case _ => aggrs map { case FieldDecl(_, as, _) =>
         s"dump($ret.$as)"
       } mkString ("\n")
     }
@@ -140,13 +140,13 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       s.sources.toList match {
         case Nil => ??? // Unreachable case
         case _   => s.aggrs match {
-          case Seq() | Seq(FieldDecl(Count(_), _)) => QueryStr(
+          case Seq() | Seq(FieldDecl(Count(_), _, _)) => QueryStr(
             Some("ret" + s.numGen.next().toString),
             Some("session.query(" + s.sources.mkString(",") + ")"))
           case _ => QueryStr(
             Some("ret" + s.numGen.next().toString),
-            Some("session.query(" + (s.aggrs map { case FieldDecl(f, l) =>
-              s"${constructFieldExpr(f)}.label('$l')"
+            Some("session.query(" + (s.aggrs map { case FieldDecl(f, l, t) =>
+              s"cast(${constructFieldExpr(f)}, ${getType(t)}).label('$l')"
             } mkString ",") + ")"))
         }
       }
@@ -170,11 +170,22 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       else s"limit($limit)"
   }
 
+  def getType(ftype: FieldType) = ftype match {
+    case StringF   => "types.String"
+    case IntF      => "types.Integer"
+    case DoubleF   => "types.Float"
+    case BooleanF  => "types.Boolean"
+    case DateTimeF => "types.DateTime"
+  }
+
   def constructFieldDecls(fields: Set[FieldDecl]) =
     if (fields.isEmpty) QueryStr()
     else
-      fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as)) =>
-        acc >> QueryStr(Some(as), Some(constructFieldExpr(f)))
+      fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t)) =>
+        acc >> QueryStr(
+          Some(as),
+          Some("cast(" + constructFieldExpr(f) + ", " + getType(t) + ")")
+        )
       }
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
@@ -188,7 +199,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         constructOrderBy(s.orders),
         s.aggrs match {
           case Seq() => ""
-          case Seq(FieldDecl(Count(_), _)) => "count()"
+          case Seq(FieldDecl(Count(_), _, _)) => "count()"
           case _ => "first()"
         },
         constructFirst(first),

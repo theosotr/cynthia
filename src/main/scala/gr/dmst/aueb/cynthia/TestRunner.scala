@@ -98,7 +98,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 2
       AggrRes(
         Seq(
-          FieldDecl(Count(None), "count")
+          FieldDecl(Count(None), "count", IntF)
         ),
         Union(
           New("Listing", Set()),
@@ -150,7 +150,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 6
       AggrRes(
         Seq(
-          FieldDecl(Count(None), "count")
+          FieldDecl(Count(None), "count", IntF)
         ),
         Union(
           New("Listing", Set()),
@@ -179,7 +179,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 8
       AggrRes(
         Seq(
-          FieldDecl(Count(None), "count")
+          FieldDecl(Count(None), "count", IntF)
         ),
         New("Listing", Set())
       ),
@@ -187,10 +187,10 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 9
       AggrRes(
         Seq(
-          FieldDecl(Sum(F("Listing.sale_price")), "sum_sale"),
-          FieldDecl(Max(F("Listing.sale_price")), "max_sale"),
-          FieldDecl(Min(F("Listing.sale_price")), "min_sale"),
-          FieldDecl(Avg(F("Listing.sale_price")), "avg_sale")
+          FieldDecl(Sum(F("Listing.sale_price")), "sum_sale", DoubleF),
+          FieldDecl(Max(F("Listing.sale_price")), "max_sale", DoubleF),
+          FieldDecl(Min(F("Listing.sale_price")), "min_sale", DoubleF),
+          FieldDecl(Avg(F("Listing.sale_price")), "avg_sale", DoubleF)
         ),
         New("Listing", Set())
       ),
@@ -209,9 +209,10 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 Min(F("Listing.sale_price"))
               )
             ),
-            "complex_add"
+            "complex_add",
+            DoubleF
           ),
-          FieldDecl(Sum(F("Listing.yearly_rent")), "yearly"),
+          FieldDecl(Sum(F("Listing.yearly_rent")), "yearly", DoubleF),
           FieldDecl(
             Sub(
               Min(F("Listing.yearly_rent")),
@@ -220,7 +221,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 Max(F("Listing.sale_price"))
               )
             ),
-            "complex_sub"
+            "complex_sub",
+            DoubleF
           )
         ),
         New("Listing", Set())
@@ -229,8 +231,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 11
       AggrRes(
         Seq(
-          FieldDecl(Max(F("Listing.foo")), "max"),
-          FieldDecl(Min(F("Listing.foo")), "min")
+          FieldDecl(Max(F("Listing.foo")), "max", StringF),
+          FieldDecl(Min(F("Listing.foo")), "min", StringF)
         ),
         New("Listing", Set())
       ),
@@ -245,7 +247,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 F("Listing.sale_price")
               )
             ),
-            "sum"
+            "sum",
+            DoubleF
           )
         ),
         New("Listing", Set())
@@ -263,7 +266,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 F("Listing.yearly_rent"),
                 F("Listing.sale_price")
               ),
-              "custom"
+              "custom",
+              DoubleF
             )
           ))
         )
