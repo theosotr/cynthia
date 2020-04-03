@@ -90,8 +90,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 1
       SetRes(
         Union(
-          New("Listing", None),
-          New("Listing", None)
+          New("Listing", Set()),
+          New("Listing", Set())
         )
       ),
 
@@ -101,10 +101,10 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Count(None), "count")
         ),
         Union(
-          New("Listing", None),
+          New("Listing", Set()),
           Union(
-            New("Listing", None),
-            New("Listing", None)
+            New("Listing", Set()),
+            New("Listing", Set())
           )
         )
       ),
@@ -117,7 +117,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               Eq("Listing.foo", Value("bar", Quoted))
             )
           ),
-          New("Listing", None)
+          New("Listing", Set())
         )
       ),
 
@@ -128,8 +128,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             Seq(("Listing.yearly_rent", Asc))
           ),
           Union(
-            New("Listing", None),
-            New("Listing", None)
+            New("Listing", Set()),
+            New("Listing", Set())
           )
         )
       ),
@@ -143,7 +143,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               ("Listing.sale_price", Asc)
             )
           ),
-          New("Listing", None)
+          New("Listing", Set())
         )
       ),
 
@@ -153,10 +153,10 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Count(None), "count")
         ),
         Union(
-          New("Listing", None),
+          New("Listing", Set()),
           Union(
-            New("Listing", None),
-            New("Listing", None)
+            New("Listing", Set()),
+            New("Listing", Set())
           )
         )
       ),
@@ -172,7 +172,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               Gte("Listing.sale_price", Value("100", UnQuoted))
             )
           ),
-          New ("Listing", None)
+          New ("Listing", Set())
         )
       ),
 
@@ -181,7 +181,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
         Seq(
           FieldDecl(Count(None), "count")
         ),
-        New("Listing", None)
+        New("Listing", Set())
       ),
 
       // Query 9
@@ -192,7 +192,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Min(F("Listing.sale_price")), "min_sale"),
           FieldDecl(Avg(F("Listing.sale_price")), "avg_sale")
         ),
-        New("Listing", None)
+        New("Listing", Set())
       ),
 
       // Query 10
@@ -223,7 +223,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             "complex_sub"
           )
         ),
-        New("Listing", None)
+        New("Listing", Set())
       ),
 
       // Query 11
@@ -232,7 +232,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Max(F("Listing.foo")), "max"),
           FieldDecl(Min(F("Listing.foo")), "min")
         ),
-        New("Listing", None)
+        New("Listing", Set())
       ),
 
       // Query 12
@@ -248,7 +248,25 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             "sum"
           )
         ),
-        New("Listing", None)
+        New("Listing", Set())
+      ),
+
+      // Query 13
+      SetRes(
+        Apply(
+          Filter(
+            Gte("custom", Value("50", UnQuoted))
+          ),
+          New("Listing", Set(
+            FieldDecl(
+              Add(
+                F("Listing.yearly_rent"),
+                F("Listing.sale_price")
+              ),
+              "custom"
+            )
+          ))
+        )
       )
     )
 
@@ -256,13 +274,13 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     Seq(
 
       // Query 1
-      SetRes(New("Book", None)),
+      SetRes(New("Book", Set())),
 
       // Query 2
       SetRes(
         Apply(
           Sort(Seq(("Review.rating", Desc))),
-          New("Review", None)
+          New("Review", Set())
         )
       ),
 
@@ -270,7 +288,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         Apply(
           Filter(Eq("Review.book.title", Value("Random book", Quoted))),
-          New("Review", None)
+          New("Review", Set())
         )
       ),
 
@@ -278,7 +296,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         Apply(
           Filter(Eq("Review.book.author.surname", Value("Coecker", Quoted))),
-          New("Review", None)
+          New("Review", Set())
         )
       ),
 
@@ -288,7 +306,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           Sort(Seq(
             ("Review.book.title", Desc))
           ),
-          New("Review", None)
+          New("Review", Set())
         )
       ),
 
@@ -299,7 +317,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             ("Review.book.title", Desc),
             ("Review.reviewer_name", Asc))
           ),
-          New("Review", None)
+          New("Review", Set())
         )
       ),
 
@@ -317,7 +335,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 Lte("Review.rating", Value("4", UnQuoted))
               )
             ),
-            New("Review", None)
+            New("Review", Set())
           )
         )
       ),
@@ -336,7 +354,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 Contains("Review.book.author.surname", "o")
               )
             ),
-            New("Review", None)
+            New("Review", Set())
           )
         )
       ),
@@ -355,7 +373,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 Contains("Review.book.author.surname", "o")
               )
             ),
-            New("Review", None)
+            New("Review", Set())
           )
         )
       ),
@@ -373,7 +391,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             Filter(
               Gte("Review.rating", Value("2", UnQuoted))
             ),
-            New("Review", None)
+            New("Review", Set())
           )
         )
       )

@@ -170,9 +170,16 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       else s"limit($limit)"
   }
 
+  def constructFieldDecls(fields: Set[FieldDecl]) =
+    if (fields.isEmpty) QueryStr()
+    else
+      fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as)) =>
+        acc >> QueryStr(Some(as), Some(constructFieldExpr(f)))
+      }
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
-    val qStr = constructQueryPrefix(s)
+    val qStr = constructFieldDecls(s.fields) >> constructQueryPrefix(s)
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,

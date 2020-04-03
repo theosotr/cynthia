@@ -115,12 +115,20 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       else s"[:$limit]"
   }
 
+  def constructFieldDecls(fields: Set[FieldDecl]) =
+    if (fields.isEmpty) ""
+    else
+      "annotate("+ (fields map { case FieldDecl(f, as) =>
+        as + "=" + constructFieldExpr(f, fieldType = "FloatField()")
+      } mkString ",") + ")"
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
     val qStr = constructQueryPrefix(s)
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
+        constructFieldDecls(s.fields),
         constructFilter(s.preds),
         constructOrderBy(s.orders),
         constructAggrs(s.aggrs),

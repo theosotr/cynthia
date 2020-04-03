@@ -53,12 +53,17 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def getSeqFieldName(field: String) =
+  def getSeqFieldName(field: String, dollarSign: Boolean = true) = {
+    def _constructField(field: String) =
+      if (dollarSign) "'$" + field + "$'"
+      else Utils.quoteStr(field)
+
     field.split('.').toList match {
-      case Nil | _ :: Nil  => field
-      case _ :: (h :: Nil) => h
+      case Nil | _ :: Nil  => _constructField(field)
+      case _ :: (h :: Nil) => _constructField(h)
       case _ :: t          => "'$" + t.mkString(".") + "$'"
     }
+  }
 
   def getSeqOrderSpec(field: String) = {
     def _getSeqOrderSpec(segs: List[String], acc: List[String]): List[String] =
@@ -108,7 +113,6 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     case And(p1, p2)                =>
       (Str("[Op.and]: [") << "{" << translatePred(p1) << "}," <<
           "{" << translatePred(p2) << "}" << "]").!
-
   }
 
   def constructWhere(preds: Set[Predicate]) =
@@ -135,7 +139,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def constructNestedFieldExpr(fexpr: FieldExpr): String = fexpr match {
-    case F(f) => "sequelize.col(" + Utils.quoteStr(getSeqFieldName(f)) + ")"
+    case F(f) => "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
     case Add(F(f1), F(f2)) =>
       "sequelize.literal(" + Utils.quoteStr(f1 + " + " + f2) + ")"
     case Sub(F(f1), F(f2)) =>
@@ -148,18 +152,16 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       "Unsupported field expression: " + fexpr.toString)
   }
 
-  def constructAggr(fdecl: FieldDecl) = {
+  def constructFieldDecl(fdecl: FieldDecl) = {
     val (qfield, as) = fdecl match { case FieldDecl(f, l) => (f, l) }
     val (f, op) = qfield match {
-      case F(_)               => (constructNestedFieldExpr(qfield), None)
       case Count(None)        => ("", Some("'count'"))
       case Count(Some(fexpr)) => (constructNestedFieldExpr(fexpr), Some("'count'"))
       case Sum(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'sum'"))
       case Avg(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'avg'"))
       case Min(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'min'"))
       case Max(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'max'"))
-      case _                  => throw new UnsupportedException(
-        "Complex aggregations are not supported")
+      case _                  => (constructNestedFieldExpr(qfield), None)
     }
     op match {
       case None     => (Str("[") << f << ", " << Utils.quoteStr(as) << "]").!
@@ -174,10 +176,10 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def constructAttributes(state: State) = {
-    val attrStr = state.aggrs map { constructAggr } mkString(",\n")
+    val attrStr = (state.fields ++ state.aggrs) map { constructFieldDecl } mkString(",\n    ")
     attrStr match {
       case "" => ""
-      case _  => "attributes: [\n" + attrStr + "]"
+      case _  => "attributes: {\n  include: [\n    " + attrStr + "]}"
     }
   }
 

@@ -40,7 +40,7 @@ case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
 case class FieldDecl(f: FieldExpr, as: String)
 
 sealed trait QuerySet
-case class New(model: String, fields: Option[Array[String]]) extends QuerySet
+case class New(model: String, fields: Set[FieldDecl]) extends QuerySet
 case class Apply(op: Operation, q: QuerySet) extends QuerySet
 case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet
 case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet
