@@ -202,7 +202,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def constructAttributes(state: State) = {
-    val attrStr = (state.fields ++ state.aggrs) map { constructFieldDecl } mkString(",\n    ")
+    val attrStr = (state.fields.values ++ state.aggrs) map {
+      constructFieldDecl } mkString(",\n    ")
     attrStr match {
       case "" => ""
       case _  => "attributes: {\n  include: [\n    " + attrStr + "]}"

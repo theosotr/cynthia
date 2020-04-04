@@ -22,6 +22,7 @@ case object Desc extends Order
 sealed trait Operation
 case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
+case class GroupBy(spec: Seq[String]) extends Operation
 
 sealed abstract class FieldExpr(val compound: Boolean) {
   def isAggregate(): Boolean

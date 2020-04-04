@@ -126,7 +126,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       else s"[:$limit]"
   }
 
-  def constructFieldDecls(fields: Set[FieldDecl]) =
+  def constructFieldDecls(fields: Iterable[FieldDecl]) =
     if (fields.isEmpty) ""
     else
       "annotate("+ (fields map { case FieldDecl(f, as, t) =>
@@ -140,7 +140,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
-        constructFieldDecls(s.fields),
+        constructFieldDecls(s.fields.values),
         constructFilter(s.preds),
         constructOrderBy(s.orders),
         constructAggrs(s.aggrs),

@@ -180,7 +180,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case DateTimeF => "types.DateTime"
   }
 
-  def constructFieldDecls(fields: Set[FieldDecl]) =
+  def constructFieldDecls(fields: Iterable[FieldDecl]) =
     if (fields.isEmpty) QueryStr()
     else
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t)) =>
@@ -192,7 +192,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
-    val qStr = constructFieldDecls(s.fields) >> constructQueryPrefix(s)
+    val qStr = constructFieldDecls(s.fields.values) >> constructQueryPrefix(s)
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,

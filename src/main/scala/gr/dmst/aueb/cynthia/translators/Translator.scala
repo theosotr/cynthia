@@ -31,7 +31,7 @@ case class QueryStr(
 case class State(
   db: DB,
   sources: Set[String] = Set(),
-  fields: Set[FieldDecl] = Set(),
+  fields: Map[String, FieldDecl] = Map(),
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
   aggrs: Seq[FieldDecl] = Seq(),
@@ -43,8 +43,10 @@ case class State(
   def +(source: String) =
     State(db, sources + source, fields, preds, orders, aggrs, joins, query, numGen)
 
-  def f(f: Set[FieldDecl]) =
-    State(db, sources, fields ++ f, preds, orders, aggrs, joins, query, numGen)
+  def f(fd: FieldDecl) = fd match {
+    case FieldDecl(_, as, _) =>
+      State(db, sources, fields + (as -> fd), preds, orders, aggrs, joins, query, numGen)
+  }
 
   def ++(pred: Predicate): State =
     State(db, sources, fields, preds + pred, orders, aggrs, joins, query, numGen)
@@ -98,7 +100,10 @@ abstract class Translator(val target: Target) {
     oSpec.map{_._1}.foldLeft (s) { (acc, x) => updateJoins(x, acc) }
 
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
-    case New(m, f)               => (s + m) f (f) // Add source and fields to state
+    case New(m, f) => { // Add source and fields to state
+      val s1 = s + m
+      f.foldLeft(s1) { (acc, x) => acc f (x) }
+    }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) ++ pred // Add predicate to state
       traversePredicate(s1, pred) // update joins
