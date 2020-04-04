@@ -99,6 +99,8 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     case Sub(a1, a2) => "(" + constructFieldExpr(a1) + " - " + constructFieldExpr(a2) + ")"
     case Mul(a1, a2) => "(" + constructFieldExpr(a1) + " * " + constructFieldExpr(a2) + ")"
     case Div(a1, a2) => "(" + constructFieldExpr(a1) + " / " + constructFieldExpr(a2) + ")"
+    case Constant(v, UnQuoted) => "Value(" + v + ")"
+    case Constant(v, Quoted)   => "Value(" + Utils.quoteStr(v) + ")"
     case _           => constructPrimAggr(fexpr, fieldType)
   }
 
@@ -163,25 +165,25 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   }
 
   def translatePred(pred: Predicate): String = pred match {
-    case Eq(k, Value(v, Quoted))    =>
+    case Eq(k, Constant(v, Quoted))    =>
       (Str(getDjangoFieldName(k)) << "=" << Utils.quoteStr(v)).!
-    case Eq(k, Value(v, UnQuoted))  =>
+    case Eq(k, Constant(v, UnQuoted))  =>
       (Str(getDjangoFieldName(k)) << "=" << v).!
-    case Gt(k, Value(v, Quoted))    =>
+    case Gt(k, Constant(v, Quoted))    =>
       (Str(getDjangoFieldName(k)) << "__gt=" << Utils.quoteStr(v)).!
-    case Gt(k, Value(v, UnQuoted))  =>
+    case Gt(k, Constant(v, UnQuoted))  =>
       (Str(getDjangoFieldName(k)) << "__gt=" << v).!
-    case Gte(k, Value(v, Quoted))   =>
+    case Gte(k, Constant(v, Quoted))   =>
       (Str(getDjangoFieldName(k)) << "__gte=" << Utils.quoteStr(v)).!
-    case Gte(k, Value(v, UnQuoted)) =>
+    case Gte(k, Constant(v, UnQuoted)) =>
       (Str(getDjangoFieldName(k)) << "__gte=" << v).!
-    case Lt(k, Value(v, Quoted))    =>
+    case Lt(k, Constant(v, Quoted))    =>
       (Str(getDjangoFieldName(k)) << "__lt=" << Utils.quoteStr(v)).!
-    case Lt(k, Value(v, UnQuoted))  =>
+    case Lt(k, Constant(v, UnQuoted))  =>
       (Str(getDjangoFieldName(k)) << "__le=" << v).!
-    case Lte(k, Value(v, Quoted))   =>
+    case Lte(k, Constant(v, Quoted))   =>
       (Str(getDjangoFieldName(k)) << "__lte=" << Utils.quoteStr(v)).!
-    case Lte(k, Value(v, UnQuoted)) =>
+    case Lte(k, Constant(v, UnQuoted)) =>
       (Str(getDjangoFieldName(k)) << "__lte=" << v).!
     case Contains(k, v)             =>
       (Str(getDjangoFieldName(k)) << "__contains=" << Utils.quoteStr(v)).!

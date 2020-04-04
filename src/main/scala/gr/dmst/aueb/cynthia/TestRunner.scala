@@ -114,7 +114,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
         Apply(
           Filter(
             Not(
-              Eq("Listing.foo", Value("bar", Quoted))
+              Eq("Listing.foo", Constant("bar", Quoted))
             )
           ),
           New("Listing", Set())
@@ -167,9 +167,9 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           Filter(
             And(
               Not(
-                Eq("Listing.foo", Value("bar", Quoted))
+                Eq("Listing.foo", Constant("bar", Quoted))
               ),
-              Gte("Listing.sale_price", Value("100", UnQuoted))
+              Gte("Listing.sale_price", Constant("100", UnQuoted))
             )
           ),
           New ("Listing", Set())
@@ -258,7 +258,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         Apply(
           Filter(
-            Gte("custom", Value("50", UnQuoted))
+            Gte("custom", Constant("50", UnQuoted))
           ),
           New("Listing", Set(
             FieldDecl(
@@ -268,6 +268,31 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               ),
               "custom",
               DoubleF
+            )
+          ))
+        )
+      ),
+
+      // Query 14
+      SetRes(
+        Apply(
+          Filter(
+            And(
+              Eq("custom", Constant("20", UnQuoted)),
+              Eq("text", Constant("foobar", Quoted))
+            )
+          ),
+          New("Listing", Set(
+            FieldDecl(
+              Add(
+                Constant("5", UnQuoted),
+                Constant("15", UnQuoted)
+              ),
+              "custom", IntF
+            ),
+            FieldDecl(
+              Constant("foobar", Quoted),
+              "text", StringF
             )
           ))
         )
@@ -291,7 +316,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 3
       SetRes(
         Apply(
-          Filter(Eq("Review.book.title", Value("Random book", Quoted))),
+          Filter(Eq("Review.book.title", Constant("Random book", Quoted))),
           New("Review", Set())
         )
       ),
@@ -299,7 +324,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 3
       SetRes(
         Apply(
-          Filter(Eq("Review.book.author.surname", Value("Coecker", Quoted))),
+          Filter(Eq("Review.book.author.surname", Constant("Coecker", Quoted))),
           New("Review", Set())
         )
       ),
@@ -335,8 +360,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           Apply(
             Filter(
               And(
-                Gte("Review.rating", Value("2", UnQuoted)),
-                Lte("Review.rating", Value("4", UnQuoted))
+                Gte("Review.rating", Constant("2", UnQuoted)),
+                Lte("Review.rating", Constant("4", UnQuoted))
               )
             ),
             New("Review", Set())
@@ -354,7 +379,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           Apply(
             Filter(
               And(
-                Gte("Review.rating", Value("2", UnQuoted)),
+                Gte("Review.rating", Constant("2", UnQuoted)),
                 Contains("Review.book.author.surname", "o")
               )
             ),
@@ -373,7 +398,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           Apply(
             Filter(
               And(
-                Gte("Review.rating", Value("2", UnQuoted)),
+                Gte("Review.rating", Constant("2", UnQuoted)),
                 Contains("Review.book.author.surname", "o")
               )
             ),
@@ -393,7 +418,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           ),
           Apply(
             Filter(
-              Gte("Review.rating", Value("2", UnQuoted))
+              Gte("Review.rating", Constant("2", UnQuoted))
             ),
             New("Review", Set())
           )

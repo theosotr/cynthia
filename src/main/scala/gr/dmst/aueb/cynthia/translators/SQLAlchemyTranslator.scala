@@ -6,7 +6,7 @@ import gr.dmst.aueb.cynthia._
 case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   override val preamble =
-    s"""from sqlalchemy import create_engine, or_, and_, not_, func, cast, types
+    s"""from sqlalchemy import create_engine, or_, and_, not_, func, cast, types, literal
     |from sqlalchemy.orm import sessionmaker
     |from models import *
     |import numbers, decimal
@@ -42,25 +42,25 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   }
 
   def translatePred(pred: Predicate): String = pred match {
-    case Eq(k, Value(v, Quoted)) =>
+    case Eq(k, Constant(v, Quoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << "==" << Utils.quoteStr(v)).!
-    case Eq(k, Value(v, UnQuoted)) =>
+    case Eq(k, Constant(v, UnQuoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << "==" << v).!
-    case Gt(k, Value(v, Quoted)) =>
+    case Gt(k, Constant(v, Quoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << " > " << Utils.quoteStr(v)).!
-    case Gt(k, Value(v, UnQuoted)) =>
+    case Gt(k, Constant(v, UnQuoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << " > " << v).!
-    case Gte(k, Value(v, Quoted)) =>
+    case Gte(k, Constant(v, Quoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << " >= " << Utils.quoteStr(v)).!
-    case Gte(k, Value(v, UnQuoted)) =>
+    case Gte(k, Constant(v, UnQuoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << " >= " << v).!
-    case Lt(k, Value(v, Quoted)) =>
+    case Lt(k, Constant(v, Quoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << " < " << Utils.quoteStr(v)).!
-    case Lt(k, Value(v, UnQuoted)) =>
+    case Lt(k, Constant(v, UnQuoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << " < " << v).!
-    case Lte(k, Value(v, Quoted)) =>
+    case Lte(k, Constant(v, Quoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << " <= " << Utils.quoteStr(v)).!
-    case Lte(k, Value(v, UnQuoted)) =>
+    case Lte(k, Constant(v, UnQuoted)) =>
       (Str(getSQLAlchemyFieldName(k)) << " <= " << v).!
     case Contains(k, v) =>
       (Str(getSQLAlchemyFieldName(k)) << ".contains(" << Utils.quoteStr(v) << ")").!
@@ -118,7 +118,9 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   }
 
   def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {
-    case F(f) => getSQLAlchemyFieldName(f)
+    case F(f)                  => getSQLAlchemyFieldName(f)
+    case Constant(v, UnQuoted) => "literal(" + v + ")"
+    case Constant(v, Quoted)   => "literal(" + Utils.quoteStr(v) + ")"
     case _    =>
       if (!fexpr.compound) constructPrimAggr(fexpr)
       else constructCompoundAggr(fexpr)

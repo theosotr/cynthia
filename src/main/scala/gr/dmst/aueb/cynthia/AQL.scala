@@ -1,17 +1,15 @@
 package gr.dmst.aueb.cynthia
 
-sealed trait ValueType
-case object Quoted extends ValueType
-case object UnQuoted extends ValueType
-
-case class Value(v: String, vt: ValueType)
+sealed trait ConstantType
+case object Quoted extends ConstantType
+case object UnQuoted extends ConstantType
 
 sealed trait Predicate
-case class Eq(key: String, value: Value) extends Predicate
-case class Gt(key: String, value: Value) extends Predicate
-case class Lt(key: String, value: Value) extends Predicate
-case class Gte(key: String, value: Value) extends Predicate
-case class Lte(key: String, value: Value) extends Predicate
+case class Eq(key: String, value: Constant) extends Predicate
+case class Gt(key: String, value: Constant) extends Predicate
+case class Lt(key: String, value: Constant) extends Predicate
+case class Gte(key: String, value: Constant) extends Predicate
+case class Lte(key: String, value: Constant) extends Predicate
 case class Contains(key: String, value: String) extends Predicate
 case class And(p1: Predicate, p2: Predicate) extends Predicate
 case class Or(p1: Predicate, p2: Predicate) extends Predicate
@@ -26,6 +24,7 @@ case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
 
 sealed abstract class FieldExpr (val compound: Boolean) {  }
+case class Constant(v: String, vt: ConstantType) extends FieldExpr(false)
 case class F(f: String) extends FieldExpr(false)
 case class Count(f: Option[FieldExpr]) extends FieldExpr(false)
 case class Sum(f: FieldExpr) extends FieldExpr(false)

@@ -83,25 +83,25 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def translatePred(pred: Predicate): String = pred match {
-    case Eq(k, Value(v, Quoted))    =>
+    case Eq(k, Constant(v, Quoted))    =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << Utils.quoteStr(v) << "}").!
-    case Eq(k, Value(v, UnQuoted))  =>
+    case Eq(k, Constant(v, UnQuoted))  =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << v << "}").!
-    case Gt(k, Value(v, Quoted))    =>
+    case Gt(k, Constant(v, Quoted))    =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.gt]: " << Utils.quoteStr(v) << "}").!
-    case Gt(k, Value(v, UnQuoted))  =>
+    case Gt(k, Constant(v, UnQuoted))  =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.gt]: " << v << "}").!
-    case Gte(k, Value(v, Quoted))   =>
+    case Gte(k, Constant(v, Quoted))   =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.gte]: " << Utils.quoteStr(v) << "}").!
-    case Gte(k, Value(v, UnQuoted)) =>
+    case Gte(k, Constant(v, UnQuoted)) =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.gte]: " << v << "}").!
-    case Lt(k, Value(v, Quoted))    =>
+    case Lt(k, Constant(v, Quoted))    =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.lt]: " << Utils.quoteStr(v) << "}").!
-    case Lt(k, Value(v, UnQuoted))  =>
+    case Lt(k, Constant(v, UnQuoted))  =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.lt]: " << v << "}").!
-    case Lte(k, Value(v, Quoted))   =>
+    case Lte(k, Constant(v, Quoted))   =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << Utils.quoteStr(v) << "}").!
-    case Lte(k, Value(v, UnQuoted)) =>
+    case Lte(k, Constant(v, UnQuoted)) =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << v << "}").!
     case Contains(k, v)             =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: " << Utils.quoteStr(v) << "}").!
@@ -138,18 +138,31 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
-  def constructNestedFieldExpr(fexpr: FieldExpr): String = fexpr match {
-    case F(f) => "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
-    case Add(F(f1), F(f2)) =>
-      "sequelize.literal(" + Utils.quoteStr(f1 + " + " + f2) + ")"
-    case Sub(F(f1), F(f2)) =>
-      "sequelize.literal(" + Utils.quoteStr(f1 + " - " + f2) + ")"
-    case Mul(F(f1), F(f2)) =>
-      "sequelize.literal(" + Utils.quoteStr(f1 + " * " + f2) + ")"
-    case Div(F(f1), F(f2)) =>
-      "sequelize.literal(" + Utils.quoteStr(f1 + " / " + f2) + ")"
-    case _ => throw new UnsupportedException(
-      "Unsupported field expression: " + fexpr.toString)
+  def constructNestedFieldExpr(fexpr: FieldExpr): String = {
+    def _f(expr: FieldExpr) = expr match {
+      case Constant(v, UnQuoted) => v
+      case Constant(v, Quoted)   => s"\\'${v}\\'"
+      case F(f)                  => f
+      case _ => throw new UnsupportedException(
+        "Unsupported field expression: " + fexpr.toString)
+    }
+
+    fexpr match {
+      case Constant(v, UnQuoted) => "sequelize.literal(" + v + ")"
+      case Constant(v, Quoted)   =>
+        "sequelize.literal(" + Utils.quoteStr(s"\\'${v}\\'") + ")"
+      case F(f) => "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
+      case Add(f1, f2) =>
+        "sequelize.literal(" + Utils.quoteStr(_f(f1) + " + " + _f(f2)) + ")"
+      case Sub(f1, f2) =>
+        "sequelize.literal(" + Utils.quoteStr(_f(f1) + " - " + _f(f2)) + ")"
+      case Mul(f1, f2) =>
+        "sequelize.literal(" + Utils.quoteStr(_f(f1) + " * " + _f(f2)) + ")"
+      case Div(f1, f2) =>
+        "sequelize.literal(" + Utils.quoteStr(_f(f1) + " / " + _f(f2)) + ")"
+      case _ => throw new UnsupportedException(
+        "Unsupported field expression: " + fexpr.toString)
+    }
   }
 
   def getType(ftype: FieldType) = ftype match {
