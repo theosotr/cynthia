@@ -23,18 +23,46 @@ sealed trait Operation
 case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
 
-sealed abstract class FieldExpr (val compound: Boolean) {  }
-case class Constant(v: String, vt: ConstantType) extends FieldExpr(false)
-case class F(f: String) extends FieldExpr(false)
-case class Count(f: Option[FieldExpr]) extends FieldExpr(false)
-case class Sum(f: FieldExpr) extends FieldExpr(false)
-case class Avg(f: FieldExpr) extends FieldExpr(false)
-case class Max(f: FieldExpr) extends FieldExpr(false)
-case class Min(f: FieldExpr) extends FieldExpr(false)
-case class Add(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
-case class Sub(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
-case class Mul(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
-case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true)
+sealed abstract class FieldExpr(val compound: Boolean) {
+  def isAggregate(): Boolean
+}
+case class Constant(v: String, vt: ConstantType) extends FieldExpr(false) {
+  def isAggregate() = false
+}
+case class F(f: String) extends FieldExpr(false) {
+  def isAggregate() = false
+}
+case class Count(f: Option[FieldExpr]) extends FieldExpr(false) {
+  def isAggregate() = true
+}
+case class Sum(f: FieldExpr) extends FieldExpr(false) {
+  def isAggregate() = true
+}
+case class Avg(f: FieldExpr) extends FieldExpr(false) {
+  def isAggregate() = true
+}
+case class Max(f: FieldExpr) extends FieldExpr(false) {
+  def isAggregate() = true
+}
+case class Min(f: FieldExpr) extends FieldExpr(false) {
+  def isAggregate() = true
+}
+case class Add(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
+  def isAggregate() =
+    f1.isAggregate || f2.isAggregate
+}
+case class Sub(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
+  def isAggregate() =
+    f1.isAggregate || f2.isAggregate
+}
+case class Mul(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
+  def isAggregate() =
+    f1.isAggregate || f2.isAggregate
+}
+case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
+  def isAggregate() =
+    f1.isAggregate || f2.isAggregate
+}
 
 
 sealed trait FieldType
