@@ -307,6 +307,48 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
           ))
         )
+      ),
+
+      // Query 16
+      SetRes(
+        Apply(
+          Filter(Gte("sales", Constant("1", UnQuoted))),
+          Apply(
+            GroupBy(Seq("sales")),
+            New("Listing", Set(
+              FieldDecl(
+                Mul(
+                  Constant("10", UnQuoted),
+                  Div(
+                    Constant("5", UnQuoted),
+                    F("Listing.sale_price")
+                  )
+                ),
+                "sales", DoubleF
+              ),
+              FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
+            ))
+          )
+        )
+      ),
+
+      // Query 17
+      SetRes(
+        Apply(
+          GroupBy(Seq("sales")),
+          New("Listing", Set(
+            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+            FieldDecl(
+              Avg(
+                Mul(
+                  F("Listing.sale_price"),
+                  F("Listing.sale_price")
+                )
+              ),
+              "squared", DoubleF
+            )
+          ))
+        )
       )
     )
 
@@ -391,7 +433,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             Filter(
               And(
                 Gte("Review.rating", Constant("2", UnQuoted)),
-                Contains("Review.book.author.surname", "o")
+                Contains("Review.book.author.surname", Constant("o", Quoted))
               )
             ),
             New("Review", Set())
@@ -410,7 +452,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             Filter(
               And(
                 Gte("Review.rating", Constant("2", UnQuoted)),
-                Contains("Review.book.author.surname", "o")
+                Contains("Review.book.author.surname", Constant("o", Quoted))
               )
             ),
             New("Review", Set())

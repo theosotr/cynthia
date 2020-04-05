@@ -48,28 +48,18 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   }
 
   def translatePred(pred: Predicate): String = pred match {
-    case Eq(k, Constant(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << "==" << Utils.quoteStr(v)).!
-    case Eq(k, Constant(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << "==" << v).!
-    case Gt(k, Constant(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " > " << Utils.quoteStr(v)).!
-    case Gt(k, Constant(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " > " << v).!
-    case Gte(k, Constant(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " >= " << Utils.quoteStr(v)).!
-    case Gte(k, Constant(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " >= " << v).!
-    case Lt(k, Constant(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " < " << Utils.quoteStr(v)).!
-    case Lt(k, Constant(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " < " << v).!
-    case Lte(k, Constant(v, Quoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " <= " << Utils.quoteStr(v)).!
-    case Lte(k, Constant(v, UnQuoted)) =>
-      (Str(getSQLAlchemyFieldName(k)) << " <= " << v).!
-    case Contains(k, v) =>
-      (Str(getSQLAlchemyFieldName(k)) << ".contains(" << Utils.quoteStr(v) << ")").!
+    case Eq(k, e) =>
+      (Str(getSQLAlchemyFieldName(k)) << "==" << constructFieldExpr(e)).!
+    case Gt(k, e) =>
+      (Str(getSQLAlchemyFieldName(k)) << " > " << constructFieldExpr(e)).!
+    case Gte(k, e) =>
+      (Str(getSQLAlchemyFieldName(k)) << " >= " << constructFieldExpr(e)).!
+    case Lt(k, e) =>
+      (Str(getSQLAlchemyFieldName(k)) << " < " << constructFieldExpr(e)).!
+    case Lte(k, e) =>
+      (Str(getSQLAlchemyFieldName(k)) << " <= " << constructFieldExpr(e)).!
+    case Contains(k, e) =>
+      (Str(getSQLAlchemyFieldName(k)) << ".contains(" << constructFieldExpr(e) << ")").!
     case Not(pred)                  =>
       (Str("not_(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>
@@ -78,10 +68,16 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       (Str("and_(") << translatePred(p1) << ", " << translatePred(p2) << ")").!
   }
 
-  def constructFilter(preds: Set[Predicate]) =
-    preds map { x =>
-      (Str("filter(") << translatePred(x) << ")").!
-    } mkString(".")
+  def constructFilter(preds: Set[Predicate], having: Boolean = false) =
+    if (having) {
+      preds map { x =>
+        (Str("having(") << translatePred(x) << ")").!
+      } mkString(".")
+    } else {
+      preds map { x =>
+        (Str("filter(") << translatePred(x) << ")").!
+      } mkString(".")
+    }
 
   def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
     case Seq() => ""
@@ -215,8 +211,9 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       Some(Seq(
         qStr.ret.get,
         constructJoins(s.joins),
-        constructFilter(s.preds),
+        constructFilter(s.preds filter { !_.hasAggregate }),
         constructGroupBy(s.groupBy),
+        constructFilter(s.preds filter { _.hasAggregate }, having = true),
         constructOrderBy(s.orders),
         s.aggrs match {
           case Seq() => ""

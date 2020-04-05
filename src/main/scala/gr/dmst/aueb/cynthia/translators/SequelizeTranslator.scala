@@ -88,28 +88,18 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def translatePred(pred: Predicate): String = pred match {
-    case Eq(k, Constant(v, Quoted))    =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << Utils.quoteStr(v) << "}").!
-    case Eq(k, Constant(v, UnQuoted))  =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << v << "}").!
-    case Gt(k, Constant(v, Quoted))    =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.gt]: " << Utils.quoteStr(v) << "}").!
-    case Gt(k, Constant(v, UnQuoted))  =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.gt]: " << v << "}").!
-    case Gte(k, Constant(v, Quoted))   =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.gte]: " << Utils.quoteStr(v) << "}").!
-    case Gte(k, Constant(v, UnQuoted)) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.gte]: " << v << "}").!
-    case Lt(k, Constant(v, Quoted))    =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.lt]: " << Utils.quoteStr(v) << "}").!
-    case Lt(k, Constant(v, UnQuoted))  =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.lt]: " << v << "}").!
-    case Lte(k, Constant(v, Quoted))   =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << Utils.quoteStr(v) << "}").!
-    case Lte(k, Constant(v, UnQuoted)) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << v << "}").!
-    case Contains(k, v)             =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: " << Utils.quoteStr(v) << "}").!
+    case Eq(k, e) =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << constructFieldExpr(e) << "}").!
+    case Gt(k, e) =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.gt]: " << constructFieldExpr(e) << "}").!
+    case Gte(k, e) =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.gte]: " << constructFieldExpr(e) << "}").!
+    case Lt(k, e)  =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.lt]: " << constructFieldExpr(e) << "}").!
+    case Lte(k, e) =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << constructFieldExpr(e) << "}").!
+    case Contains(k, e) =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: " << constructFieldExpr(e) << "}").!
     case Not(pred)                  =>
       (Str("[Op.not]: {") << translatePred(pred) << "}").!
     case Or(p1, p2)                 =>
@@ -120,14 +110,15 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
           "{" << translatePred(p2) << "}" << "]").!
   }
 
-  def constructWhere(preds: Set[Predicate]) =
+  def constructFilter(preds: Set[Predicate], having: Boolean = false) = {
+    val method = if (having) "having" else "where"
     if (preds.isEmpty) ""
     else
-      (
-        Str("where: {\n  [Op.and]: [\n") << (
-          preds map { x => "    {" + translatePred(x) + "}" } mkString(",")
-        ) << "  ]\n}"
+      (Str(method) << ": {\n  [Op.and]: [\n" << (
+        preds map { x => "    {" + translatePred(x) + "}" } mkString(",")
+       ) << "  ]\n}"
       ).!
+  }
 
   def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
     case Seq() => ""
@@ -178,32 +169,35 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     case DateTimeF => "'datetime'"
   }
 
-  def constructFieldDecl(fdecl: FieldDecl) = {
-    def castField(f: String, t: String) =
-      (Str("sequelize.cast(") << f << "," << t << ")").!
-
-    val (qfield, as, t) = fdecl match { case FieldDecl(f, l, t) => (f, l, t) }
-    val (f, op) = qfield match {
+  def constructFieldExpr(fexpr: FieldExpr): String = {
+    val (f, op) = fexpr match {
       case Count(None)        => ("", Some("'count'"))
       case Count(Some(fexpr)) => (constructNestedFieldExpr(fexpr), Some("'count'"))
       case Sum(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'sum'"))
       case Avg(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'avg'"))
       case Min(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'min'"))
       case Max(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'max'"))
-      case _                  => (constructNestedFieldExpr(qfield), None)
+      case _                  => (constructNestedFieldExpr(fexpr), None)
     }
     op match {
-      case None     => (Str("[") << castField(f, getType(t)) << ", " <<
-        Utils.quoteStr(as) << "]").!
+      case None     => f
       case Some(op) =>
-        val str = Str("[sequelize.fn(") << op
-        val k = castField(f, getType(t))
+        val str = Str("sequelize.fn(") << op
         f match {
-          case "" => (str << "), " << Utils.quoteStr(as) << "]").!
-          case _    =>
-            (str << ", " << k << "), " << Utils.quoteStr(as) << "]").!
+          case "" => (str << ")").!
+          case _  =>
+            (str << ", " << f << ")").!
         }
     }
+  }
+
+  def constructFieldDecl(fdecl: FieldDecl) = {
+    def castField(f: String, t: String) =
+      (Str("sequelize.cast(") << f << "," << t << ")").!
+
+    val (qfield, as, t) = fdecl match { case FieldDecl(f, l, t) => (f, l, t) }
+    val f = constructFieldExpr(qfield)
+    (Str("[") << castField(f, getType(t)) << ", " << Utils.quoteStr(as) << "]").!
   }
 
   def constructAttributes(state: State) = {
@@ -235,7 +229,6 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         }
       }
     }
-
 
   def constructIncludes(source: String, joinedModels: Map[String, Set[String]]) = {
     def _findIncludes(n: String): String = {
@@ -272,7 +265,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
             Seq(
               constructIncludes(h, joinMap),
               constructAttributes(state),
-              constructWhere(state.preds),
+              constructFilter(state.preds filter { !_.hasAggregate }),
+              constructFilter(state.preds filter { _.hasAggregate }, having = true),
               constructGroupBy(state.groupBy),
               constructOrderBy(state.orders),
               if (offset >= 0) s"offset: $offset" else "",

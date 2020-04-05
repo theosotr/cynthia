@@ -159,10 +159,11 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       Some((Seq(
         qStr.ret.get,
         constructFieldDecls(s.fields.values filter { case FieldDecl(f, _, _) => !f.isAggregate }),
-        constructFilter(s.preds),
+        constructFilter(s.preds filter { !_.hasAggregate }),
         constructGroupBy(s.groupBy),
         constructFieldDecls(s.fields.values filter { case FieldDecl(f, _, _) => f.isAggregate }),
         constructOrderBy(s.orders),
+        constructFilter(s.preds filter { _.hasAggregate }),
         constructAggrs(s.aggrs),
         constructFirst(first)
       ) filter {
@@ -185,28 +186,18 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   }
 
   def translatePred(pred: Predicate): String = pred match {
-    case Eq(k, Constant(v, Quoted))    =>
-      (Str(getDjangoFieldName(k)) << "=" << Utils.quoteStr(v)).!
-    case Eq(k, Constant(v, UnQuoted))  =>
-      (Str(getDjangoFieldName(k)) << "=" << v).!
-    case Gt(k, Constant(v, Quoted))    =>
-      (Str(getDjangoFieldName(k)) << "__gt=" << Utils.quoteStr(v)).!
-    case Gt(k, Constant(v, UnQuoted))  =>
-      (Str(getDjangoFieldName(k)) << "__gt=" << v).!
-    case Gte(k, Constant(v, Quoted))   =>
-      (Str(getDjangoFieldName(k)) << "__gte=" << Utils.quoteStr(v)).!
-    case Gte(k, Constant(v, UnQuoted)) =>
-      (Str(getDjangoFieldName(k)) << "__gte=" << v).!
-    case Lt(k, Constant(v, Quoted))    =>
-      (Str(getDjangoFieldName(k)) << "__lt=" << Utils.quoteStr(v)).!
-    case Lt(k, Constant(v, UnQuoted))  =>
-      (Str(getDjangoFieldName(k)) << "__le=" << v).!
-    case Lte(k, Constant(v, Quoted))   =>
-      (Str(getDjangoFieldName(k)) << "__lte=" << Utils.quoteStr(v)).!
-    case Lte(k, Constant(v, UnQuoted)) =>
-      (Str(getDjangoFieldName(k)) << "__lte=" << v).!
-    case Contains(k, v)             =>
-      (Str(getDjangoFieldName(k)) << "__contains=" << Utils.quoteStr(v)).!
+    case Eq(k, e) =>
+      (Str(getDjangoFieldName(k)) << "=" << constructFieldExpr(e)).!
+    case Gt(k, e) =>
+      (Str(getDjangoFieldName(k)) << "__gt=" << constructFieldExpr(e)).!
+    case Gte(k, e) =>
+      (Str(getDjangoFieldName(k)) << "__gte=" << constructFieldExpr(e)).!
+    case Lt(k, e)  =>
+      (Str(getDjangoFieldName(k)) << "__le=" << constructFieldExpr(e)).!
+    case Lte(k, e) =>
+      (Str(getDjangoFieldName(k)) << "__lte=" << constructFieldExpr(e)).!
+    case Contains(k, e)             =>
+      (Str(getDjangoFieldName(k)) << "__contains=" << constructFieldExpr(e)).!
     case Not(pred)                  =>
       (Str("~Q(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>

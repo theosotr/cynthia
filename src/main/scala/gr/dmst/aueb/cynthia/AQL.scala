@@ -4,26 +4,6 @@ sealed trait ConstantType
 case object Quoted extends ConstantType
 case object UnQuoted extends ConstantType
 
-sealed trait Predicate
-case class Eq(key: String, value: Constant) extends Predicate
-case class Gt(key: String, value: Constant) extends Predicate
-case class Lt(key: String, value: Constant) extends Predicate
-case class Gte(key: String, value: Constant) extends Predicate
-case class Lte(key: String, value: Constant) extends Predicate
-case class Contains(key: String, value: String) extends Predicate
-case class And(p1: Predicate, p2: Predicate) extends Predicate
-case class Or(p1: Predicate, p2: Predicate) extends Predicate
-case class Not(p: Predicate) extends Predicate
-
-sealed trait Order
-case object Asc extends Order
-case object Desc extends Order
-
-sealed trait Operation
-case class Filter (pred: Predicate) extends Operation
-case class Sort(spec: Seq[(String, Order)]) extends Operation
-case class GroupBy(spec: Seq[String]) extends Operation
-
 sealed abstract class FieldExpr(val compound: Boolean) {
   def isAggregate(): Boolean
 }
@@ -65,6 +45,45 @@ case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
     f1.isAggregate || f2.isAggregate
 }
 
+sealed trait Predicate {
+  def hasAggregate(): Boolean
+}
+case class Eq(key: String, value: FieldExpr) extends Predicate {
+  def hasAggregate() = value.isAggregate
+}
+case class Gt(key: String, value: FieldExpr) extends Predicate {
+  def hasAggregate() = value.isAggregate
+}
+case class Lt(key: String, value: FieldExpr) extends Predicate {
+  def hasAggregate() = value.isAggregate
+}
+case class Gte(key: String, value: FieldExpr) extends Predicate {
+  def hasAggregate() = value.isAggregate
+}
+case class Lte(key: String, value: FieldExpr) extends Predicate {
+  def hasAggregate() = value.isAggregate
+}
+case class Contains(key: String, value: FieldExpr) extends Predicate {
+  def hasAggregate() = value.isAggregate
+}
+case class And(p1: Predicate, p2: Predicate) extends Predicate {
+  def hasAggregate() = p1.hasAggregate || p2.hasAggregate
+}
+case class Or(p1: Predicate, p2: Predicate) extends Predicate {
+  def hasAggregate() = p1.hasAggregate || p2.hasAggregate
+}
+case class Not(p: Predicate) extends Predicate {
+  def hasAggregate() = p.hasAggregate
+}
+
+sealed trait Order
+case object Asc extends Order
+case object Desc extends Order
+
+sealed trait Operation
+case class Filter (pred: Predicate) extends Operation
+case class Sort(spec: Seq[(String, Order)]) extends Operation
+case class GroupBy(spec: Seq[String]) extends Operation
 
 sealed trait FieldType
 case object StringF extends FieldType
