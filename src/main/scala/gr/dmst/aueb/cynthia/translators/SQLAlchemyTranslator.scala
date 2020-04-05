@@ -22,14 +22,20 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     |        print(x)
     |""".stripMargin
 
-  override def emitPrint(q: Query, ret: String) = q match {
-    case SetRes(_) | SubsetRes(_, _, _) => s"for r in $ret:\n  dump(r.id)"
-    case FirstRes(_) => s"dump($ret.id)"
-    case AggrRes(aggrs, _) => aggrs match {
-      case Seq(FieldDecl(Count(_), _, _)) => s"dump($ret)"
-      case _ => aggrs map { case FieldDecl(_, as, _) =>
-        s"dump($ret.$as)"
-      } mkString ("\n")
+  override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
+    def _dumpField(v: String, fields: Seq[String], ident: String = "") =
+      fields map { as => s"${ident}dump($v.$as)" } mkString "\n"
+    q match {
+      case SetRes(_) | SubsetRes(_, _, _) =>
+        s"for r in $ret:\n${_dumpField("r", dFields, ident = " " * 4)}"
+      case FirstRes(_) => _dumpField(ret, dFields)
+      case AggrRes(aggrs, _) => aggrs match {
+        case Seq(FieldDecl(Count(_), _, _)) => s"dump($ret)"
+        case _ => {
+          val aggrF = aggrs map { case FieldDecl(_, as, _) => as }
+          _dumpField(ret, aggrF)
+        }
+      }
     }
   }
 
@@ -142,9 +148,14 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       s.sources.toList match {
         case Nil => ??? // Unreachable case
         case _   => s.aggrs match {
-          case Seq() | Seq(FieldDecl(Count(_), _, _)) => QueryStr(
-            Some("ret" + s.numGen.next().toString),
-            Some("session.query(" + s.sources.mkString(",") + ")"))
+          case Seq() | Seq(FieldDecl(Count(_), _, _)) => {
+            val dFields = s.fields.values map { case FieldDecl(_, as, _) => as }
+            val str = (s.sources ++ dFields) mkString ","
+            QueryStr(
+              Some("ret" + s.numGen.next().toString),
+              Some("session.query(" + str + ")")
+            )
+          }
           case _ => QueryStr(
             Some("ret" + s.numGen.next().toString),
             Some("session.query(" + (s.aggrs map { case FieldDecl(f, l, t) =>
@@ -183,12 +194,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   def constructFieldDecls(fields: Iterable[FieldDecl]) =
     if (fields.isEmpty) QueryStr()
     else
-      fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t)) =>
-        acc >> QueryStr(
-          Some(as),
-          Some("cast(" + constructFieldExpr(f) + ", " + getType(t) + ")")
-        )
+      fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t)) => {
+        val str = Str("cast(") << constructFieldExpr(f) << ", " << getType(t) <<
+          ").label(" << Utils.quoteStr(as) << ")"
+        acc >> QueryStr(Some(as), Some(str.!))
       }
+    }
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {

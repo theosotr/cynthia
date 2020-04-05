@@ -27,12 +27,24 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       case _ :: t         => t.mkString("__")
     }
 
-  override def emitPrint(q: Query, ret: String) = q match {
-    case SetRes (_) | SubsetRes(_, _, _) => s"for r in $ret:\n  dump(r.id)"
-    case FirstRes(_) => s"dump($ret.id)"
-    case AggrRes (aggrs, _) => aggrs map { case FieldDecl(_, as, _) =>
-      s"dump($ret['$as'])"
-    } mkString ("\n")
+  override def emitPrint(q: Query, dfields: Seq[String], ret: String) = {
+    def _dumpField(v: String, fields: Seq[String], ident: String = "") =
+      fields map { as =>
+        s"""
+        |${ident}if(isinstance($v, dict)):
+        |${ident}    dump($v['$as'])
+        |${ident}else:
+        |${ident}    dump($v.$as)""".stripMargin
+      } mkString "\n"
+    q match {
+      case SetRes (_) | SubsetRes(_, _, _) =>
+        s"for r in $ret:\n${_dumpField("r", dfields, ident = " " * 4)}"
+      case FirstRes(_) => _dumpField(ret, dfields)
+      case AggrRes (aggrs, _) => {
+        val aggrF = aggrs map { case FieldDecl(_, as, _) => as }
+        _dumpField(ret, aggrF)
+      }
+    }
   }
 
   def constructFilter(preds: Set[Predicate]) =

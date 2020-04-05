@@ -152,30 +152,34 @@ abstract class Translator(val target: Target) {
   }
 
   def apply(q: Query): String = {
-    val qStr = q match {
+    val s1 = State(target.db)
+    val (s, qStr) = q match {
       case FirstRes(qs) => {
-        val f = evalQuerySet(State(target.db)) _ andThen constructQuery(
-          first = true)
-        f(qs)
+        val s2 = evalQuerySet(s1)(qs)
+        (s2, constructQuery(first = true)(s2))
       }
       case SetRes(qs) => {
-        val f = evalQuerySet(State(target.db)) _ andThen constructQuery() _
-        f(qs)
+        val s2 = evalQuerySet(s1)(qs)
+        (s2, constructQuery()(s2))
       }
       case AggrRes(_, _) => {
-        val f = evalAggrQuery(State(target.db)) _ andThen constructQuery() _
-        f(q)
+        val s2 = evalAggrQuery(s1)(q)
+        (s2, constructQuery()(s2))
       }
       case SubsetRes(offset, limit, qs) => {
-        val f = evalQuerySet(State(target.db)) _ andThen constructQuery(
-          offset = offset, limit = limit)
-        f(qs)
+        val s2 = evalQuerySet(s1)(qs)
+        (s2, constructQuery(offset = offset, limit = limit)(s2))
       }
     }
-    preamble + "\n" + qStr.toString + "\n" + emitPrint(q, qStr.ret.get)
+    val dfields = s.fields.values.toSeq match {
+      case Seq() => Seq("id")
+      case f     => f map { case FieldDecl(_, as, _) => as }
+    }
+    preamble + "\n" + qStr.toString + "\n" + emitPrint(
+      q, dfields, qStr.ret.get)
   }
 
-  def emitPrint(q: Query, ret: String): String
+  def emitPrint(q: Query, dFields: Seq[String], ret: String): String
   def constructQuery(first: Boolean = false, offset: Int = 0,
     limit: Option[Int] = None)(state: State): QueryStr
   def unionQueries(s1: State, s2: State): State

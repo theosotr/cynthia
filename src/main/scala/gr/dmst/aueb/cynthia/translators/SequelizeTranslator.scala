@@ -41,15 +41,20 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     |
     """.stripMargin
 
-  override def emitPrint(q: Query, ret: String) = q match {
-    case SetRes(_)  | SubsetRes(_, _, _) =>
-      s"$ret.then((x) => { x.forEach((x) => dump(x.id)) })"
-    case FirstRes(_) => s"$ret.then(x => dump(x.id))"
-    case AggrRes (aggrs, _) => {
-      val prints = aggrs map { case FieldDecl(_, as, _) =>
-        s"dump(x[0].dataValues.$as)"
-      } mkString ("\n  ")
-      s"$ret.then((x) =>{\n  $prints})"
+  override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
+    def _dumpField(v: String, fields: Seq[String], ident: String = "") =
+      fields map { as =>
+        s"${ident}dump($v.dataValues.$as)"
+      } mkString "\n"
+    q match {
+      case SetRes(_)  | SubsetRes(_, _, _) =>
+        s"$ret.then((x) => { x.forEach((x) => {\n${_dumpField("x", dFields, ident = " " * 2)}\n})\n})"
+      case FirstRes(_) =>
+        s"$ret.then(x => {\n${_dumpField("x", dFields, ident = " " * 2)}\n})"
+      case AggrRes (aggrs, _) => {
+        val aggrF = aggrs map { case FieldDecl(_, as, _) => as }
+        s"$ret.then((x) => {\n${_dumpField("x[0]", aggrF, ident = " " * 2)}\n})"
+      }
     }
   }
 
