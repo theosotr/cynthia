@@ -6,6 +6,8 @@ import gr.dmst.aueb.cynthia._
 final case class UnsupportedException(private val message: String)
 extends Exception(message)
 
+final case class InvalidQuery(private val message: String)
+extends Exception(message)
 
 case class QueryStr(
   ret: Option[String] = None,
@@ -34,38 +36,50 @@ case class State(
   fields: Map[String, FieldDecl] = Map(),
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
+  groupBy: Seq[String] = Seq(),
   aggrs: Seq[FieldDecl] = Seq(),
   joins: Set[(String, String)] = Set(),
   query: Option[QueryStr] = None,
   numGen: Iterator[Int] = Stream.from(1).iterator
   ) {
 
-  def +(source: String) =
-    State(db, sources + source, fields, preds, orders, aggrs, joins, query, numGen)
+  def source(s: String) =
+    State(db, sources + s, fields, preds, orders, groupBy, aggrs, joins, query,
+          numGen)
 
   def f(fd: FieldDecl) = fd match {
     case FieldDecl(_, as, _) =>
-      State(db, sources, fields + (as -> fd), preds, orders, aggrs, joins, query, numGen)
+      State(db, sources, fields + (as -> fd), preds, orders, groupBy, aggrs,
+            joins, query, numGen)
   }
 
-  def ++(pred: Predicate): State =
-    State(db, sources, fields, preds + pred, orders, aggrs, joins, query, numGen)
+  def pred(p: Predicate): State =
+    State(db, sources, fields, preds + p, orders, groupBy, aggrs, joins, query,
+          numGen)
 
-  def :+(o: (String, Order)): State =
-    State(db, sources, fields, preds, orders :+ o, aggrs, joins, query, numGen)
+  def order(o: (String, Order)): State =
+    State(db, sources, fields, preds, orders :+ o, groupBy, aggrs, joins, query,
+          numGen)
 
-  def :-(a: Seq[FieldDecl]): State =
-    State(db, sources, fields, preds, orders, aggrs ++ a, joins, query, numGen)
+  def groupBy(g: Seq[String]): State =
+    State(db, sources, fields, preds, orders, groupBy ++ g, aggrs, joins, query,
+          numGen)
 
-  def :>(j: (String, String)): State =
-    State(db, sources, fields, preds, orders, aggrs, joins + j, query, numGen)
+  def aggr(a: Seq[FieldDecl]): State =
+    State(db, sources, fields, preds, orders, groupBy, aggrs ++ a, joins, query,
+          numGen)
+
+  def join(j: (String, String)): State =
+    State(db, sources, fields, preds, orders, groupBy, aggrs, joins + j, query,
+          numGen)
 
   def >>(qstr: QueryStr): State = query match {
     case None =>
-      State(db, sources, fields, preds, orders, aggrs, joins, Some(qstr), numGen)
+      State(db, sources, fields, preds, orders, groupBy, aggrs, joins,
+            Some(qstr), numGen)
     case Some(query) =>
-      State(db, sources, fields, preds, orders, aggrs, joins, Some(query >> qstr),
-            numGen)
+      State(db, sources, fields, preds, orders, groupBy, aggrs, joins,
+            Some(query >> qstr), numGen)
   }
 }
 
@@ -78,7 +92,7 @@ abstract class Translator(val target: Target) {
       case Nil | _ :: Nil | _ :: (_ :: Nil) => s
       case h1 :: (h2 :: t) => {
         val cap = h2.capitalize
-        _updateJoins(cap :: t, s :> (h1, cap))
+        _updateJoins(cap :: t, s join (h1, cap))
       }
     }
     _updateJoins(field.split('.').toList, s)
@@ -96,21 +110,35 @@ abstract class Translator(val target: Target) {
     case And(p1, p2)    => traversePredicate(traversePredicate(s, p1), p2)
   }
 
-  def traverseOrderSpec(s: State, oSpec: Seq[(String, Order)]): State =
-    oSpec.map{_._1}.foldLeft (s) { (acc, x) => updateJoins(x, acc) }
+  def traverseFields(s: State, fields: Seq[String]): State =
+    fields.foldLeft (s) { (acc, x) => updateJoins(x, acc) }
 
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
     case New(m, f) => { // Add source and fields to state
-      val s1 = s + m
+      val s1 = s source m
       f.foldLeft(s1) { (acc, x) => acc f (x) }
     }
     case Apply(Filter(pred), qs) => {
-      val s1 = evalQuerySet(s)(qs) ++ pred // Add predicate to state
+      val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state
       traversePredicate(s1, pred) // update joins
     }
     case Apply(Sort(spec), qs) => {
-      val s1 = traverseOrderSpec(s, spec)
-      spec.foldLeft(evalQuerySet(s1)(qs)) { (s, x) => s :+ x } // Add order spec to state
+      val s1 = traverseFields(s, spec map { _._1 })
+      spec.foldLeft(evalQuerySet(s1)(qs)) { (s, x) => s order x } // Add order spec to state
+    }
+    case Apply(GroupBy(spec), qs) => {
+      val s1 = traverseFields(s, spec)
+      val s2 = evalQuerySet(s1)(qs)
+      val isAggregate: (FieldDecl) => Boolean = { case FieldDecl(f, _, _) => f.isAggregate }
+      if (!s2.fields.values.exists { isAggregate }) {
+        throw new InvalidQuery(
+          "You have to declare aggregate fields to apply 'groupBy' operation")
+      }
+      if (spec.exists { x => isAggregate(s2.fields(x)) }) {
+        throw new InvalidQuery(
+          "You cannot apply 'groupBy' operation to aggregate fields")
+      }
+      s1 groupBy spec
     }
     case Union (qs1, qs2) =>
       unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)) // Merge queries
@@ -119,7 +147,7 @@ abstract class Translator(val target: Target) {
   }
 
   def evalAggrQuery(s: State)(q: Query): State = q match {
-    case AggrRes(aggrs, qs) => evalQuerySet(s)(qs) :- aggrs
+    case AggrRes(aggrs, qs) => evalQuerySet(s)(qs) aggr aggrs
     case _ => ??? // Unreachable case
   }
 
