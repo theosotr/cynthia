@@ -207,13 +207,14 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
     val qStr = constructFieldDecls(s.fields.values) >> constructQueryPrefix(s)
+    val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,
         constructJoins(s.joins),
-        constructFilter(s.preds filter { !_.hasAggregate }),
+        constructFilter(nonAggrP),
         constructGroupBy(s.groupBy),
-        constructFilter(s.preds filter { _.hasAggregate }, having = true),
+        constructFilter(aggrP, having = true),
         constructOrderBy(s.orders),
         s.aggrs match {
           case Seq() => ""

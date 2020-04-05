@@ -260,13 +260,14 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         // Coverts set of pairs to map of lists.
         val joinMap = state.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
         val qStr = importModels(joinMap, Set(h)) << createAssociations(joinMap)
+        val (aggrP, nonAggrP) = state.preds partition { _.hasAggregate }
         val q = (Str(h) << method << "({\n" <<
           (
             Seq(
               constructIncludes(h, joinMap),
               constructAttributes(state),
-              constructFilter(state.preds filter { !_.hasAggregate }),
-              constructFilter(state.preds filter { _.hasAggregate }, having = true),
+              constructFilter(nonAggrP),
+              constructFilter(aggrP, having = true),
               constructGroupBy(state.groupBy),
               constructOrderBy(state.orders),
               if (offset >= 0) s"offset: $offset" else "",
