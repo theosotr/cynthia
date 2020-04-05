@@ -138,7 +138,7 @@ abstract class Translator(val target: Target) {
         throw new InvalidQuery(
           "You cannot apply 'groupBy' operation to aggregate fields")
       }
-      s1 groupBy spec
+      s2 groupBy spec
     }
     case Union (qs1, qs2) =>
       unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)) // Merge queries

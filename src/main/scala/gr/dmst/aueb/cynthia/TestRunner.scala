@@ -296,6 +296,17 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             )
           ))
         )
+      ),
+
+      // Query 15
+      SetRes(
+        Apply(
+          GroupBy(Seq("sales")),
+          New("Listing", Set(
+            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+            FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
+          ))
+        )
       )
     )
 

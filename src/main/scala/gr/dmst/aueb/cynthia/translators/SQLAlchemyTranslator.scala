@@ -201,6 +201,13 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       }
     }
 
+  def constructGroupBy(groupBy: Seq[String]) = groupBy match {
+    case Seq() => ""
+    case _     =>
+      "group_by(" + (
+        groupBy map { getSQLAlchemyFieldName } mkString ", ") + ")"
+  }
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
     val qStr = constructFieldDecls(s.fields.values) >> constructQueryPrefix(s)
@@ -209,6 +216,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         qStr.ret.get,
         constructJoins(s.joins),
         constructFilter(s.preds),
+        constructGroupBy(s.groupBy),
         constructOrderBy(s.orders),
         s.aggrs match {
           case Seq() => ""

@@ -146,14 +146,22 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
           ", output_field=" + getType(t) + ")"
       } mkString ",") + ")"
 
+  def constructGroupBy(groupBy: Seq[String]) = groupBy match {
+    case Seq() => ""
+    case _     => "values(" + (
+      groupBy map { x => Utils.quoteStr(getDjangoFieldName(x)) } mkString ", ") + ")"
+  }
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
     val qStr = constructQueryPrefix(s)
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
-        constructFieldDecls(s.fields.values),
+        constructFieldDecls(s.fields.values filter { case FieldDecl(f, _, _) => !f.isAggregate }),
         constructFilter(s.preds),
+        constructGroupBy(s.groupBy),
+        constructFieldDecls(s.fields.values filter { case FieldDecl(f, _, _) => f.isAggregate }),
         constructOrderBy(s.orders),
         constructAggrs(s.aggrs),
         constructFirst(first)

@@ -253,6 +253,12 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     else "include: [\n" + _findIncludes(source) + "\n]"
   }
 
+  def constructGroupBy(groupBy: Seq[String]) = groupBy match {
+    case Seq() => ""
+    case _     => "group: [" + (
+      groupBy map { x => Utils.quoteStr(x) } mkString ", ") + "]"
+  }
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(state: State): QueryStr =
     state.sources.toList match {
@@ -267,6 +273,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
               constructIncludes(h, joinMap),
               constructAttributes(state),
               constructWhere(state.preds),
+              constructGroupBy(state.groupBy),
               constructOrderBy(state.orders),
               if (offset >= 0) s"offset: $offset" else "",
               limit match {
