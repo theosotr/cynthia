@@ -156,7 +156,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       limit: Option[Int] = None)(s: State) = {
     val qStr = constructQueryPrefix(s)
     val (aggrF, nonAggrF) = s.fields.values partition { case FieldDecl(f, _, _) => f.isAggregate }
-    val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate }
+    val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
@@ -165,7 +165,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
         constructGroupBy(s.groupBy),
         constructFieldDecls(aggrF),
         constructOrderBy(s.orders),
-        constructFilter(nonAggrP),
+        constructFilter(aggrP),
         constructAggrs(s.aggrs),
         constructFirst(first)
       ) filter {

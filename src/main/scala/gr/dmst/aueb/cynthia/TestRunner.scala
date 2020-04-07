@@ -349,6 +349,51 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             )
           ))
         )
+      ),
+
+      // Query 18
+      SetRes(
+        Apply(
+          Filter(Gte("max", Add(Constant("10", UnQuoted), F("Listing.sale_price")))),
+          Apply(
+            GroupBy(Seq("sales")),
+            New("Listing", Set(
+              FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+              FieldDecl(
+                Max(
+                  Add(
+                    F("Listing.yearly_rent"),
+                    Constant("10", UnQuoted)
+                  )
+                ), "max", DoubleF)
+            ))
+          )
+        )
+      ),
+
+      // Query 19
+      SetRes(
+        Apply(
+          Filter(
+            And(
+              Eq("Listing.foo", Constant("baz", Quoted)),
+              Gte("max", Add(Constant("10", UnQuoted), F("Listing.sale_price")))
+            )
+          ),
+          Apply(
+            GroupBy(Seq("sales")),
+            New("Listing", Set(
+              FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+              FieldDecl(
+                Max(
+                  Add(
+                    F("Listing.yearly_rent"),
+                    Constant("10", UnQuoted)
+                  )
+                ), "max", DoubleF)
+            ))
+          )
+        )
       )
     )
 

@@ -253,23 +253,23 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
-      limit: Option[Int] = None)(state: State): QueryStr =
-    state.sources.toList match {
+      limit: Option[Int] = None)(s: State): QueryStr =
+    s.sources.toList match {
       case h :: Nil => {
         val method = if (first) ".findOne" else ".findAll"
         // Coverts set of pairs to map of lists.
-        val joinMap = state.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
+        val joinMap = s.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
         val qStr = importModels(joinMap, Set(h)) << createAssociations(joinMap)
-        val (aggrP, nonAggrP) = state.preds partition { _.hasAggregate }
+        val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
         val q = (Str(h) << method << "({\n" <<
           (
             Seq(
               constructIncludes(h, joinMap),
-              constructAttributes(state),
+              constructAttributes(s),
               constructFilter(nonAggrP),
               constructFilter(aggrP, having = true),
-              constructGroupBy(state.groupBy),
-              constructOrderBy(state.orders),
+              constructGroupBy(s.groupBy),
+              constructOrderBy(s.orders),
               if (offset >= 0) s"offset: $offset" else "",
               limit match {
                 case None        => ""
@@ -280,7 +280,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
               case _  => true
             }) mkString(",\n")
           ) << "\n})").!
-        qStr >> QueryStr(Some("ret" + state.numGen.next()), Some(q))
+        qStr >> QueryStr(Some("ret" + s.numGen.next()), Some(q))
       }
       case _ => ???
   }

@@ -45,35 +45,50 @@ case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
     f1.isAggregate || f2.isAggregate
 }
 
-sealed trait Predicate {
-  def hasAggregate(): Boolean
+sealed abstract class Predicate {
+  def isAggregateField(field: String, fields: Map[String, FieldDecl]) =
+    fields.get(field) match {
+      case None                     => false
+      case Some(FieldDecl(f, _, _)) => f.isAggregate
+    }
+
+  def hasAggregate(fields: Map[String, FieldDecl]): Boolean
 }
 case class Eq(key: String, value: FieldExpr) extends Predicate {
-  def hasAggregate() = value.isAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    value.isAggregate || isAggregateField(key, fields)
 }
 case class Gt(key: String, value: FieldExpr) extends Predicate {
-  def hasAggregate() = value.isAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    value.isAggregate || isAggregateField(key, fields)
 }
 case class Lt(key: String, value: FieldExpr) extends Predicate {
-  def hasAggregate() = value.isAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    value.isAggregate || isAggregateField(key, fields)
 }
 case class Gte(key: String, value: FieldExpr) extends Predicate {
-  def hasAggregate() = value.isAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    value.isAggregate || isAggregateField(key, fields)
 }
 case class Lte(key: String, value: FieldExpr) extends Predicate {
-  def hasAggregate() = value.isAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    value.isAggregate || isAggregateField(key, fields)
 }
 case class Contains(key: String, value: FieldExpr) extends Predicate {
-  def hasAggregate() = value.isAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    value.isAggregate || isAggregateField(key, fields)
 }
 case class And(p1: Predicate, p2: Predicate) extends Predicate {
-  def hasAggregate() = p1.hasAggregate || p2.hasAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    p1.hasAggregate(fields) || p2.hasAggregate(fields)
 }
 case class Or(p1: Predicate, p2: Predicate) extends Predicate {
-  def hasAggregate() = p1.hasAggregate || p2.hasAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    p1.hasAggregate(fields) || p2.hasAggregate(fields)
 }
 case class Not(p: Predicate) extends Predicate {
-  def hasAggregate() = p.hasAggregate
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    p.hasAggregate(fields)
 }
 
 sealed trait Order
