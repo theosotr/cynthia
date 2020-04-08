@@ -36,7 +36,7 @@ case class State(
   fields: Map[String, FieldDecl] = Map(),
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
-  groupBy: Seq[String] = Seq(),
+  groupBy: Boolean = false,
   aggrs: Seq[FieldDecl] = Seq(),
   joins: Set[(String, String)] = Set(),
   query: Option[QueryStr] = None,
@@ -61,8 +61,8 @@ case class State(
     State(db, sources, fields, preds, orders :+ o, groupBy, aggrs, joins, query,
           numGen)
 
-  def groupBy(g: Seq[String]): State =
-    State(db, sources, fields, preds, orders, groupBy ++ g, aggrs, joins, query,
+  def group(): State =
+    State(db, sources, fields, preds, orders, true, aggrs, joins, query,
           numGen)
 
   def aggr(a: Seq[FieldDecl]): State =
@@ -126,19 +126,14 @@ abstract class Translator(val target: Target) {
       val s1 = traverseFields(s, spec map { _._1 })
       spec.foldLeft(evalQuerySet(s1)(qs)) { (s, x) => s order x } // Add order spec to state
     }
-    case Apply(GroupBy(spec), qs) => {
-      val s1 = traverseFields(s, spec)
-      val s2 = evalQuerySet(s1)(qs)
-      val isAggregate: (FieldDecl) => Boolean = { case FieldDecl(f, _, _, _) => f.isAggregate }
-      if (!s2.fields.values.exists { isAggregate }) {
+    case Apply(GroupBy, qs) => {
+      val s1 = evalQuerySet(s)(qs)
+      val isAggregate: FieldDecl => Boolean = { case FieldDecl(f, _, _, _) => f.isAggregate }
+      if (!s1.fields.values.exists { isAggregate }) {
         throw new InvalidQuery(
           "You have to declare aggregate fields to apply 'groupBy' operation")
       }
-      if (spec.exists { x => isAggregate(s2.fields(x)) }) {
-        throw new InvalidQuery(
-          "You cannot apply 'groupBy' operation to aggregate fields")
-      }
-      s2 groupBy spec
+      s1.group
     }
     case Union (qs1, qs2) =>
       unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)) // Merge queries
@@ -189,11 +184,20 @@ abstract class Translator(val target: Target) {
 
 
 object TUtils {
+  def filterMapAs(f: FieldDecl => Boolean)(fields: Iterable[FieldDecl]) =
+    fields filter f map FieldDecl.as
+
   def mapNonHiddenFields[T](fields: Iterable[FieldDecl], f: FieldDecl => T): Iterable[T] =
-    fields filter { case FieldDecl(_, _, _, h) => !h } map { f }
+    fields filter { !FieldDecl.hidden(_) } map { f }
 
   def mapHiddenFields[T](fields: Iterable[FieldDecl], f: FieldDecl => T): Iterable[T] =
-    fields filter { case FieldDecl(_, _, _, h) => h } map { f }
+    fields filter FieldDecl.hidden map { f }
+
+  def filterHidden(fields: Iterable[FieldDecl]) =
+    filterMapAs(FieldDecl.hidden)(fields)
+
+  def filterNonAggrHidden(fields: Iterable[FieldDecl]) =
+    filterMapAs({x => !(FieldDecl.hidden(x) || FieldDecl.isAggregate(x))})(fields)
 }
 
 

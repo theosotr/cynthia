@@ -98,7 +98,7 @@ case object Desc extends Order
 sealed trait Operation
 case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
-case class GroupBy(spec: Seq[String]) extends Operation
+case object GroupBy extends Operation
 
 sealed trait FieldType
 case object StringF extends FieldType
@@ -108,6 +108,20 @@ case object BooleanF extends FieldType
 case object DateTimeF extends FieldType
 
 case class FieldDecl(f: FieldExpr, as: String, ftype: FieldType, hidden: Boolean = false)
+object FieldDecl {
+
+  def as(fieldDecl: FieldDecl) = fieldDecl match {
+    case FieldDecl(_, as, _, _) => as
+  }
+
+  def hidden(fieldDecl: FieldDecl) = fieldDecl match {
+    case FieldDecl(_, _, _, h) => h
+  }
+
+  def isAggregate(fieldDecl: FieldDecl) = fieldDecl match {
+    case FieldDecl(f, _, _, _) => f.isAggregate
+  }
+}
 
 sealed trait QuerySet
 case class New(model: String, fields: Set[FieldDecl]) extends QuerySet

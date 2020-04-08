@@ -42,8 +42,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
         s"for r in $ret:\n${_dumpField("r", dfields, ident = " " * 4)}"
       case FirstRes(_) => _dumpField(ret, dfields)
       case AggrRes (aggrs, _) => {
-        val aggrF = TUtils.mapNonHiddenFields(
-          aggrs, { case FieldDecl(_, as, _, _) => as })
+        val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
         _dumpField(ret, aggrF)
       }
     }
@@ -176,17 +175,21 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
-    this.hidden ++= TUtils.mapHiddenFields(
-      s.fields.values, { case FieldDecl(_, as, _, _) => as })
-    val qStr = constructFieldDecls(s.fields.values) >> constructQueryPrefix(s)
-    val (aggrF, nonAggrF) = s.fields.values partition { case FieldDecl(f, _, _, _) => f.isAggregate }
+    val fieldVals = s.fields.values
+    val (nonAggrH, hidden) = (
+      TUtils.filterNonAggrHidden(fieldVals),
+      TUtils.filterHidden(fieldVals)
+    )
+    this.hidden ++= hidden
+    val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
+    val (aggrF, nonAggrF) = fieldVals partition FieldDecl.isAggregate
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
         constructAnnotate(nonAggrF),
         constructFilter(nonAggrP),
-        constructGroupBy(s.groupBy),
+        if (s.groupBy) constructGroupBy(nonAggrH.toSeq) else "",
         constructAnnotate(aggrF),
         constructOrderBy(s.orders),
         constructFilter(aggrP),

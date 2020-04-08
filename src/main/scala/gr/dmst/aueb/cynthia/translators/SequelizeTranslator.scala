@@ -55,8 +55,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       case FirstRes(_) =>
         s"$ret.then(x => {\n${_dumpField("x", dFields, ident = " " * 2)}\n})"
       case AggrRes (aggrs, _) => {
-        val aggrF = TUtils.mapNonHiddenFields(
-          aggrs,{ case FieldDecl(_, as, _, _) => as })
+        val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
         s"$ret.then((x) => {\n${_dumpField("x[0]", aggrF, ident = " " * 2)}\n})"
       }
     }
@@ -272,12 +271,14 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       limit: Option[Int] = None)(s: State): QueryStr =
     s.sources.toList match {
       case h :: Nil => {
+        val fieldVals = s.fields.values
+        val nonAggrHidden = TUtils.filterNonAggrHidden(fieldVals).toSeq
         val method = if (first) ".findOne" else ".findAll"
         // Coverts set of pairs to map of lists.
         val joinMap = s.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
         val qStr = importModels(joinMap, Set(h)) <<
           createAssociations(joinMap) <<
-          constructFieldDecls(s.fields.values ++ s.aggrs)
+          constructFieldDecls(fieldVals ++ s.aggrs)
         val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
         val q = (Str(h) << method << "({\n" <<
           (
@@ -286,7 +287,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
               constructAttributes(s),
               constructFilter(nonAggrP),
               constructFilter(aggrP, having = true),
-              constructGroupBy(s.groupBy),
+              if (s.groupBy) constructGroupBy(nonAggrHidden) else "",
               constructOrderBy(s.orders),
               if (offset >= 0) s"offset: $offset" else "",
               limit match {
