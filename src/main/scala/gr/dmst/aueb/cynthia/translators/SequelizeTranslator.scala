@@ -4,6 +4,9 @@ import gr.dmst.aueb.cynthia._
 
 
 case class SequelizeTranslator(t: Target) extends Translator(t) {
+  private val fieldDecls: scala.collection.mutable.Set[String] =
+    scala.collection.mutable.Set()
+
   val dbsettings = target.db match {
     case Postgres(user, password, dbname) =>
       Str("new Sequelize(") <<
@@ -135,7 +138,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
-  def constructNestedFieldExpr(fexpr: FieldExpr): String = {
+  def constructNestedFieldExpr(fexpr: FieldExpr, subCol: Boolean): String = {
     def _f(expr: FieldExpr) = expr match {
       case Constant(v, UnQuoted) => v
       case Constant(v, Quoted)   => s"\\'${v}\\'"
@@ -148,7 +151,11 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       case Constant(v, UnQuoted) => "sequelize.literal(" + v + ")"
       case Constant(v, Quoted)   =>
         "sequelize.literal(" + Utils.quoteStr(s"\\'${v}\\'") + ")"
-      case F(f) => "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
+      case F(f) => {
+        val str = "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
+        if (subCol && this.fieldDecls.contains(f)) f
+        else str
+      }
       case Add(f1, f2) =>
         "sequelize.literal(" + Utils.quoteStr(_f(f1) + " + " + _f(f2)) + ")"
       case Sub(f1, f2) =>
@@ -170,15 +177,15 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     case DateTimeF => "'datetime'"
   }
 
-  def constructFieldExpr(fexpr: FieldExpr): String = {
+  def constructFieldExpr(fexpr: FieldExpr, subCol: Boolean = false): String = {
     val (f, op) = fexpr match {
       case Count(None)        => ("", Some("'count'"))
-      case Count(Some(fexpr)) => (constructNestedFieldExpr(fexpr), Some("'count'"))
-      case Sum(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'sum'"))
-      case Avg(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'avg'"))
-      case Min(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'min'"))
-      case Max(fexpr)         => (constructNestedFieldExpr(fexpr), Some("'max'"))
-      case _                  => (constructNestedFieldExpr(fexpr), None)
+      case Count(Some(fexpr)) => (constructNestedFieldExpr(fexpr, subCol), Some("'count'"))
+      case Sum(fexpr)         => (constructNestedFieldExpr(fexpr, subCol), Some("'sum'"))
+      case Avg(fexpr)         => (constructNestedFieldExpr(fexpr, subCol), Some("'avg'"))
+      case Min(fexpr)         => (constructNestedFieldExpr(fexpr, subCol), Some("'min'"))
+      case Max(fexpr)         => (constructNestedFieldExpr(fexpr, subCol), Some("'max'"))
+      case _                  => (constructNestedFieldExpr(fexpr, subCol), None)
     }
     op match {
       case None     => f
@@ -192,18 +199,26 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def constructFieldDecl(fdecl: FieldDecl) = {
+  def constructFieldDecls(fields: Iterable[FieldDecl]) = {
     def castField(f: String, t: String) =
       (Str("sequelize.cast(") << f << "," << t << ")").!
 
-    val (qfield, as, t) = fdecl match { case FieldDecl(f, l, t, _) => (f, l, t) }
-    val f = constructFieldExpr(qfield)
-    (Str("[") << castField(f, getType(t)) << ", " << Utils.quoteStr(as) << "]").!
+    fields.foldLeft(QueryStr()) { (acc, x) => {
+      val (qfield, as, t) = x match { case FieldDecl(f, l, t, _) => (f, l, t) }
+      val f = constructFieldExpr(qfield, subCol = true)
+      val qstr = castField(f, getType(t))
+      this.fieldDecls += as
+      acc >> QueryStr(
+        Some(as),
+        Some(qstr)
+      )
+    }}
   }
 
   def constructAttributes(state: State) = {
-    val attrStr = (state.fields.values ++ state.aggrs) map {
-      constructFieldDecl } mkString(",\n    ")
+    val attrStr = (state.fields.values ++ state.aggrs) map { case FieldDecl(_, as, _, _) =>
+      (Str("[") << as << ", " << Utils.quoteStr(as) << "]").!
+    } mkString(",\n    ")
     attrStr match {
       case "" => ""
       case _  => "attributes: {\n  include: [\n    " + attrStr + "]}"
@@ -260,7 +275,9 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         val method = if (first) ".findOne" else ".findAll"
         // Coverts set of pairs to map of lists.
         val joinMap = s.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
-        val qStr = importModels(joinMap, Set(h)) << createAssociations(joinMap)
+        val qStr = importModels(joinMap, Set(h)) <<
+          createAssociations(joinMap) <<
+          constructFieldDecls(s.fields.values ++ s.aggrs)
         val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
         val q = (Str(h) << method << "({\n" <<
           (
