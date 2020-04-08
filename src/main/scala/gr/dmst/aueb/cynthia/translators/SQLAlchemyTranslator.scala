@@ -36,8 +36,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       case AggrRes(aggrs, _) => aggrs match {
         case Seq(FieldDecl(Count(_), _, _, _)) => s"dump($ret)"
         case _ => {
-          val aggrF = TUtils.mapNonHiddenFields(
-            aggrs, { case FieldDecl(_, as, _, _) => as })
+          val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
           _dumpField(ret, aggrF)
         }
       }
@@ -151,7 +150,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         case _   => s.aggrs match {
           case Seq() | Seq(FieldDecl(Count(_), _, _, _)) => {
             val dFields = TUtils.mapNonHiddenFields(
-              s.fields.values, { case FieldDecl(_, as, _, _) => as })
+              s.fields.values, FieldDecl.as)
             val str = (s.sources ++ dFields) mkString ","
             QueryStr(
               Some("ret" + s.numGen.next().toString),
