@@ -48,7 +48,7 @@ case class State(
           numGen)
 
   def f(fd: FieldDecl) = fd match {
-    case FieldDecl(_, as, _) =>
+    case FieldDecl(_, as, _, _) =>
       State(db, sources, fields + (as -> fd), preds, orders, groupBy, aggrs,
             joins, query, numGen)
   }
@@ -129,7 +129,7 @@ abstract class Translator(val target: Target) {
     case Apply(GroupBy(spec), qs) => {
       val s1 = traverseFields(s, spec)
       val s2 = evalQuerySet(s1)(qs)
-      val isAggregate: (FieldDecl) => Boolean = { case FieldDecl(f, _, _) => f.isAggregate }
+      val isAggregate: (FieldDecl) => Boolean = { case FieldDecl(f, _, _, _) => f.isAggregate }
       if (!s2.fields.values.exists { isAggregate }) {
         throw new InvalidQuery(
           "You have to declare aggregate fields to apply 'groupBy' operation")
@@ -173,7 +173,8 @@ abstract class Translator(val target: Target) {
     }
     val dfields = s.fields.values.toSeq match {
       case Seq() => Seq("id")
-      case f     => f map { case FieldDecl(_, as, _) => as }
+      case f     => TUtils.mapNonHiddenFields(
+        f, { case FieldDecl(_, as, _, _) => as }).toSeq
     }
     preamble + "\n" + qStr.toString + "\n" + emitPrint(
       q, dfields, qStr.ret.get)
@@ -184,6 +185,15 @@ abstract class Translator(val target: Target) {
     limit: Option[Int] = None)(state: State): QueryStr
   def unionQueries(s1: State, s2: State): State
   def intersectQueries(s1: State, s2: State): State
+}
+
+
+object TUtils {
+  def mapNonHiddenFields[T](fields: Iterable[FieldDecl], f: FieldDecl => T): Iterable[T] =
+    fields filter { case FieldDecl(_, _, _, h) => !h } map { f }
+
+  def mapHiddenFields[T](fields: Iterable[FieldDecl], f: FieldDecl => T): Iterable[T] =
+    fields filter { case FieldDecl(_, _, _, h) => h } map { f }
 }
 
 

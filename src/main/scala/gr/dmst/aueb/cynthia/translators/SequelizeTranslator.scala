@@ -42,7 +42,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     """.stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
-    def _dumpField(v: String, fields: Seq[String], ident: String = "") =
+    def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
       fields map { as =>
         s"${ident}dump($v.dataValues.$as)"
       } mkString "\n"
@@ -52,7 +52,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       case FirstRes(_) =>
         s"$ret.then(x => {\n${_dumpField("x", dFields, ident = " " * 2)}\n})"
       case AggrRes (aggrs, _) => {
-        val aggrF = aggrs map { case FieldDecl(_, as, _) => as }
+        val aggrF = TUtils.mapNonHiddenFields(
+          aggrs,{ case FieldDecl(_, as, _, _) => as })
         s"$ret.then((x) => {\n${_dumpField("x[0]", aggrF, ident = " " * 2)}\n})"
       }
     }
@@ -195,7 +196,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     def castField(f: String, t: String) =
       (Str("sequelize.cast(") << f << "," << t << ")").!
 
-    val (qfield, as, t) = fdecl match { case FieldDecl(f, l, t) => (f, l, t) }
+    val (qfield, as, t) = fdecl match { case FieldDecl(f, l, t, _) => (f, l, t) }
     val f = constructFieldExpr(qfield)
     (Str("[") << castField(f, getType(t)) << ", " << Utils.quoteStr(as) << "]").!
   }

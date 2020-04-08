@@ -48,8 +48,8 @@ case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
 sealed abstract class Predicate {
   def isAggregateField(field: String, fields: Map[String, FieldDecl]) =
     fields.get(field) match {
-      case None                     => false
-      case Some(FieldDecl(f, _, _)) => f.isAggregate
+      case None                        => false
+      case Some(FieldDecl(f, _, _, _)) => f.isAggregate
     }
 
   def hasAggregate(fields: Map[String, FieldDecl]): Boolean
@@ -107,7 +107,7 @@ case object DoubleF extends FieldType
 case object BooleanF extends FieldType
 case object DateTimeF extends FieldType
 
-case class FieldDecl(f: FieldExpr, as: String, ftype: FieldType)
+case class FieldDecl(f: FieldExpr, as: String, ftype: FieldType, hidden: Boolean = false)
 
 sealed trait QuerySet
 case class New(model: String, fields: Set[FieldDecl]) extends QuerySet

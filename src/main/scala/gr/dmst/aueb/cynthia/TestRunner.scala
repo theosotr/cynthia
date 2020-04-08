@@ -394,6 +394,28 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             ))
           )
         )
+      ),
+
+      // Query 20
+      SetRes(
+        Apply(
+          GroupBy(Seq("sales")),
+          New("Listing", Set(
+            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+            FieldDecl(
+              Mul(
+                F("Listing.sale_price"),
+                 F("Listing.sale_price")
+              ),
+              "mul", DoubleF, hidden = true
+            ),
+            FieldDecl(
+              Sub(
+                Avg(F("mul")),
+                Constant("10", UnQuoted)
+              ), "squared", DoubleF)
+          ))
+        )
       )
     )
 

@@ -4,6 +4,7 @@ import gr.dmst.aueb.cynthia._
 
 
 case class DjangoTranslator(t: Target) extends Translator(t) {
+  private val hidden: scala.collection.mutable.Set[String] = scala.collection.mutable.Set()
 
   override val preamble =
    s"""import os, django
@@ -24,11 +25,11 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   def getDjangoFieldName(field: String) =
     field.split('.').toList match {
       case Nil | _ :: Nil => field
-      case _ :: t         => t.mkString("__")
+      case _ :: t         => t mkString "__"
     }
 
   override def emitPrint(q: Query, dfields: Seq[String], ret: String) = {
-    def _dumpField(v: String, fields: Seq[String], ident: String = "") =
+    def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
       fields map { as =>
         s"""
         |${ident}if(isinstance($v, dict)):
@@ -41,7 +42,8 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
         s"for r in $ret:\n${_dumpField("r", dfields, ident = " " * 4)}"
       case FirstRes(_) => _dumpField(ret, dfields)
       case AggrRes (aggrs, _) => {
-        val aggrF = aggrs map { case FieldDecl(_, as, _) => as }
+        val aggrF = TUtils.mapNonHiddenFields(
+          aggrs, { case FieldDecl(_, as, _, _) => as })
         _dumpField(ret, aggrF)
       }
     }
@@ -106,7 +108,13 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
 
   def constructFieldExpr(fexpr: FieldExpr,
       fieldType: String = "FloatField()"): String = fexpr match {
-    case F(f)        => "F(" + Utils.quoteStr(getDjangoFieldName(f)) + ")"
+    case F(f) =>
+      if (this.hidden contains f)
+        // Hidden fields are not annotated so just simply return `f`
+        // corresponding to the variable holding the definition of hidden field.
+        f
+      else
+        "F(" + Utils.quoteStr(getDjangoFieldName(f)) + ")"
     case Add(a1, a2) => "(" + constructFieldExpr(a1) + " + " + constructFieldExpr(a2) + ")"
     case Sub(a1, a2) => "(" + constructFieldExpr(a1) + " - " + constructFieldExpr(a2) + ")"
     case Mul(a1, a2) => "(" + constructFieldExpr(a1) + " * " + constructFieldExpr(a2) + ")"
@@ -118,11 +126,13 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
 
   def constructAggrs(aggrs: Seq[FieldDecl]) = aggrs match {
     case Seq() => ""
-    case _     =>
-      "aggregate(" + (aggrs map { case FieldDecl(f, as, t) =>
-        as + "=ExpressionWrapper(" + constructFieldExpr(f, fieldType = getType(t)) +
-          ", output_field=" + getType(t) + ")"
-      } mkString ",") + ")"
+    case _     => {
+      val fields = TUtils.mapNonHiddenFields(aggrs, { case FieldDecl(f, as, t, _) =>
+        (Str(as) << "=ExpressionWrapper(" << constructFieldExpr(f, fieldType = getType(t)) <<
+          ", output_field=" << getType(t) << ")").!
+      })
+      "aggregate(" + (fields mkString ",") + ")"
+    }
   }
 
   def constructFirst(first: Boolean) =
@@ -138,13 +148,14 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       else s"[:$limit]"
   }
 
-  def constructFieldDecls(fields: Iterable[FieldDecl]) =
+  def constructAnnotate(fields: Iterable[FieldDecl]) =
     if (fields.isEmpty) ""
-    else
-      "annotate("+ (fields map { case FieldDecl(f, as, t) =>
-        as + "=ExpressionWrapper(" + constructFieldExpr(f) +
-          ", output_field=" + getType(t) + ")"
-      } mkString ",") + ")"
+    else {
+      val anFields = TUtils.mapNonHiddenFields(fields, { case FieldDecl(_, as, _, _) =>
+        as + "=" + as
+      })
+      "annotate(" + (anFields mkString ", ") + ")"
+    }
 
   def constructGroupBy(groupBy: Seq[String]) = groupBy match {
     case Seq() => ""
@@ -152,18 +163,31 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       groupBy map { x => Utils.quoteStr(getDjangoFieldName(x)) } mkString ", ") + ")"
   }
 
+  def constructFieldDecls(fields: Iterable[FieldDecl]) =
+    if (fields.isEmpty) QueryStr()
+    else {
+      fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
+        val str = Str("ExpressionWrapper(") << constructFieldExpr(f) <<
+          ", output_field=" << getType(t) << ")"
+        acc >> QueryStr(Some(as), Some(str.!))
+      }
+    }
+  }
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
-    val qStr = constructQueryPrefix(s)
-    val (aggrF, nonAggrF) = s.fields.values partition { case FieldDecl(f, _, _) => f.isAggregate }
+    this.hidden ++= TUtils.mapHiddenFields(
+      s.fields.values, { case FieldDecl(_, as, _, _) => as })
+    val qStr = constructFieldDecls(s.fields.values) >> constructQueryPrefix(s)
+    val (aggrF, nonAggrF) = s.fields.values partition { case FieldDecl(f, _, _, _) => f.isAggregate }
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
-        constructFieldDecls(nonAggrF),
+        constructAnnotate(nonAggrF),
         constructFilter(nonAggrP),
         constructGroupBy(s.groupBy),
-        constructFieldDecls(aggrF),
+        constructAnnotate(aggrF),
         constructOrderBy(s.orders),
         constructFilter(aggrP),
         constructAggrs(s.aggrs),
