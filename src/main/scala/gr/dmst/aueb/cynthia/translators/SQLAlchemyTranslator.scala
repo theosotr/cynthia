@@ -8,8 +8,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   override val preamble =
     s"""from sqlalchemy import create_engine, or_, and_, not_, func, cast, types, literal
     |from sqlalchemy.orm import sessionmaker
+    |from sqlalchemy.exc import SAWarning
     |from models import *
-    |import numbers, decimal
+    |import numbers, decimal, warnings
+    |
+    |# Ignore SQLAlchemy warnings
+    |warnings.simplefilter("ignore", category=SAWarning)
     |
     |engine = create_engine('${target.db.getURI()}')
     |Session = sessionmaker(bind=engine)

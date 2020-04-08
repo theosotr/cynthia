@@ -30,7 +30,11 @@ object QueryExecutor {
         val (stdout, stderr) = (new StringBuilder, new StringBuilder)
         target.getTargetCommand() !
         ProcessLogger(stdout append _ + "\n", stderr append _ + "\n") match {
-          case 0 => Ok(stdout.toString)
+          case 0 =>
+            if (stderr.length != 0 && stdout.length == 0)
+              Fail(stderr.toString)
+            else
+              Ok(stdout.toString)
           case _ => Fail(stderr.toString)
         }
       case Failure(UnsupportedException(msg)) => Unsupported(msg)
