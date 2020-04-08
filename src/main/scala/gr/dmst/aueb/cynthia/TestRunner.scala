@@ -301,7 +301,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 15
       SetRes(
         Apply(
-          GroupBy,
+          Group,
           New("Listing", Set(
             FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
             FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
@@ -314,7 +314,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
         Apply(
           Filter(Gte("sales", Constant("1", UnQuoted))),
           Apply(
-            GroupBy,
+            Group,
             New("Listing", Set(
               FieldDecl(
                 Mul(
@@ -335,7 +335,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 17
       SetRes(
         Apply(
-          GroupBy,
+          Group,
           New("Listing", Set(
             FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
             FieldDecl(
@@ -356,7 +356,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
         Apply(
           Filter(Gte("max", Add(Constant("10", UnQuoted), F("Listing.sale_price")))),
           Apply(
-            GroupBy,
+            Group,
             New("Listing", Set(
               FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
               FieldDecl(
@@ -381,7 +381,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             )
           ),
           Apply(
-            GroupBy,
+            Group,
             New("Listing", Set(
               FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
               FieldDecl(
@@ -399,7 +399,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 20
       SetRes(
         Apply(
-          GroupBy,
+          Group,
           New("Listing", Set(
             FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
             FieldDecl(
@@ -421,7 +421,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 21
       SetRes(
         Apply(
-          GroupBy,
+          Group,
           New("Listing", Set(
             FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
             FieldDecl(
@@ -439,7 +439,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 22
       SetRes(
         Apply(
-          GroupBy,
+          Group,
           New("Listing", Set(
             FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
             FieldDecl(F("Listing.foo"), "fooF", StringF),

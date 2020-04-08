@@ -126,12 +126,12 @@ abstract class Translator(val target: Target) {
       val s1 = traverseFields(s, spec map { _._1 })
       spec.foldLeft(evalQuerySet(s1)(qs)) { (s, x) => s order x } // Add order spec to state
     }
-    case Apply(GroupBy, qs) => {
+    case Apply(Group, qs) => {
       val s1 = evalQuerySet(s)(qs)
       val isAggregate: FieldDecl => Boolean = { case FieldDecl(f, _, _, _) => f.isAggregate }
       if (!s1.fields.values.exists { isAggregate }) {
         throw new InvalidQuery(
-          "You have to declare aggregate fields to apply 'groupBy' operation")
+          "You have to declare aggregate fields to apply 'Group' operation")
       }
       s1.group
     }

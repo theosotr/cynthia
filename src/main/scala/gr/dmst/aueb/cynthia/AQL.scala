@@ -98,7 +98,7 @@ case object Desc extends Order
 sealed trait Operation
 case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
-case object GroupBy extends Operation
+case object Group extends Operation
 
 sealed trait FieldType
 case object StringF extends FieldType
