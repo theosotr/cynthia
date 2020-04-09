@@ -124,22 +124,22 @@ object FieldDecl {
 }
 
 sealed trait QuerySet {
-  def hasSort(): Boolean
+  def ordered(): Boolean
 }
 case class New(model: String, fields: Set[FieldDecl]) extends QuerySet {
-  def hasSort() = false
+  def ordered() = false
 }
 case class Apply(op: Operation, q: QuerySet) extends QuerySet {
-  def hasSort() = op match {
+  def ordered() = op match {
     case Sort(_) => true
-    case _       => q.hasSort
+    case _       => q.ordered
   }
 }
 case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet {
-  def hasSort() = q1.hasSort && q2.hasSort
+  def ordered() = q1.ordered && q2.ordered
 }
 case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet {
-  def hasSort() = q1.hasSort && q2.hasSort
+  def ordered() = q1.ordered && q2.ordered
 }
 
 sealed abstract class Query(val queryset: QuerySet)
