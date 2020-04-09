@@ -362,7 +362,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 18
       SetRes(
         Apply(
-          Filter(Gte("max", Add(Constant("10", UnQuoted), F("Listing.sale_price")))),
+          Filter(Gte("max", Add(Constant("10", UnQuoted), F("sales")))),
           Apply(
             Group,
             New("Listing", Set(
@@ -384,13 +384,14 @@ class TestRunner(schema: String, targets: Seq[Target]) {
         Apply(
           Filter(
             And(
-              Eq("Listing.foo", Constant("baz", Quoted)),
-              Gte("max", Add(Constant("10", UnQuoted), F("Listing.sale_price")))
+              Eq("fooF", Constant("baz", Quoted)),
+              Gte("max", Add(Constant("10", UnQuoted), F("sales")))
             )
           ),
           Apply(
             Group,
             New("Listing", Set(
+              FieldDecl(F("Listing.foo"), "fooF", StringF),
               FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
               FieldDecl(
                 Max(
