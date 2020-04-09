@@ -470,14 +470,6 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 1
       SetRes(New("Book", Set())),
 
-      // Query 2
-      SetRes(
-        Apply(
-          Sort(Seq(("Review.rating", Desc))),
-          New("Review", Set())
-        )
-      ),
-
       // Query 3
       SetRes(
         Apply(
@@ -588,7 +580,15 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             New("Review", Set())
           )
         )
+      ),
+      // Query 2
+      SetRes(
+        Apply(
+          Sort(Seq(("Review.rating", Desc))),
+          New("Review", Set())
+        )
       )
+
     )
 
   def genQueries() = schema match {
@@ -619,12 +619,12 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
   }
 
-  def storeMismatch(q: Query, mismatches: Map[String, Seq[Target]],
+  def storeMismatch(q: Query, mismatches: Map[(String, String), Seq[Target]],
                     reportDir: String) = {
     new File(reportDir).mkdirs
     val queryFile = Utils.joinPaths(List(reportDir, "query.aql"))
     Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
-    mismatches.foreach { case (k, v) => v.foreach { x =>
+    mismatches.foreach { case ((_, k), v) => v.foreach { x =>
         val filename = s"${x.orm.ormName}_${x.db.getName}.out"
         Utils.writeToFile(Utils.joinPaths(List(reportDir, filename)), k)
       }
@@ -635,15 +635,15 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     println(s"Starting testing session for $schema...")
     val stats = genQueries()
       .foldLeft(Stats()) { (acc, q) => {
-        val futures = targets.map { t =>
+        val futures = targets map { t =>
           Future {
             (t, QueryExecutor(q, t))
           }
         }
         val f = Future.sequence(futures) map { res =>
             val results = (
-              Map[String, Seq[Target]](),
-              Map[String, Seq[Target]]()
+              Map[(String, String), Seq[Target]](),
+              Map[(String, String), Seq[Target]]()
             )
             val (oks, failed) =
               res.foldLeft(results) { case ((oks, failed), x) => {
@@ -651,16 +651,20 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                   case (target, Unsupported(_)) => (oks, failed)
                   case (_, Invalid(_)) => (oks, failed)
                   case (target, Ok(res)) => {
-                    val targets = oks getOrElse(res, Seq())
-                    (oks + (res -> (targets :+ target)), failed)
+                    val k = (target.db.getName(), res)
+                    val targets = oks getOrElse(k, Seq())
+                    (oks + (k -> (targets :+ target)), failed)
                   }
                   case (target, Fail(err)) => {
-                    val targets = failed getOrElse(err, Seq())
-                    (oks, failed + (err -> (targets :+ target)))
+                    val k = (target.db.getName(), err)
+                    val targets = failed getOrElse(k, Seq())
+                    (oks, failed + (k -> (targets :+ target)))
                   }
                 }
               }}
-            if (failed.size >= 1 || oks.size > 1) {
+            // Get the number of backends
+            val ndbs = targets.map(x => x.db).toSet.size
+            if (failed.size >= 1 || oks.size > ndbs) {
               val qid = mismatchEnumerator.next()
               val reportDir = getMismatchesDir(qid)
               val msg =
