@@ -471,6 +471,14 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 1
       SetRes(New("Book", Set())),
 
+      // Query 2
+      SetRes(
+        Apply(
+          Sort(Seq(("Review.rating", Desc))),
+          New("Review", Set())
+        )
+      ),
+
       // Query 3
       SetRes(
         Apply(
@@ -580,13 +588,6 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             ),
             New("Review", Set())
           )
-        )
-      ),
-      // Query 2
-      SetRes(
-        Apply(
-          Sort(Seq(("Review.rating", Desc))),
-          New("Review", Set())
         )
       )
 

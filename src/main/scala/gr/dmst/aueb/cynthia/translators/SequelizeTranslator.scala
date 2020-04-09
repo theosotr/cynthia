@@ -49,16 +49,28 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       fields map { as =>
         s"${ident}dump($v.dataValues.$as)"
       } mkString "\n"
-    q match {
+    val str = q match {
       case SetRes(_)  | SubsetRes(_, _, _) =>
-        s"$ret.then((x) => { x.forEach((x) => {\n${_dumpField("x", dFields, ident = " " * 2)}\n})\n})"
+        s"""$ret.then((x) => {
+        |  sequelize.close()
+        |  x.forEach((x) => {
+        |    ${_dumpField("x", dFields, ident = " " * 2)}
+        |  })
+        |})""".stripMargin
       case FirstRes(_) =>
-        s"$ret.then(x => {\n${_dumpField("x", dFields, ident = " " * 2)}\n})"
+        s"""$ret.then(x => {
+        |  sequelize.close()
+        |  ${_dumpField("x", dFields, ident = " " * 2)}
+        |})""".stripMargin
       case AggrRes (aggrs, _) => {
         val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
-        s"$ret.then((x) => {\n${_dumpField("x[0]", aggrF, ident = " " * 2)}\n})"
+        s"""$ret.then((x) => {
+        |  sequelize.close()
+        |  ${_dumpField("x[0]", aggrF, ident = " " * 2)}
+        |})""".stripMargin
       }
     }
+    str + ".catch(x => { sequelize.close(); throw x; })"
   }
 
   def getSeqFieldName(field: String, dollarSign: Boolean = true) = {
@@ -171,7 +183,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   def getType(ftype: FieldType) = ftype match {
     case StringF   => "'varchar'"
     case IntF      => "'int'"
-    case DoubleF   => "'double'"
+    case DoubleF   => "'real'"
     case BooleanF  => "'boolean'"
     case DateTimeF => "'datetime'"
   }
@@ -215,12 +227,15 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def constructAttributes(state: State) = {
-    val attrStr = (state.fields.values ++ state.aggrs) map { case FieldDecl(_, as, _, _) =>
-      (Str("[") << as << ", " << Utils.quoteStr(as) << "]").!
-    } mkString(",\n    ")
+    val attrStr = TUtils.mapNonHiddenFields(
+      state.fields.values ++ state.aggrs,
+      { case FieldDecl(_, as, _, _) =>
+        (Str("[") << as << ", " << Utils.quoteStr(as) << "]").!
+      }
+    ) mkString(",\n    ")
     attrStr match {
       case "" => ""
-      case _  => "attributes: {\n  include: [\n    " + attrStr + "]}"
+      case _  => "attributes: [\n " + attrStr + "]"
     }
   }
 
