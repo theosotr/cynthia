@@ -81,6 +81,14 @@ object TestRunnerCreator {
   }
 }
 
+case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
+  def ++(mism: Boolean = false, invd: Boolean = false) =
+    if (mism)
+      Stats(totalQ + 1, mismatches + 1, invalid)
+    else
+      if (invd) Stats(totalQ + 1, mismatches, invalid + 1)
+      else Stats(totalQ + 1, mismatches, invalid)
+}
 
 class TestRunner(schema: String, targets: Seq[Target]) {
   val mismatchEnumerator = Stream.from(1).iterator
@@ -589,12 +597,27 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     case _         => genListingQueries()
   }
 
-  def getReportDir(i: Int) =
+  def getMismatchesDir(i: Int) =
     Utils.joinPaths(List(
-      Utils.getMismatchesDir(),
+      Utils.getReportDir(),
       schema,
+      "mismatches",
       i.toString)
     )
+
+  def getInvalidQDir() =
+    Utils.joinPaths(List(
+      Utils.getReportDir(),
+      schema,
+      "invalid")
+    )
+
+  def storeInvalid(q: Query, i: Int) = {
+    val invDir = getInvalidQDir()
+    new File(invDir).mkdirs
+    val queryFile = Utils.joinPaths(List(invDir, s"query_$i.aql"))
+    Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
+  }
 
   def storeMismatch(q: Query, mismatches: Map[String, Seq[Target]],
                     reportDir: String) = {
@@ -608,9 +631,10 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     }
   }
 
-  def start() =
-    genQueries()
-      .foreach { q => {
+  def start() = {
+    println(s"Starting testing session for $schema...")
+    val stats = genQueries()
+      .foldLeft(Stats()) { (acc, q) => {
         val futures = targets.map { t =>
           Future {
             (t, QueryExecutor(q, t))
@@ -625,6 +649,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               res.foldLeft(results) { case ((oks, failed), x) => {
                 x match {
                   case (target, Unsupported(_)) => (oks, failed)
+                  case (_, Invalid(_)) => (oks, failed)
                   case (target, Ok(res)) => {
                     val targets = oks getOrElse(res, Seq())
                     (oks + (res -> (targets :+ target)), failed)
@@ -637,7 +662,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               }}
             if (failed.size >= 1 || oks.size > 1) {
               val qid = mismatchEnumerator.next()
-              val reportDir = getReportDir(qid)
+              val reportDir = getMismatchesDir(qid)
               val msg =
                 s"""${Console.GREEN}[INFO]: Mismatch found in schema '$schema':${Console.WHITE}
                 |  - Query ID: $qid
@@ -649,9 +674,24 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 """.stripMargin
               storeMismatch(q, oks ++ failed, reportDir)
               println(msg)
-            }
+              acc ++ (mism = true)
+            } else if (failed.size == 0 && oks.size == 0) {
+              val qid = mismatchEnumerator.next()
+              storeInvalid(q, qid)
+              acc ++ (invd = true)
+            } else acc.++()
         }
-        Await.result(f, 5 seconds) 
+        Await.result(f, 5 seconds)
       }
     }
+    val msg =
+      s"""Testing session for $schema ends...
+      |Statistics
+      |----------
+      |Total Queries: ${stats.totalQ}
+      |Queries Passed: ${stats.totalQ - stats.mismatches - stats.invalid}
+      |Mismatches: ${stats.mismatches}
+      |Invalid Queries: ${stats.invalid}\n""".stripMargin
+    println(msg)
+  }
 }

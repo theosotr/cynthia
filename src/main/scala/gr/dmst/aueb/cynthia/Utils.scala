@@ -23,7 +23,7 @@ object Utils {
   val cwdDir = ".cynthia"
   val dbDir = "dbs"
   val projectDir = "projects"
-  val misDir = "mismatches"
+  val reportDir = "report"
 
   def exists(file: String) =
     new File(file).exists
@@ -79,8 +79,8 @@ object Utils {
   def getProjectDir() =
     joinPaths(List(".", cwdDir, projectDir))
 
-  def getMismatchesDir() =
-    joinPaths(List(".", cwdDir, misDir))
+  def getReportDir() =
+    joinPaths(List(".", cwdDir, reportDir))
 
   def createDir(dir: String) = {
     val file = new File(dir)
@@ -91,10 +91,10 @@ object Utils {
 
   def setWorkDir() = {
      val workdir = getWorkdir()
-     List(dbDir, projectDir, misDir)
+     List(dbDir, projectDir, reportDir)
        .foreach { dir => {
-           if (dir.equals(misDir)) {
-             Utils.emptyFile(dir)
+           if (dir.equals(reportDir)) {
+             Utils.emptyFile(reportDir)
            }
            createDir(Utils.joinPaths(List(workdir, dir)))
          }

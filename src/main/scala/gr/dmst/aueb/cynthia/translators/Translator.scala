@@ -151,6 +151,9 @@ abstract class Translator(val target: Target) {
     val (s, qStr) = q match {
       case FirstRes(qs) => {
         val s2 = evalQuerySet(s1)(qs)
+        if (s2.orders.isEmpty)
+          throw new InvalidQuery(
+            "You have to make queryset ordered in order to perform safe comparisons")
         (s2, constructQuery(first = true)(s2))
       }
       case SetRes(qs) => {
@@ -163,6 +166,9 @@ abstract class Translator(val target: Target) {
       }
       case SubsetRes(offset, limit, qs) => {
         val s2 = evalQuerySet(s1)(qs)
+        if (s2.orders.isEmpty)
+          throw new InvalidQuery(
+            "You have to make queryset ordered in order to perform safe comparisons")
         (s2, constructQuery(offset = offset, limit = limit)(s2))
       }
     }

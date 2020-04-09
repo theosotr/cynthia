@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia
 import scala.util.{Try, Success, Failure}
 import scala.sys.process._
 
-import gr.dmst.aueb.cynthia.translators.{ORMTranslator, UnsupportedException}
+import gr.dmst.aueb.cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery}
 
 sealed trait QueryRes
 case class Ok(res: String) extends QueryRes {
@@ -19,6 +19,11 @@ case class Unsupported(res: String) extends QueryRes {
 case class Fail(msg: String) extends QueryRes {
   override def toString() =
     "Fail[" + msg + "]"
+}
+
+case class Invalid(msg: String) extends QueryRes {
+  override def toString() =
+    "Invalid[" + msg + "]"
 }
 
 object QueryExecutor {
@@ -44,6 +49,7 @@ object QueryExecutor {
           case _ => Fail(stderr.toString)
         }
       case Failure(UnsupportedException(msg)) => Unsupported(msg)
+      case Failure(InvalidQuery(msg)) => Invalid(msg)
       case Failure(e) => throw e
     }
   }
