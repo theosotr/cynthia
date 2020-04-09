@@ -93,10 +93,11 @@ object Utils {
      val workdir = getWorkdir()
      List(dbDir, projectDir, reportDir)
        .foreach { dir => {
+           val fdir = Utils.joinPaths(List(workdir, dir))
            if (dir.equals(reportDir)) {
-             Utils.emptyFile(reportDir)
+             Utils.emptyFile(fdir)
            }
-           createDir(Utils.joinPaths(List(workdir, dir)))
+           createDir(fdir)
          }
        }
   }
