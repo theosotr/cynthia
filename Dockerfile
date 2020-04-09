@@ -32,11 +32,12 @@ RUN ${HOME}/scripts/setup-postgres.sh
 RUN ${HOME}/scripts/setup-mysql.sh
 
 RUN mkdir ${HOME}/cynthia_src
+
 ADD ./requirements.txt ${HOME}/cynthia_src
 ADD ./build.sbt  ${HOME}/cynthia_src
 ADD ./src  ${HOME}/cynthia_src/src
 ADD ./project  ${HOME}/cynthia_src/project
-ADD ./bugs ${HOME}/cynthia_src/bugs
+ADD ./examples ${HOME}/cynthia_src/examples
 WORKDIR ${HOME}/cynthia_src
 # Setup a Python3 virtual environment.
 RUN sudo pip3 install virtualenv
