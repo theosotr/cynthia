@@ -123,14 +123,27 @@ object FieldDecl {
   }
 }
 
-sealed trait QuerySet
-case class New(model: String, fields: Set[FieldDecl]) extends QuerySet
-case class Apply(op: Operation, q: QuerySet) extends QuerySet
-case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet
-case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet
+sealed trait QuerySet {
+  def hasSort(): Boolean
+}
+case class New(model: String, fields: Set[FieldDecl]) extends QuerySet {
+  def hasSort() = false
+}
+case class Apply(op: Operation, q: QuerySet) extends QuerySet {
+  def hasSort() = op match {
+    case Sort(_) => true
+    case _       => q.hasSort
+  }
+}
+case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet {
+  def hasSort() = q1.hasSort && q2.hasSort
+}
+case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet {
+  def hasSort() = q1.hasSort && q2.hasSort
+}
 
-sealed trait Query
-case class FirstRes(qs: QuerySet) extends Query
-case class SubsetRes(offset: Int = 0, limit: Option[Int], qs: QuerySet) extends Query
-case class SetRes (qs: QuerySet) extends Query
-case class AggrRes (aggrs: Seq[FieldDecl], qs: QuerySet) extends Query
+sealed abstract class Query(val queryset: QuerySet)
+case class FirstRes(qs: QuerySet) extends Query(qs)
+case class SubsetRes(offset: Int = 0, limit: Option[Int], qs: QuerySet) extends Query(qs)
+case class SetRes(qs: QuerySet) extends Query(qs)
+case class AggrRes(aggrs: Seq[FieldDecl], qs: QuerySet) extends Query(qs)
