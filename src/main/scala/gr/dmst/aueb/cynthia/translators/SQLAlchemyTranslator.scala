@@ -151,10 +151,16 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
           case Seq() | Seq(FieldDecl(Count(_), _, _, _)) => {
             val dFields = TUtils.mapNonHiddenFields(
               s.fields.values, FieldDecl.as)
-            val str = (s.sources ++ dFields) mkString ","
+            val sourceStr = s.sources mkString ","
+            val fieldStr = dFields mkString ","
+            val q =
+              if (fieldStr.equals(""))
+                "session.query(" + sourceStr + ")"
+              else
+                "session.query(" + fieldStr + ").select_from(" + sourceStr + ")"
             QueryStr(
               Some("ret" + s.numGen.next().toString),
-              Some("session.query(" + str + ")")
+              Some(q)
             )
           }
           case _ => {
