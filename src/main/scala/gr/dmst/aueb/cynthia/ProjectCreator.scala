@@ -110,7 +110,7 @@ object ProjectCreator {
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
             "},"
         }
-      } + "}\n" + "INSTALLED_APPS = ['" + name + "']"
+      } + "}\n" + "INSTALLED_APPS += ['" + name + "']"
       Utils.appendToFile(orm.getSettingsPath(), dbsettings)
     }
     case _ => ()
