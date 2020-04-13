@@ -30,11 +30,8 @@ object Cynthia {
           .required()
           .action((x, o) => o.copy(orms = x))
           .validate(_.foldLeft (success) { (acc, x) => x match {
-              case "django"       => acc
-              case "sqlalchemy"   => acc
-              case "sequelize"    => acc
-              case "activerecord" => acc
-              case _              => failure("ORM '" + x + "' is not supported")
+              case "django"  | "sqlalchemy" | "sequelize" | "activerecord" => acc
+              case _  => failure("ORM '" + x + "' is not supported")
             }
           })
           .text("ORMs to differentially test"),
