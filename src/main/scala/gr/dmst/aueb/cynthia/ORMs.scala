@@ -52,3 +52,16 @@ extends ORM("sequelize", name, pDir) {
   override def getDriverPath(db: DB) =
     Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".js"))
 }
+
+case class ActiveRecord(name: String, pDir: String)
+extends ORM("activerecord", name, pDir) {
+  Utils.createDir(pDir)
+
+  override def getModelsPath() =
+    Utils.joinPaths(List(pDir, "models.rb"))
+
+  override def getSettingsPath() = ""
+
+  override def getDriverPath(db: DB) =
+    Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".rb"))
+}
