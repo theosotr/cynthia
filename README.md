@@ -31,6 +31,15 @@ source .env/bin/activate
 pip install -r requirements.txt
 ```
 
+## ORMs dependencies
+
+* ActiveRecord (Ruby)
+
+```bash
+sudo apt install ruby-full ruby-activerecord rudy-dev
+sudo gem install sqlite3 mysql2 postgres
+sudo install scripts/dump-activerecord-models.py /usr/local/bin/dump-activerecord-models
+```
 
 ## Compile Cynthia
 

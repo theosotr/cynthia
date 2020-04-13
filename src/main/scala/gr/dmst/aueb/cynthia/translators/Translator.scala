@@ -28,7 +28,7 @@ case class QueryStr(
 
   override def toString() =
     toBuiltQ mkString ("\n")
-} 
+}
 
 case class State(
   db: DB,
@@ -210,8 +210,9 @@ object TUtils {
 object ORMTranslator {
 
   def apply(q: Query, target: Target): String = target.orm match {
-    case Django(name, _, setDir)   => DjangoTranslator(target)(q)
-    case SQLAlchemy (_, _)         => SQLAlchemyTranslator(target)(q)
-    case Sequelize(_, _)           => SequelizeTranslator(target)(q)
+    case Django(name, _, setDir)      => DjangoTranslator(target)(q)
+    case SQLAlchemy (_, _)            => SQLAlchemyTranslator(target)(q)
+    case Sequelize(_, _)              => SequelizeTranslator(target)(q)
+    case ActiveRecord(_, _)           => ActiveRecordTranslator(target)(q)
   }
 }

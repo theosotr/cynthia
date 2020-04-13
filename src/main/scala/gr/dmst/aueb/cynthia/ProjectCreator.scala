@@ -14,9 +14,10 @@ object ProjectCreator {
   }
 
   def setupProject(orm: ORM, dbs: Seq[DB]) = orm match {
-    case Django (_, _, _)  => createDjangoProject(orm, dbs)
-    case SQLAlchemy (_, _) => createSQLAlchemyProject(orm, dbs)
-    case Sequelize (_, _)  => createSequelizeProject(orm, dbs)
+    case Django (_, _, _)     => createDjangoProject(orm, dbs)
+    case SQLAlchemy (_, _)    => createSQLAlchemyProject(orm, dbs)
+    case Sequelize (_, _)     => createSequelizeProject(orm, dbs)
+    case ActiveRecord (_, _)  => createActiveRecordProject(orm, dbs)
   }
 
   def createModels(orm: ORM, db: DB) = orm match {
@@ -28,6 +29,19 @@ object ProjectCreator {
     }
     case SQLAlchemy(_, pdir) => {
       val models = Utils.runCmd("sqlacodegen " + db.getURI, None)
+      Utils.writeToFile(orm.getModelsPath(), models)
+    }
+    case ActiveRecord(_, pdir) => {
+      val bcmd = "dump-activerecord-models"
+      val cmd = db match {
+        case Postgres(user, password, dbname) =>
+          Seq(bcmd, "postgres", user, password, dbname).mkString(" ")
+        case MySQL(user, password, dbname) =>
+          Seq(bcmd, "mysql", user, password, dbname).mkString(" ")
+        case SQLite(dbname) =>
+          Seq(bcmd, "sqlite", dbname).mkString(" ")
+      }
+      val models = Utils.runCmd(cmd, None)
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case Sequelize(_, pdir) => {
@@ -60,8 +74,13 @@ object ProjectCreator {
   }
 
   def createSequelizeProject(orm: ORM, dbs: Seq[DB]) = orm match {
-    case Sequelize(name, pdir) => Utils.emptyFile(pdir)
+    case ActiveRecord(name, pdir) => Utils.emptyFile(pdir)
     case _                     => ()
+  }
+
+  def createActiveRecordProject(orm: ORM, dbs: Seq[DB]) = orm match {
+    case ActiveRecord(name, pdir) => Utils.emptyFile(pdir)
+    case _                        => ()
   }
 
   def createSQLAlchemyProject(orm: ORM, dbs: Seq[DB]) = orm match {

@@ -1,5 +1,6 @@
 mysqlclient
 psycopg2
+mysql-connector
 django
 sqlalchemy
 sqlacodegen

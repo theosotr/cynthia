@@ -14,6 +14,7 @@ case class Target(orm: ORM, db: DB) {
   def getTargetCommand() = orm match {
     case Django (_, _, _) | SQLAlchemy (_, _) => "python3 " + orm.getDriverPath(db)
     case Sequelize(_, _) => "node " + orm.getDriverPath(db)
+    case ActiveRecord(_, _) => "ruby " + orm.getDriverPath(db)
   }
 
   override def toString() =
@@ -47,6 +48,8 @@ object TestRunnerCreator {
                                         Utils.joinPaths(List(workdir, "sqlalchemy")))
         case "sequelize"  => Sequelize(dbname,
                                        Utils.joinPaths(List(workdir, "sequelize")))
+        case "activerecord"  => ActiveRecord(dbname,
+                                       Utils.joinPaths(List(workdir, "activerecord")))
         case _            => ???
       }
     }
@@ -141,7 +144,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           )
         )
       ),
- 
+
       // Query 5
       SetRes(
         Apply(
