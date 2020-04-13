@@ -2,26 +2,29 @@ drop table if exists review;
 drop table if exists book;
 drop table if exists author;
 CREATE TABLE author (
-      id serial primary key,
+      id integer,
       first_name varchar(50) NOT NULL,
-      surname varchar(50) NOT NULL
+      surname varchar(50) NOT NULL,
+      PRIMARY KEY (id)
 );
 
 CREATE TABLE book (
-      id serial primary key,
+      id integer,
       title varchar(100) NOT NULL,
       author_id integer NOT NULL,
       isbn char(12),
       unique(isbn),
+      PRIMARY KEY (id),
       FOREIGN KEY (author_id) REFERENCES author(id) ON DELETE CASCADE
 );
 
 CREATE TABLE review (
-      id serial primary key,
+      id integer,
       book_id integer NOT NULL,
       reviewer_name varchar(255),
       content varchar(255),
       rating integer,
+      PRIMARY KEY (id),
       FOREIGN KEY (book_id) REFERENCES book(id) ON DELETE CASCADE
 );
 

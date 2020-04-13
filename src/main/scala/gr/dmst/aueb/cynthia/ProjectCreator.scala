@@ -22,7 +22,9 @@ object ProjectCreator {
   def createModels(orm: ORM, db: DB) = orm match {
     case Django(_, pdir, _) => {
       val models = Utils.runCmd("python3 manage.py inspectdb", Some(pdir))
-      Utils.writeToFile(orm.getModelsPath(), models)
+      val models2 = models.replaceAll(
+        "id = models.AutoField\\(", "id = models.AutoField\\(primary_key=True,")
+      Utils.writeToFile(orm.getModelsPath(), models2)
     }
     case SQLAlchemy(_, pdir) => {
       val models = Utils.runCmd("sqlacodegen " + db.getURI, None)
