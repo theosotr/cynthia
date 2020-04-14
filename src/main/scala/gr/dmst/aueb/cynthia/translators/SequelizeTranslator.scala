@@ -153,7 +153,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     def _f(expr: FieldExpr) = expr match {
       case Constant(v, UnQuoted) => v
       case Constant(v, Quoted)   => s"\\'${v}\\'"
-      case F(f)                  => f
+      case F(f)                  => f.toLowerCase
       case _ => throw new UnsupportedException(
         "Unsupported field expression: " + fexpr.toString)
     }
@@ -181,16 +181,16 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def getType(ftype: FieldType) = ftype match {
-    case StringF   => "'varchar'"
-    case IntF      => "'int'"
-    case DoubleF   => "'real'"
+    case StringF   => "'char(100)'"
+    case IntF      => "'signed'"
+    case DoubleF   => "'decimal(9, 2)'"
     case BooleanF  => "'boolean'"
     case DateTimeF => "'datetime'"
   }
 
   def constructFieldExpr(fexpr: FieldExpr, subCol: Boolean = false): String = {
     val (f, op) = fexpr match {
-      case Count(None)        => ("", Some("'count'"))
+      case Count(None)        => ("'*'", Some("'count'"))
       case Count(Some(fexpr)) => (constructNestedFieldExpr(fexpr, subCol), Some("'count'"))
       case Sum(fexpr)         => (constructNestedFieldExpr(fexpr, subCol), Some("'sum'"))
       case Avg(fexpr)         => (constructNestedFieldExpr(fexpr, subCol), Some("'avg'"))
