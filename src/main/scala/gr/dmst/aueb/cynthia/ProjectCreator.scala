@@ -6,10 +6,10 @@ import scala.sys.process._
 object ProjectCreator {
 
   def createProject(orm: ORM, dbs: Seq[DB]) = dbs match {
-    case Nil    => ()
-    case h :: _ => {
+    case Seq() => ()
+    case _     => {
       setupProject(orm, dbs)
-      createModels(orm, h)
+      createModels(orm, dbs)
     }
   }
 
@@ -21,7 +21,7 @@ object ProjectCreator {
     case ActiveRecord(_, _)  => createActiveRecordProject(orm, dbs)
   }
 
-  def createModels(orm: ORM, db: DB) = orm match {
+  def createModels(orm: ORM, dbs: Seq[DB]) = orm match {
     case Django(_, pdir, _) => {
       val models = Utils.runCmd("python3 manage.py inspectdb", Some(pdir))
       val models2 = models.replaceAll(
@@ -29,25 +29,32 @@ object ProjectCreator {
       Utils.writeToFile(orm.getModelsPath(), models2)
     }
     case SQLAlchemy(_, pdir) => {
-      val models = Utils.runCmd("sqlacodegen " + db.getURI, None)
+      // Use the first element of the db sequence.
+      val models = Utils.runCmd("sqlacodegen " + dbs(0).getURI, None)
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case Peewee(_, pdir) => {
       val bcmd = "python -m pwiz"
-      val cmd = db match {
-        case Postgres(user, password, dbname) =>
-          s" -e postgres -u $user -H localhost $dbname -P"
-        case MySQL(user, password, dbname) =>
-          s" -e mysql -u $user -H localhost $dbname -P"
-        case SQLite(dbname) =>
-          s" -e sqlite $dbname"
+      // Generate a models.py file for each backend.
+      dbs.foreach { db => {
+          val cmd = db match {
+            case Postgres(user, password, dbname) =>
+              s" -e postgres -u $user -H localhost $dbname -P"
+            case MySQL(user, password, dbname) =>
+              s" -e mysql -u $user -H localhost $dbname -P"
+            case SQLite(dbname) =>
+              s" -e sqlite $dbname"
+          }
+          val models = Utils.runCmd(bcmd + cmd, None)
+          Utils.writeToFile(
+            orm.getModelsPath().replace(".py", "_" + db.getName + ".py"),
+            models)
+        }
       }
-      val models = Utils.runCmd(bcmd + cmd, None)
-      Utils.writeToFile(orm.getModelsPath(), models)
     }
     case ActiveRecord(_, pdir) => {
       val bcmd = "dump-activerecord-models"
-      val cmd = db match {
+      val cmd = dbs(0) match {
         case Postgres(user, password, dbname) =>
           Seq(bcmd, "postgres", user, password, dbname).mkString(" ")
         case MySQL(user, password, dbname) =>
@@ -59,6 +66,7 @@ object ProjectCreator {
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case Sequelize(_, pdir) => {
+      val db = dbs(0)
       val bcmd = "node_modules/sequelize-auto/bin/sequelize-auto"
       val cmd = db match {
         case Postgres(user, password, dbname) =>

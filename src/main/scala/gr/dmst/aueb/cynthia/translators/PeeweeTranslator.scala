@@ -8,7 +8,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
   override val preamble =
     s"""import numbers, decimal
     |from peewee import *
-    |from models import *
+    |from models_${target.db.getName} import *
     |
     |def dump(x):
     |    if isinstance(x, numbers.Number):
