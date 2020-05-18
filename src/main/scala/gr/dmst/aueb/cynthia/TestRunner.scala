@@ -595,8 +595,29 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             New("Review", Set())
           )
         )
-      )
+      ),
 
+      // Query 10
+      SetRes(
+        Apply(
+          Filter(
+            And (
+              Gte("Review.rating", Constant("2", UnQuoted)),
+              Lte("Review.book.author.first_name", Constant("Z", Quoted))
+            )
+          ),
+          New("Review", Set(
+            FieldDecl(
+              Mul(
+                F("Review.rating"),
+                Constant("-1", UnQuoted)
+              ),
+              "mul", DoubleF
+            ),
+            FieldDecl(F("Review.book.author.first_name"), "name", StringF)
+          ))
+        )
+      )
     )
 
   def genQueries() = schema match {

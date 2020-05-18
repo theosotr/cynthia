@@ -81,7 +81,9 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     field.split('.').toList match {
       case Nil | _ :: Nil  => _constructField(field)
       case _ :: (h :: Nil) => _constructField(h)
-      case _ :: t          => "'$" + t.mkString(".") + "$'"
+      case _ :: t          =>
+        if (dollarSign) "'$" + t.mkString(".") + "$'"
+        else Utils.quoteStr(t mkString ".")
     }
   }
 
