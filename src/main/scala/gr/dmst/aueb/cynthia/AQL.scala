@@ -100,12 +100,33 @@ case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
 case object Group extends Operation
 
-sealed trait FieldType
-case object StringF extends FieldType
-case object IntF extends FieldType
-case object DoubleF extends FieldType
-case object BooleanF extends FieldType
-case object DateTimeF extends FieldType
+sealed trait FieldType {
+  def convertType(db: DB): String
+}
+case object StringF extends FieldType {
+  override def convertType(db: DB) = db match {
+    case MySQL(_, _, _) => "char"
+    case _              => "varchar(100)"
+  }
+}
+case object IntF extends FieldType {
+  override def convertType(db: DB) = db match {
+    case Postgres(_, _, _) => "integer"
+    case _                 => "signed"
+  }
+}
+case object DoubleF extends FieldType {
+  override def convertType(db: DB) = db match {
+    case SQLite(_) => "float"
+    case _         => "decimal(9, 2)"
+  }
+}
+case object BooleanF extends FieldType {
+  override def convertType(db: DB) = "boolean"
+}
+case object DateTimeF extends FieldType {
+  override def convertType(db: DB) = "datetime"
+}
 
 case class FieldDecl(f: FieldExpr, as: String, ftype: FieldType, hidden: Boolean = false)
 object FieldDecl {

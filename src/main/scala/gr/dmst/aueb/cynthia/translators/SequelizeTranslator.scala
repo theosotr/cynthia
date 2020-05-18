@@ -180,13 +180,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def getType(ftype: FieldType) = ftype match {
-    case StringF   => "'char(100)'"
-    case IntF      => "'signed'"
-    case DoubleF   => "'decimal(9, 2)'"
-    case BooleanF  => "'boolean'"
-    case DateTimeF => "'datetime'"
-  }
+  def getType(ftype: FieldType) = Utils.quoteStr(ftype.convertType(target.db))
 
   def constructFieldExpr(fexpr: FieldExpr, subCol: Boolean = false): String = {
     val (f, op) = fexpr match {

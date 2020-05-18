@@ -13,6 +13,8 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     |def dump(x):
     |    if isinstance(x, numbers.Number):
     |        print(round(decimal.Decimal(x), 2))
+    |    elif isinstance(x, str):
+    |        print(x.strip())
     |    else:
     |        print(x)
     |""".stripMargin
@@ -39,7 +41,12 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString "."
       case _ :: (h :: t) => _getPeeweeFieldName(h.capitalize :: t)
     }
-    _getPeeweeFieldName(field.split('.').toList)
+    val segs = field.split('.').toList
+    segs match {
+      // Revert alias for declared fields.
+      case _ :: Nil => field + ".alias()"
+      case _        => _getPeeweeFieldName(field.split('.').toList)
+    }
   }
 
   def translatePred(pred: Predicate): String = pred match {
@@ -150,7 +157,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
           case _ => {
             val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
               case FieldDecl(f, l, t, _) =>
-                s"(${constructFieldExpr(f)}).cast(${getType(t)}).alias('$l')"
+                s"(${constructFieldExpr(f)}).coerce(${getType(t)}).alias('$l')"
             })
             val qstr = s"$h.select(${(aggrs mkString ", ")})"
             QueryStr(
@@ -172,27 +179,23 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       if (offset > 0) s"offset($offset)"
       else ""
     case Some(limit) =>
-      if (offset > 0)
-        RUtils.chooseFrom(Seq(
-          s"offset($offset).limit($limit)",
-          s"slice($offset, $offset + $limit)")
-        )
+      if (offset > 0) s"offset($offset).limit($limit)"
       else s"limit($limit)"
   }
 
   def getType(ftype: FieldType) = ftype match {
-    case StringF   => "'varchar'"
-    case IntF      => "'signed'"
-    case DoubleF   => "'float'"
-    case BooleanF  => "'boolean'"
-    case DateTimeF => "'datetime'"
+    case StringF   => "str"
+    case IntF      => "int"
+    case DoubleF   => "float"
+    case BooleanF  => "bool"
+    case DateTimeF => "str"
   }
 
   def constructFieldDecls(fields: Iterable[FieldDecl]) =
     if (fields.isEmpty) QueryStr()
     else
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
-        val str = Str("(") << constructFieldExpr(f) << ").cast(" <<
+        val str = Str("(") << constructFieldExpr(f) << ").coerce(" <<
           getType(t) << ").alias(" << Utils.quoteStr(as) << ")"
         acc >> QueryStr(Some(as), Some(str.!))
       }

@@ -6,7 +6,7 @@ import gr.dmst.aueb.cynthia._
 case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   override val preamble =
-    s"""from sqlalchemy import create_engine, or_, and_, not_, func, cast, types, literal
+    s"""from sqlalchemy import create_engine, or_, and_, not_, func, type_coerce, types, literal
     |from sqlalchemy.orm import sessionmaker
     |from sqlalchemy.exc import SAWarning
     |from models import *
@@ -166,7 +166,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
           case _ => {
             val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
               case FieldDecl(f, l, t, _) =>
-                s"cast(${constructFieldExpr(f)}, ${getType(t)}).label('$l')"
+                s"type_coerce(${constructFieldExpr(f)}, ${getType(t)}).label('$l')"
             })
             val qstr = "session.query(" + (aggrs mkString ", ") + ")"
             QueryStr(
@@ -208,7 +208,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     if (fields.isEmpty) QueryStr()
     else
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
-        val str = Str("cast(") << constructFieldExpr(f) << ", " << getType(t) <<
+        val str = Str("type_coerce(") << constructFieldExpr(f) << ", " << getType(t) <<
           ").label(" << Utils.quoteStr(as) << ")"
         acc >> QueryStr(Some(as), Some(str.!))
       }
