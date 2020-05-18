@@ -53,6 +53,19 @@ extends ORM("sequelize", name, pDir) {
     Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".js"))
 }
 
+case class Peewee(name: String, pDir: String)
+extends ORM("peewee", name, pDir) {
+  Utils.createDir(pDir)
+
+  override def getModelsPath() =
+    Utils.joinPaths(List(pDir, "models.py"))
+
+  override def getSettingsPath() = ""
+
+  override def getDriverPath(db: DB) =
+    Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".py"))
+}
+
 case class ActiveRecord(name: String, pDir: String)
 extends ORM("activerecord", name, pDir) {
   Utils.createDir(pDir)

@@ -213,6 +213,7 @@ object ORMTranslator {
     case Django(name, _, setDir)      => DjangoTranslator(target)(q)
     case SQLAlchemy (_, _)            => SQLAlchemyTranslator(target)(q)
     case Sequelize(_, _)              => SequelizeTranslator(target)(q)
+    case Peewee(_, _)                 => PeeweeTranslator(target)(q)
     case ActiveRecord(_, _)           => ActiveRecordTranslator(target)(q)
   }
 }

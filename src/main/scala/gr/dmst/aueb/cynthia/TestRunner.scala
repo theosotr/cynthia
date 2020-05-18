@@ -12,8 +12,9 @@ import pprint.PPrinter.BlackWhite
 
 case class Target(orm: ORM, db: DB) {
   def getTargetCommand() = orm match {
-    case Django (_, _, _) | SQLAlchemy (_, _) => "python3 " + orm.getDriverPath(db)
-    case Sequelize(_, _) => "node " + orm.getDriverPath(db)
+    case Django (_, _, _) | SQLAlchemy (_, _)
+    | Peewee(_, _) => "python3 " + orm.getDriverPath(db)
+    case Sequelize(_, _)    => "node " + orm.getDriverPath(db)
     case ActiveRecord(_, _) => "ruby " + orm.getDriverPath(db)
   }
 
@@ -41,16 +42,18 @@ object TestRunnerCreator {
 
   def genORMs(orms: Seq[String], dbname: String, workdir: String) =
     orms.map { x => x match {
-        case "django"     => Django(dbname,
+        case "django"        => Django(dbname,
                                    Utils.joinPaths(List(workdir, "django")),
                                    "djangoproject")
-        case "sqlalchemy" => SQLAlchemy(dbname,
+        case "sqlalchemy"    => SQLAlchemy(dbname,
                                         Utils.joinPaths(List(workdir, "sqlalchemy")))
-        case "sequelize"  => Sequelize(dbname,
+        case "sequelize"     => Sequelize(dbname,
                                        Utils.joinPaths(List(workdir, "sequelize")))
+        case "peewee"        => Peewee(dbname,
+                                       Utils.joinPaths(List(workdir, "peewee")))
         case "activerecord"  => ActiveRecord(dbname,
                                        Utils.joinPaths(List(workdir, "activerecord")))
-        case _            => ???
+        case _               => ???
       }
     }
 

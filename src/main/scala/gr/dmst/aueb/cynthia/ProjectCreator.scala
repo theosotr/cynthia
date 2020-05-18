@@ -14,10 +14,11 @@ object ProjectCreator {
   }
 
   def setupProject(orm: ORM, dbs: Seq[DB]) = orm match {
-    case Django (_, _, _)     => createDjangoProject(orm, dbs)
-    case SQLAlchemy (_, _)    => createSQLAlchemyProject(orm, dbs)
-    case Sequelize (_, _)     => createSequelizeProject(orm, dbs)
-    case ActiveRecord (_, _)  => createActiveRecordProject(orm, dbs)
+    case Django(_, _, _)     => createDjangoProject(orm, dbs)
+    case SQLAlchemy(_, _)    => createSQLAlchemyProject(orm, dbs)
+    case Sequelize(_, _)     => createSequelizeProject(orm, dbs)
+    case Peewee(_, _)        => createPeeweeProject(orm, dbs)
+    case ActiveRecord(_, _)  => createActiveRecordProject(orm, dbs)
   }
 
   def createModels(orm: ORM, db: DB) = orm match {
@@ -29,6 +30,19 @@ object ProjectCreator {
     }
     case SQLAlchemy(_, pdir) => {
       val models = Utils.runCmd("sqlacodegen " + db.getURI, None)
+      Utils.writeToFile(orm.getModelsPath(), models)
+    }
+    case Peewee(_, pdir) => {
+      val bcmd = "python -m pwiz"
+      val cmd = db match {
+        case Postgres(user, password, dbname) =>
+          s" -e postgres -u $user -H localhost $dbname -P"
+        case MySQL(user, password, dbname) =>
+          s" -e mysql -u $user -H localhost $dbname -P"
+        case SQLite(dbname) =>
+          s" -e sqlite $dbname"
+      }
+      val models = Utils.runCmd(bcmd + cmd, None)
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case ActiveRecord(_, pdir) => {
@@ -74,13 +88,18 @@ object ProjectCreator {
   }
 
   def createSequelizeProject(orm: ORM, dbs: Seq[DB]) = orm match {
-    case ActiveRecord(name, pdir) => Utils.emptyFile(pdir)
-    case _                     => ()
+    case Sequelize(_, pdir) => Utils.emptyFile(pdir)
+    case _                  => ()
   }
 
   def createActiveRecordProject(orm: ORM, dbs: Seq[DB]) = orm match {
-    case ActiveRecord(name, pdir) => Utils.emptyFile(pdir)
-    case _                        => ()
+    case ActiveRecord(_, pdir) => Utils.emptyFile(pdir)
+    case _                     => ()
+  }
+
+  def createPeeweeProject(orm: ORM, dbs: Seq[DB]) = orm match {
+    case Peewee(_, pdir) => Utils.emptyFile(pdir)
+    case _               => ()
   }
 
   def createSQLAlchemyProject(orm: ORM, dbs: Seq[DB]) = orm match {
