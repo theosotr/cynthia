@@ -239,11 +239,15 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     )
   }
 
-  override def unionQueries(s1: State, s2: State) =
-    // TODO
-    throw new UnsupportedException("unions are not supported")
+  override def unionQueries(s1: State, s2: State) = {
+    val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))
+    s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
+                                Some(q1.ret.get + ".union(" + q2.ret.get + ")")))
+  }
 
-  override def intersectQueries(s1: State, s2: State) =
-    // TODO
-    throw new UnsupportedException("intersections are not supported")
+  override def intersectQueries(s1: State, s2: State) = {
+    val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))
+    s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
+                                Some(q1.ret.get + ".intersect(" + q2.ret.get + ")")))
+  }
 }
