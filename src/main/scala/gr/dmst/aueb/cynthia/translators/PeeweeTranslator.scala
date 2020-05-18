@@ -123,15 +123,9 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       else constructCompoundAggr(fexpr)
   }
 
-  def toField(x: String, y: String) = {
-    val char = Character.toLowerCase(y.charAt(0))
-    val str = s"${char}${y.substring(1)}"
-    x + "." + str
-  }
-
   def constructJoins(joins: Set[(String, String)]): String =
-    joins map { case (x, y) =>
-      "join(" + toField(x, y) + ")"
+    joins map { case (_, y) =>
+      "join(" + y + ")"
     } mkString (".")
 
   def constructQueryPrefix(s: State) =  s.query match {
