@@ -1,7 +1,7 @@
 drop table if exists listing;
 create table if not exists listing (
-  id serial not null primary key,
-  sale_price numeric (10) not null,
+  id integer not null primary key,
+  sale_price numeric(10) not null,
   yearly_rent numeric(10) not null,
   toto boolean not null,
   foo varchar(20) not null
