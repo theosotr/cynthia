@@ -14,5 +14,5 @@ case class VarChar(n: Int) extends DataType
 
 // TODO Maybe we should add field constraints.
 case class Field(name: String, ftype: DataType)
-case class Model(name: String, fields: Set[Field])
-case class Schema(name: String, models: Set[Model])
+case class Model(name: String, fields: Seq[Field])
+case class Schema(name: String, models: Seq[Model])
