@@ -172,10 +172,9 @@ abstract class Translator(val target: Target) {
         (s2, constructQuery(offset = offset, limit = limit)(s2))
       }
     }
-    val dfields = s.fields.values.toSeq match {
+    val dfields = s.fields.values.filter { !FieldDecl.hidden(_) }.toSeq match {
       case Seq() => Seq("id")
-      case f     => TUtils.mapNonHiddenFields(
-        f, { case FieldDecl(_, as, _, _) => as }).toSeq
+      case f     => f.map  { FieldDecl.as }.toSeq
     }
     preamble + "\n" + qStr.toString + "\n" + emitPrint(
       q, dfields, qStr.ret.get)
