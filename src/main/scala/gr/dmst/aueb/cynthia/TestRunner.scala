@@ -99,6 +99,21 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
 class TestRunner(schema: String, targets: Seq[Target]) {
   val mismatchEnumerator = Stream.from(1).iterator
 
+  val model = Model("Listing", Seq(
+    Field("id", Serial),
+    Field("yearly_rent", Numeric),
+    Field("sale_price", Numeric)
+  ))
+
+  val schemad = Schema("listing", Map("Listing" -> model))
+
+  def genQueries(i: Int = 0): LazyList[Query] = {
+    val q = QueryGenerator(schemad)
+    println(BlackWhite.tokenize(q).mkString)
+    if (i >= 10) q #:: LazyList.empty
+    else q #:: genQuery(i + 1)
+  }
+
   def genListingQueries() =
     List(
       // Query 1
@@ -620,8 +635,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       )
     )
 
-  def genQueries() = schema match {
-    case "listing" => genListingQueries()
+  def genQueries(): Seq[Query] = schema match {
+    case "listing" => genQuery(0)
     case "books"   => genBooksQueries()
     case _         => genListingQueries()
   }
@@ -664,6 +679,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     println(s"Starting testing session for $schema...")
     val stats = genQueries()
       .foldLeft(Stats()) { (acc, q) => {
+        genQuery(0)
         val futures = targets map { t =>
           Future {
             (t, QueryExecutor(q, t))

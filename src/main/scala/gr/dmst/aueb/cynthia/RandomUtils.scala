@@ -15,4 +15,16 @@ object RUtils {
     val n = r.nextInt(s.size)
     r.shuffle(s).take(n)
   }
+
+  def string(n: Int = 10): String =
+    r.alphanumeric.take(r.nextInt(n)) mkString ""
+
+  def word(n: Int = 9): String =
+    r.alphanumeric.filter { _.isLetter }.take(r.nextInt(n) + 1) mkString ""
+
+  def integer(n: Int = 10): Int =
+    r.nextInt(n)
+
+  def bool() =
+    r.nextBoolean
 }
