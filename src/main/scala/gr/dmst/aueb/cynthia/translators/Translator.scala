@@ -32,7 +32,7 @@ case class QueryStr(
 
 case class State(
   db: DB,
-  sources: Set[String] = Set(),
+  source: String = "",
   fields: Map[String, FieldDecl] = Map(),
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
@@ -44,41 +44,41 @@ case class State(
   ) {
 
   def source(s: String) =
-    State(db, sources + s, fields, preds, orders, groupBy, aggrs, joins, query,
+    State(db, s, fields, preds, orders, groupBy, aggrs, joins, query,
           numGen)
 
   def f(fd: FieldDecl) = fd match {
     case FieldDecl(_, as, _, _) =>
-      State(db, sources, fields + (as -> fd), preds, orders, groupBy, aggrs,
+      State(db, source, fields + (as -> fd), preds, orders, groupBy, aggrs,
             joins, query, numGen)
   }
 
   def pred(p: Predicate): State =
-    State(db, sources, fields, preds + p, orders, groupBy, aggrs, joins, query,
+    State(db, source, fields, preds + p, orders, groupBy, aggrs, joins, query,
           numGen)
 
   def order(o: (String, Order)): State =
-    State(db, sources, fields, preds, orders :+ o, groupBy, aggrs, joins, query,
+    State(db, source, fields, preds, orders :+ o, groupBy, aggrs, joins, query,
           numGen)
 
   def group(): State =
-    State(db, sources, fields, preds, orders, true, aggrs, joins, query,
+    State(db, source, fields, preds, orders, true, aggrs, joins, query,
           numGen)
 
   def aggr(a: Seq[FieldDecl]): State =
-    State(db, sources, fields, preds, orders, groupBy, aggrs ++ a, joins, query,
+    State(db, source, fields, preds, orders, groupBy, aggrs ++ a, joins, query,
           numGen)
 
   def join(j: (String, String)): State =
-    State(db, sources, fields, preds, orders, groupBy, aggrs, joins + j, query,
+    State(db, source, fields, preds, orders, groupBy, aggrs, joins + j, query,
           numGen)
 
   def >>(qstr: QueryStr): State = query match {
     case None =>
-      State(db, sources, fields, preds, orders, groupBy, aggrs, joins,
+      State(db, source, fields, preds, orders, groupBy, aggrs, joins,
             Some(qstr), numGen)
     case Some(query) =>
-      State(db, sources, fields, preds, orders, groupBy, aggrs, joins,
+      State(db, source, fields, preds, orders, groupBy, aggrs, joins,
             Some(query >> qstr), numGen)
   }
 }
@@ -204,6 +204,17 @@ object TUtils {
 
   def filterNonAggrHidden(fields: Iterable[FieldDecl]) =
     filterMapAs({x => !(FieldDecl.hidden(x) || FieldDecl.isAggregate(x))})(fields)
+
+  def getAggrAndNonAggr(fields: Iterable[FieldDecl]) =
+    fields.foldLeft((Seq[String](), Seq[String]())) { (acc, x) => {
+      val (a, b) = acc
+      val as = FieldDecl.as(x)
+      if (FieldDecl.isAggregate(x) && !FieldDecl.hidden(x)) (a :+ as, b)
+      else
+        if (!FieldDecl.isAggregate(x) && !FieldDecl.hidden(x)) (a, b :+ as)
+        else (a, b)
+      }
+    }
 }
 
 

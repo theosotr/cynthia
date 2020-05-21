@@ -137,34 +137,31 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>
-      s.sources.toList match {
-        case Nil => ??? // Unreachable case
-        case h :: _   => s.aggrs match {
-          case Seq() | Seq(FieldDecl(Count(_), _, _, _)) => {
-            val dFields = TUtils.mapNonHiddenFields(
-              s.fields.values, FieldDecl.as)
-            val fieldStr = dFields mkString ","
-            val q =
-              if (fieldStr.equals(""))
-                s"$h.select()"
-              else
-                s"$h.select($fieldStr)"
-            QueryStr(
-              Some("ret" + s.numGen.next().toString),
-              Some(q)
-            )
-          }
-          case _ => {
-            val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
-              case FieldDecl(f, l, t, _) =>
-                s"(${constructFieldExpr(f)}).coerce(${getType(t)}).alias('$l')"
-            })
-            val qstr = s"$h.select(${(aggrs mkString ", ")})"
-            QueryStr(
-              Some("ret" + s.numGen.next().toString),
-              Some(qstr)
-            )
-          }
+      s.aggrs match {
+        case Seq() | Seq(FieldDecl(Count(_), _, _, _)) => {
+          val dFields = TUtils.mapNonHiddenFields(
+            s.fields.values, FieldDecl.as)
+          val fieldStr = dFields mkString ","
+          val q =
+            if (fieldStr.equals(""))
+              s"${s.source}.select()"
+            else
+              s"${s.source}.select($fieldStr)"
+          QueryStr(
+            Some("ret" + s.numGen.next().toString),
+            Some(q)
+          )
+        }
+        case _ => {
+          val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
+            case FieldDecl(f, l, t, _) =>
+              s"(${constructFieldExpr(f)}).coerce(${getType(t)}).alias('$l')"
+          })
+          val qstr = s"${s.source}.select(${(aggrs mkString ", ")})"
+          QueryStr(
+            Some("ret" + s.numGen.next().toString),
+            Some(qstr)
+          )
         }
       }
     case Some(q) => q

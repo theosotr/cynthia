@@ -145,35 +145,32 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>
-      s.sources.toList match {
-        case Nil => ??? // Unreachable case
-        case _   => s.aggrs match {
-          case Seq() | Seq(FieldDecl(Count(_), _, _, _)) => {
-            val dFields = TUtils.mapNonHiddenFields(
-              s.fields.values, FieldDecl.as)
-            val sourceStr = s.sources mkString ","
-            val fieldStr = dFields mkString ","
-            val q =
-              if (fieldStr.equals(""))
-                "session.query(" + sourceStr + ")"
-              else
-                "session.query(" + fieldStr + ").select_from(" + sourceStr + ")"
-            QueryStr(
-              Some("ret" + s.numGen.next().toString),
-              Some(q)
-            )
-          }
-          case _ => {
-            val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
-              case FieldDecl(f, l, t, _) =>
-                s"type_coerce(${constructFieldExpr(f)}, ${getType(t)}).label('$l')"
-            })
-            val qstr = "session.query(" + (aggrs mkString ", ") + ")"
-            QueryStr(
-              Some("ret" + s.numGen.next().toString),
-              Some(qstr)
-            )
-          }
+      s.aggrs match {
+        case Seq() | Seq(FieldDecl(Count(_), _, _, _)) => {
+          val dFields = TUtils.mapNonHiddenFields(
+            s.fields.values, FieldDecl.as)
+          val sourceStr = s.source
+          val fieldStr = dFields mkString ","
+          val q =
+            if (fieldStr.equals(""))
+              "session.query(" + sourceStr + ")"
+            else
+              "session.query(" + fieldStr + ").select_from(" + sourceStr + ")"
+          QueryStr(
+            Some("ret" + s.numGen.next().toString),
+            Some(q)
+          )
+        }
+        case _ => {
+          val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
+            case FieldDecl(f, l, t, _) =>
+              s"type_coerce(${constructFieldExpr(f)}, ${getType(t)}).label('$l')"
+          })
+          val qstr = "session.query(" + (aggrs mkString ", ") + ")"
+          QueryStr(
+            Some("ret" + s.numGen.next().toString),
+            Some(qstr)
+          )
         }
       }
     case Some(q) => q
@@ -224,15 +221,20 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
     val fieldVals = s.fields.values
-    val nonAggrHidden = TUtils.filterNonAggrHidden(fieldVals).toSeq
+    val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
+    val groupBy =
+      if (!aggrNHidden.isEmpty && nonAggrHidden.isEmpty) Seq(s.source + ".id")
+      else
+        if (s.groupBy) nonAggrHidden
+        else Seq()
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,
         constructJoins(s.joins),
         constructFilter(nonAggrP),
-        if (s.groupBy) constructGroupBy(nonAggrHidden) else "",
+        constructGroupBy(groupBy),
         constructFilter(aggrP, having = true),
         constructOrderBy(s.orders),
         s.aggrs match {

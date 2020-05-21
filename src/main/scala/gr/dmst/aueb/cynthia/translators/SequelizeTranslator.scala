@@ -279,40 +279,36 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
-      limit: Option[Int] = None)(s: State): QueryStr =
-    s.sources.toList match {
-      case h :: Nil => {
-        val fieldVals = s.fields.values
-        val nonAggrHidden = TUtils.filterNonAggrHidden(fieldVals).toSeq
-        val method = if (first) ".findOne" else ".findAll"
-        // Coverts set of pairs to map of lists.
-        val joinMap = s.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
-        val qStr = importModels(joinMap, Set(h)) <<
-          createAssociations(joinMap) <<
-          constructFieldDecls(fieldVals ++ s.aggrs)
-        val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
-        val q = (Str(h) << method << "({\n" <<
-          (
-            Seq(
-              constructIncludes(h, joinMap),
-              constructAttributes(s),
-              constructFilter(nonAggrP),
-              constructFilter(aggrP, having = true),
-              if (s.groupBy) constructGroupBy(nonAggrHidden) else "",
-              constructOrderBy(s.orders),
-              if (offset >= 0) s"offset: $offset" else "",
-              limit match {
-                case None        => ""
-                case Some(limit) => s"limit: $limit"
-              }
-            ) filter (x => x match {
-              case "" => false
-              case _  => true
-            }) mkString(",\n")
-          ) << "\n})").!
-        qStr >> QueryStr(Some("ret" + s.numGen.next()), Some(q))
-      }
-      case _ => ???
+      limit: Option[Int] = None)(s: State): QueryStr = {
+    val fieldVals = s.fields.values
+    val nonAggrHidden = TUtils.filterNonAggrHidden(fieldVals).toSeq
+    val method = if (first) ".findOne" else ".findAll"
+    // Coverts set of pairs to map of lists.
+    val joinMap = s.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
+    val qStr = importModels(joinMap, Set(s.source)) <<
+      createAssociations(joinMap) <<
+      constructFieldDecls(fieldVals ++ s.aggrs)
+    val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
+    val q = (Str(s.source) << method << "({\n" <<
+      (
+        Seq(
+          constructIncludes(s.source, joinMap),
+          constructAttributes(s),
+          constructFilter(nonAggrP),
+          constructFilter(aggrP, having = true),
+          if (s.groupBy) constructGroupBy(nonAggrHidden) else "",
+          constructOrderBy(s.orders),
+          if (offset >= 0) s"offset: $offset" else "",
+          limit match {
+            case None        => ""
+            case Some(limit) => s"limit: $limit"
+          }
+        ) filter (x => x match {
+          case "" => false
+          case _  => true
+        }) mkString(",\n")
+      ) << "\n})").!
+    qStr >> QueryStr(Some("ret" + s.numGen.next()), Some(q))
   }
 
   override def unionQueries(s1: State, s2: State): State =

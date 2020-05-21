@@ -77,18 +77,15 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   }
 
   def constructQueryPrefix(s: State) =  s.query match {
-    case None =>
-      s.sources.toList match {
-        case Nil | _ :: _ :: _ => ???
-        case h :: Nil =>
-          val dbname = s.db match {
-            case Postgres (_, _, _) => "postgres"
-            case MySQL (_, _, _)    => "mysql"
-            case SQLite (_)         => "default"
-          }
-          QueryStr(Some("ret" + s.numGen.next().toString),
-                   Some(h + ".objects.using('" + dbname + "')"))
+    case None => {
+      val dbname = s.db match {
+        case Postgres (_, _, _) => "postgres"
+        case MySQL (_, _, _)    => "mysql"
+        case SQLite (_)         => "default"
       }
+      QueryStr(Some("ret" + s.numGen.next().toString),
+               Some(s.source + ".objects.using('" + dbname + "')"))
+    }
     case Some(q) => q
   }
 

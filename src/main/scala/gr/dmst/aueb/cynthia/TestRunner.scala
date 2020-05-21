@@ -107,7 +107,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
   val schemad = Schema("listing", Map("Listing" -> model))
 
-  def genQueries(i: Int = 0): LazyList[Query] = {
+  def genQuery(i: Int = 0): LazyList[Query] = {
     val q = QueryGenerator(schemad)
     println(BlackWhite.tokenize(q).mkString)
     if (i >= 10) q #:: LazyList.empty
@@ -483,6 +483,20 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(Avg(F("mul")), "squared", DoubleF)
           ))
         )
+      ),
+
+      // Query 23
+      SetRes(
+        New("Listing", Set(
+          FieldDecl(
+            Mul(
+              Avg(F("Listing.yearly_rent")),
+              Avg(F("Listing.sale_price"))
+            ),
+            "mul",
+            DoubleF
+          )
+        ))
       )
     )
 
@@ -636,7 +650,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     )
 
   def genQueries(): Seq[Query] = schema match {
-    case "listing" => genQuery(0)
+    case "listing" => genListingQueries()
     case "books"   => genBooksQueries()
     case _         => genListingQueries()
   }
