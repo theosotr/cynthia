@@ -211,7 +211,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       }
     }
 
-  def constructGroupBy(groupBy: Seq[String]) = groupBy match {
+  def constructGroupBy(groupBy: Set[String]) = groupBy match {
     case Seq() => ""
     case _     =>
       "group_by(" + (
@@ -224,17 +224,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
-    val groupBy =
-      if (!aggrNHidden.isEmpty && nonAggrHidden.isEmpty) Seq(s.source + ".id")
-      else
-        if (s.groupBy) nonAggrHidden
-        else Seq()
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,
         constructJoins(s.joins),
         constructFilter(nonAggrP),
-        constructGroupBy(groupBy),
+        constructGroupBy(s.groupBy),
         constructFilter(aggrP, having = true),
         constructOrderBy(s.orders),
         s.aggrs match {

@@ -272,16 +272,16 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     else "include: [\n" + _findIncludes(source) + "\n]"
   }
 
-  def constructGroupBy(groupBy: Seq[String]) = groupBy match {
+  def constructGroupBy(groupBy: Set[String]) = groupBy match {
     case Seq() => ""
     case _     => "group: [" + (
-      groupBy map { x => Utils.quoteStr(x) } mkString ", ") + "]"
+      groupBy map { x => getSeqFieldName(x, false) } mkString ", ") + "]"
   }
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State): QueryStr = {
     val fieldVals = s.fields.values
-    val nonAggrHidden = TUtils.filterNonAggrHidden(fieldVals).toSeq
+    val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val method = if (first) ".findOne" else ".findAll"
     // Coverts set of pairs to map of lists.
     val joinMap = s.joins.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
@@ -296,7 +296,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
           constructAttributes(s),
           constructFilter(nonAggrP),
           constructFilter(aggrP, having = true),
-          if (s.groupBy) constructGroupBy(nonAggrHidden) else "",
+          constructGroupBy(s.groupBy),
           constructOrderBy(s.orders),
           if (offset >= 0) s"offset: $offset" else "",
           limit match {

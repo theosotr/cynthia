@@ -36,7 +36,7 @@ case class State(
   fields: Map[String, FieldDecl] = Map(),
   preds: Set[Predicate] = Set(),
   orders: Seq[(String, Order)] = Seq(),
-  groupBy: Boolean = false,
+  groupBy: Set[String] = Set(),
   aggrs: Seq[FieldDecl] = Seq(),
   joins: Set[(String, String)] = Set(),
   query: Option[QueryStr] = None,
@@ -61,8 +61,8 @@ case class State(
     State(db, source, fields, preds, orders :+ o, groupBy, aggrs, joins, query,
           numGen)
 
-  def group(): State =
-    State(db, source, fields, preds, orders, true, aggrs, joins, query,
+  def group(f: Set[String]): State =
+    State(db, source, fields, preds, orders, f, aggrs, joins, query,
           numGen)
 
   def aggr(a: Seq[FieldDecl]): State =
@@ -98,6 +98,61 @@ abstract class Translator(val target: Target) {
     _updateJoins(field.split('.').toList, s)
   }
 
+  def computeGroupBy(source: String, fields: Set[FieldDecl]): Set[String] = {
+    val init = (Set[String](), Map[String, (FieldExpr, Boolean)]())
+    //  Compute a map of field names to their corresponding expression
+    //  and an the initial sets of group bys.
+    val (groupBy, store) = fields.foldLeft(init) { (acc, x) => {
+      val (g, s) = acc
+      x match {
+        case FieldDecl(Constant(a, b), as, _, h) =>
+          (g, s + (as -> (Constant(a, b), h)))
+        case FieldDecl(e, as, _, false) =>
+          (if (!e.isAggregate) g + as else g, s + (as -> (e, false)))
+        case FieldDecl(e, as, _, true) => (g, s + (as -> (e, true)))
+      }
+    }}
+    def _handleComplexExpr(e: FieldExpr, as: String, g: Set[String]): Set[String] = {
+      val (e1, e2) = e match {
+        case Add(e1, e2) => (e1, e2)
+        case Sub(e1, e2) => (e1, e2)
+        case Mul(e1, e2) => (e1, e2)
+        case Div(e1, e2) => (e1, e2)
+        case _           => ???
+      }
+      if (e1.isNaiveAggregate) _computeGroupBy(e2, as, g)
+      else if(e2.isNaiveAggregate) _computeGroupBy(e1, as, g)
+      else _computeGroupBy(e2, as, _computeGroupBy(e1, as, g))
+    }
+    def _computeGroupBy(e: FieldExpr, as: String, g: Set[String]): Set[String] = e match {
+      case F(f) =>
+        store get f match {
+          case None         => g + f // the field is native
+          case Some((e, h)) => if (e.isAggregate) (g - as) else (e, h) match {
+            case (Constant(_, _), _) => g
+            case (_, false)          => g + f
+            case _                   => g
+          }
+        }
+      case Constant(_, _) |
+        Count(_) |
+        Sum(_) |
+        Avg(_) |
+        Max(_) |
+        Min(_) => g
+      case _   => _handleComplexExpr(e, as, g)
+    }
+    val (hasAggr, groupedF) = fields.foldLeft((false, groupBy)) { (s, f) => {
+      val (a, b) = s
+      f match { case FieldDecl(e, as, _, _) =>
+         (if (!a) e.isAggregate else a, _computeGroupBy(e, as, b))
+      }
+    }}
+    if (!hasAggr) Set()
+    else if (groupedF.isEmpty) Set(source + ".id")
+    else groupedF
+  }
+
   def traversePredicate(s: State, pred: Predicate): State = pred match {
     case Eq(k, _)       => updateJoins(k, s)
     case Gt(k, _)       => updateJoins(k, s)
@@ -116,7 +171,8 @@ abstract class Translator(val target: Target) {
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
     case New(m, f) => { // Add source and fields to state
       val s1 = s source m
-      f.foldLeft(s1) { (acc, x) => acc f (x) }
+      val s2 = s1 group (computeGroupBy(m, f))
+      f.foldLeft(s2) { (acc, x) => acc f (x) }
     }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state
@@ -125,15 +181,6 @@ abstract class Translator(val target: Target) {
     case Apply(Sort(spec), qs) => {
       val s1 = traverseFields(s, spec map { _._1 })
       spec.foldLeft(evalQuerySet(s1)(qs)) { (s, x) => s order x } // Add order spec to state
-    }
-    case Apply(Group, qs) => {
-      val s1 = evalQuerySet(s)(qs)
-      val isAggregate: FieldDecl => Boolean = { case FieldDecl(f, _, _, _) => f.isAggregate }
-      if (!s1.fields.values.exists { isAggregate }) {
-        throw new InvalidQuery(
-          "You have to declare aggregate fields to apply 'Group' operation")
-      }
-      s1.group
     }
     case Union (qs1, qs2) =>
       unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)) // Merge queries

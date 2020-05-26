@@ -6,43 +6,55 @@ case object UnQuoted extends ConstantType
 
 sealed abstract class FieldExpr(val compound: Boolean) {
   def isAggregate(): Boolean
+  def isNaiveAggregate(): Boolean
 }
 case class Constant(v: String, vt: ConstantType) extends FieldExpr(false) {
   def isAggregate() = false
+  def isNaiveAggregate() = false
 }
 case class F(f: String) extends FieldExpr(false) {
   def isAggregate() = false
+  def isNaiveAggregate() = false
 }
 case class Count(f: Option[FieldExpr]) extends FieldExpr(false) {
   def isAggregate() = true
+  def isNaiveAggregate() = true
 }
 case class Sum(f: FieldExpr) extends FieldExpr(false) {
   def isAggregate() = true
+  def isNaiveAggregate() = true
 }
 case class Avg(f: FieldExpr) extends FieldExpr(false) {
   def isAggregate() = true
+  def isNaiveAggregate() = true
 }
 case class Max(f: FieldExpr) extends FieldExpr(false) {
   def isAggregate() = true
+  def isNaiveAggregate() = true
 }
 case class Min(f: FieldExpr) extends FieldExpr(false) {
   def isAggregate() = true
+  def isNaiveAggregate() = true
 }
 case class Add(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
     f1.isAggregate || f2.isAggregate
+  def isNaiveAggregate() = false
 }
 case class Sub(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
     f1.isAggregate || f2.isAggregate
+  def isNaiveAggregate() = false
 }
 case class Mul(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
     f1.isAggregate || f2.isAggregate
+  def isNaiveAggregate() = false
 }
 case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
     f1.isAggregate || f2.isAggregate
+  def isNaiveAggregate() = false
 }
 
 sealed abstract class Predicate {
@@ -98,7 +110,6 @@ case object Desc extends Order
 sealed trait Operation
 case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
-case object Group extends Operation
 
 sealed trait FieldType {
   def convertType(db: DB): String

@@ -109,8 +109,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
   def genQuery(i: Int = 0): LazyList[Query] = {
     val q = QueryGenerator(schemad)
-    println(BlackWhite.tokenize(q).mkString)
-    if (i >= 10) q #:: LazyList.empty
+    if (i >= 5000) q #:: LazyList.empty
     else q #:: genQuery(i + 1)
   }
 
@@ -329,74 +328,62 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 15
       SetRes(
-        Apply(
-          Group,
-          New("Listing", Set(
-            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
-            FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
-          ))
-        )
+        New("Listing", Set(
+          FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+          FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
+        ))
       ),
 
       // Query 16
       SetRes(
         Apply(
           Filter(Gte("sales", Constant("1", UnQuoted))),
-          Apply(
-            Group,
-            New("Listing", Set(
-              FieldDecl(
-                Mul(
-                  Constant("10", UnQuoted),
-                  Div(
-                    Constant("5", UnQuoted),
-                    F("Listing.sale_price")
-                  )
-                ),
-                "sales", DoubleF
+          New("Listing", Set(
+            FieldDecl(
+              Mul(
+                Constant("10", UnQuoted),
+                Div(
+                  Constant("5", UnQuoted),
+                  F("Listing.sale_price")
+                )
               ),
-              FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
-            ))
-          )
+              "sales", DoubleF
+            ),
+            FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
+          ))
         )
       ),
 
       // Query 17
       SetRes(
-        Apply(
-          Group,
-          New("Listing", Set(
-            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
-            FieldDecl(
-              Avg(
-                Mul(
-                  F("Listing.sale_price"),
-                  F("Listing.sale_price")
-                )
-              ),
-              "squared", DoubleF
-            )
-          ))
-        )
+        New("Listing", Set(
+          FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+          FieldDecl(
+            Avg(
+              Mul(
+                F("Listing.sale_price"),
+                F("Listing.sale_price")
+              )
+            ),
+            "squared", DoubleF
+          )
+        ))
       ),
 
       // Query 18
       SetRes(
         Apply(
           Filter(Gte("max", Add(Constant("10", UnQuoted), F("sales")))),
-          Apply(
-            Group,
-            New("Listing", Set(
-              FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
-              FieldDecl(
-                Max(
-                  Add(
-                    F("Listing.yearly_rent"),
-                    Constant("10", UnQuoted)
-                  )
-                ), "max", DoubleF)
-            ))
-          )
+          New("Listing", Set(
+            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+            FieldDecl(
+              Max(
+                Add(
+                  F("Listing.yearly_rent"),
+                  Constant("10", UnQuoted)
+                )
+              ), "max", DoubleF)
+          ))
         )
       ),
 
@@ -409,80 +396,68 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               Gte("max", Add(Constant("10", UnQuoted), F("sales")))
             )
           ),
-          Apply(
-            Group,
-            New("Listing", Set(
-              FieldDecl(F("Listing.foo"), "fooF", StringF),
-              FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
-              FieldDecl(
-                Max(
-                  Add(
-                    F("Listing.yearly_rent"),
-                    Constant("10", UnQuoted)
-                  )
-                ), "max", DoubleF)
-            ))
-          )
+          New("Listing", Set(
+            FieldDecl(F("Listing.foo"), "fooF", StringF),
+            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+            FieldDecl(
+              Max(
+                Add(
+                  F("Listing.yearly_rent"),
+                  Constant("10", UnQuoted)
+                )
+              ), "max", DoubleF)
+          ))
         )
       ),
 
       // Query 20
       SetRes(
-        Apply(
-          Group,
-          New("Listing", Set(
-            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
-            FieldDecl(
-              Mul(
-                F("Listing.sale_price"),
-                F("Listing.sale_price")
-              ),
-              "mul", DoubleF, hidden = true
+        New("Listing", Set(
+          FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+          FieldDecl(
+            Mul(
+              F("Listing.sale_price"),
+              F("Listing.sale_price")
             ),
-            FieldDecl(
-              Sub(
-                Avg(F("mul")),
-                Constant("10", UnQuoted)
-              ), "squared", DoubleF)
-          ))
-        )
+            "mul", DoubleF, hidden = true
+          ),
+          FieldDecl(
+            Sub(
+              Avg(F("mul")),
+              Constant("10", UnQuoted)
+            ), "squared", DoubleF)
+        ))
       ),
 
       // Query 21
       SetRes(
-        Apply(
-          Group,
-          New("Listing", Set(
-            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
-            FieldDecl(
-              Mul(
-                F("Listing.sale_price"),
-                F("Listing.sale_price")
-              ),
-              "mul", DoubleF, hidden = true
+        New("Listing", Set(
+          FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+          FieldDecl(
+            Mul(
+              F("Listing.sale_price"),
+              F("Listing.sale_price")
             ),
-            FieldDecl(Avg(F("mul")), "squared", DoubleF)
-          ))
-        )
+            "mul", DoubleF, hidden = true
+          ),
+          FieldDecl(Avg(F("mul")), "squared", DoubleF)
+        ))
       ),
 
       // Query 22
       SetRes(
-        Apply(
-          Group,
-          New("Listing", Set(
-            FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
-            FieldDecl(F("Listing.foo"), "fooF", StringF),
-            FieldDecl(
-              Mul(
-                F("Listing.sale_price"),
-                F("Listing.sale_price")
-              ),
-              "mul", DoubleF, hidden = true
+        New("Listing", Set(
+          FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
+          FieldDecl(F("Listing.foo"), "fooF", StringF),
+          FieldDecl(
+            Mul(
+              F("Listing.sale_price"),
+              F("Listing.sale_price")
             ),
-            FieldDecl(Avg(F("mul")), "squared", DoubleF)
-          ))
-        )
+            "mul", DoubleF, hidden = true
+          ),
+          FieldDecl(Avg(F("mul")), "squared", DoubleF)
+        ))
       ),
 
       // Query 23
@@ -497,6 +472,138 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             DoubleF
           )
         ))
+      ),
+
+      // Query 24
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(F("Listing.sale_price"), "V", DoubleF, false),
+            FieldDecl(Mul(F("Listing.id"), F("V")), "jjG", DoubleF, false),
+            FieldDecl(
+              Mul(Div(F("Listing.id"), F("jjG")), Min(Sub(F("V"), Constant("7", UnQuoted)))),
+              "qmIqh",
+              DoubleF,
+              false
+            )
+          )
+        )
+      ),
+
+      // Query 25
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Constant("JB", Quoted), "Jble", StringF, false),
+            FieldDecl(Constant("1", UnQuoted), "cn", IntF, true),
+            FieldDecl(
+              Min(Add(Constant("qdbiycgpD", Quoted), Constant("3WnBi", Quoted))),
+              "FJOKGoi",
+              DoubleF,
+              false
+            )
+          )
+        )
+      ),
+
+      // Query 26
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Constant("EcwE", Quoted), "wduesdvc", StringF, false),
+            FieldDecl(Sub(F("wduesdvc"), F("wduesdvc")), "rrW", DoubleF, false),
+            FieldDecl(Add(Constant("2", UnQuoted), F("Listing.sale_price")), "bCGVwr", DoubleF, false)
+          )
+        )
+      ),
+
+      // Query 27
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Sub(F("Listing.sale_price"), F("Listing.sale_price")), "GTfzOMrj", DoubleF, true),
+            FieldDecl(Sub(F("Listing.sale_price"), F("GTfzOMrj")), "lqA", DoubleF, false),
+            FieldDecl(Min(F("Listing.sale_price")), "Rp", DoubleF, false),
+            FieldDecl(Sum(F("GTfzOMrj")), "blny", DoubleF, false)
+          )
+        )
+      ),
+
+      // Query 28
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Constant("3", UnQuoted), "WXDdG", IntF, false),
+            FieldDecl(
+              Mul(Sum(Add(F("Listing.id"), Constant("2", UnQuoted))), F("Listing.id")),
+              "CBG",
+              DoubleF,
+              false
+            )
+          )
+        )
+      ),
+
+      // Query 29
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(
+              Add(
+                Mul(Constant("3", UnQuoted), Sub(Add(F("Listing.yearly_rent"), F("Listing.id")), Sum(Constant("obAoS5v", Quoted)))),
+                Constant("bfJWBP7p", Quoted)
+              ),
+              "QutFiZgOg",
+              DoubleF,
+              false
+            ),
+            FieldDecl(
+              Avg(Sub(F("Listing.sale_price"), Constant("4", UnQuoted))),
+              "SsJNcy",
+              DoubleF,
+              false
+            ),
+            FieldDecl(F("Listing.sale_price"), "wdVXax", DoubleF, false),
+            FieldDecl(
+              Sub(
+                Add(F("Listing.id"), Min(F("Listing.sale_price"))),
+                Div(F("SsJNcy"), Sub(F("SsJNcy"), Constant("HYQvPq", Quoted)))
+              ),
+              "wmWMTQf",
+              DoubleF,
+              false
+            )
+          )
+        )
+      ),
+
+      // Query 30
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Constant("6quxR", Quoted), "y", StringF, false),
+            FieldDecl(Sum(Div(F("y"), Constant("2", UnQuoted))), "WIhPq", DoubleF, false)
+          )
+        )
+      ),
+
+      // Query 31
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Max(F("Listing.sale_price")), "Bypp", DoubleF, true),
+            FieldDecl(F("Bypp"), "XcRfBTT", DoubleF, false),
+            FieldDecl(Constant("duySFSo3w", Quoted), "PsJ", StringF, true)
+          )
+        )
       )
     )
 
@@ -570,24 +677,6 @@ class TestRunner(schema: String, targets: Seq[Target]) {
         )
       ),
 
-      // Query 7
-      SetRes(
-        Apply(
-          Sort(Seq(
-            ("Review.book.title", Desc),
-            ("Review.reviewer_name", Asc))
-          ),
-          Apply(
-            Filter(
-              And(
-                Gte("Review.rating", Constant("2", UnQuoted)),
-                Contains("Review.book.author.surname", Constant("o", Quoted))
-              )
-            ),
-            New("Review", Set())
-          )
-        )
-      ),
 
       // Query 8
       FirstRes(
@@ -723,7 +812,9 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               }}
             // Get the number of backends
             val ndbs = targets.map(x => x.db).toSet.size
-            if (failed.size >= 1 || oks.size > ndbs) {
+            val okDbs = oks.keys.map { case (k, _) => k }.toSet
+            if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
+                oks.size > ndbs) {
               val qid = mismatchEnumerator.next()
               val reportDir = getMismatchesDir(qid)
               val msg =

@@ -198,7 +198,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       }
     }
 
-  def constructGroupBy(groupBy: Seq[String]) = groupBy match {
+  def constructGroupBy(groupBy: Set[String]) = groupBy match {
     case Seq() => ""
     case _     =>
       "group_by(" + (
@@ -208,7 +208,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
     val fieldVals = s.fields.values
-    val nonAggrHidden = TUtils.filterNonAggrHidden(fieldVals).toSeq
+    val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
@@ -216,7 +216,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         qStr.ret.get,
         constructJoins(s.joins),
         constructFilter(nonAggrP),
-        if (s.groupBy) constructGroupBy(nonAggrHidden) else "",
+        constructGroupBy(s.groupBy),
         constructFilter(aggrP, having = true),
         constructOrderBy(s.orders),
         s.aggrs match {
