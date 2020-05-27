@@ -98,18 +98,38 @@ abstract class Translator(val target: Target) {
     _updateJoins(field.split('.').toList, s)
   }
 
+  def hasAggregate(fields: Set[FieldDecl], store: Map[String, FieldExpr]) = {
+    def _hasAggregate(e: FieldExpr): Boolean = e match {
+      case Constant(_, _) => false
+      case Count(_) | Sum(_) | Avg(_) | Max(_) | Min(_) => true
+      case F(f) => store get f match {
+        case None    => false
+        case Some(e) => _hasAggregate(e)
+      }
+      case Add(e1, e2) => _hasAggregate(e1) || _hasAggregate(e2)
+      case Sub(e1, e2) => _hasAggregate(e1) || _hasAggregate(e2)
+      case Mul(e1, e2) => _hasAggregate(e1) || _hasAggregate(e2)
+      case Div(e1, e2) => _hasAggregate(e1) || _hasAggregate(e2)
+    }
+    (fields filter { !FieldDecl.hidden(_) } map FieldDecl.expr) exists _hasAggregate
+  }
+
   def computeGroupBy(source: String, fields: Set[FieldDecl]): Set[String] = {
-    val init = (Set[String](), Map[String, (FieldExpr, Boolean)]())
+    val init = (
+      Set[String](),
+      Set[Constant](),
+      Map[String, (FieldExpr, Boolean)]()
+    )
     //  Compute a map of field names to their corresponding expression
     //  and an the initial sets of group bys.
-    val (groupBy, store) = fields.foldLeft(init) { (acc, x) => {
-      val (g, s) = acc
+    val (groupBy, cons, store) = fields.foldLeft(init) { (acc, x) => {
+      val (g, c, s) = acc
       x match {
         case FieldDecl(Constant(a, b), as, _, h) =>
-          (g, s + (as -> (Constant(a, b), h)))
+          (g, c + Constant(a, b), s + (as -> (Constant(a, b), h)))
         case FieldDecl(e, as, _, false) =>
-          (if (!e.isAggregate) g + as else g, s + (as -> (e, false)))
-        case FieldDecl(e, as, _, true) => (g, s + (as -> (e, true)))
+          (if (!e.isAggregate) g + as else g, c, s + (as -> (e, false)))
+        case FieldDecl(e, as, _, true) => (g, c, s + (as -> (e, true)))
       }
     }}
     def _handleComplexExpr(e: FieldExpr, as: String, g: Set[String]): Set[String] = {
@@ -142,14 +162,19 @@ abstract class Translator(val target: Target) {
         Min(_) => g
       case _   => _handleComplexExpr(e, as, g)
     }
-    val (hasAggr, groupedF) = fields.foldLeft((false, groupBy)) { (s, f) => {
-      val (a, b) = s
-      f match { case FieldDecl(e, as, _, _) =>
-         (if (!a) e.isAggregate else a, _computeGroupBy(e, as, b))
-      }
+    // Compute all fields that must be included in the GROUP BY clause.
+    val groupedF = fields.foldLeft(groupBy) { (s, f) => {
+      f match { case FieldDecl(e, as, _, h) => _computeGroupBy(e, as, s) }
     }}
+    // Check if all grouped fields are constants.
+    val isConstant = groupedF forall { x => store get x match {
+      case Some((x, _)) => x.isConstant
+      case None    => false
+    }}
+    // Check if fields contain aggregate functions.
+    val hasAggr = hasAggregate(fields, store map { case (k, v) => (k, v._1) })
     if (!hasAggr) Set()
-    else if (groupedF.isEmpty) Set(source + ".id")
+    else if (groupedF.isEmpty || isConstant) Set(source + ".id")
     else groupedF
   }
 

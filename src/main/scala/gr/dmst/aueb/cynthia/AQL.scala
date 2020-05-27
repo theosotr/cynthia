@@ -7,54 +7,70 @@ case object UnQuoted extends ConstantType
 sealed abstract class FieldExpr(val compound: Boolean) {
   def isAggregate(): Boolean
   def isNaiveAggregate(): Boolean
+  def isConstant(): Boolean
 }
 case class Constant(v: String, vt: ConstantType) extends FieldExpr(false) {
   def isAggregate() = false
   def isNaiveAggregate() = false
+  def isConstant() = true
 }
 case class F(f: String) extends FieldExpr(false) {
   def isAggregate() = false
   def isNaiveAggregate() = false
+  def isConstant() = false
 }
 case class Count(f: Option[FieldExpr]) extends FieldExpr(false) {
   def isAggregate() = true
   def isNaiveAggregate() = true
+  def isConstant() = false
 }
 case class Sum(f: FieldExpr) extends FieldExpr(false) {
   def isAggregate() = true
   def isNaiveAggregate() = true
+  def isConstant() = false
 }
 case class Avg(f: FieldExpr) extends FieldExpr(false) {
   def isAggregate() = true
   def isNaiveAggregate() = true
+  def isConstant() = false
 }
 case class Max(f: FieldExpr) extends FieldExpr(false) {
   def isAggregate() = true
   def isNaiveAggregate() = true
+  def isConstant() = false
 }
 case class Min(f: FieldExpr) extends FieldExpr(false) {
   def isAggregate() = true
   def isNaiveAggregate() = true
+  def isConstant() = false
 }
 case class Add(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
     f1.isAggregate || f2.isAggregate
   def isNaiveAggregate() = false
+  def isConstant() =
+    f1.isConstant && f2.isConstant
 }
 case class Sub(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
     f1.isAggregate || f2.isAggregate
   def isNaiveAggregate() = false
+  def isConstant() =
+    f1.isConstant && f2.isConstant
 }
 case class Mul(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
     f1.isAggregate || f2.isAggregate
   def isNaiveAggregate() = false
+  def isConstant() =
+    f1.isConstant && f2.isConstant
 }
 case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
     f1.isAggregate || f2.isAggregate
   def isNaiveAggregate() = false
+  def isConstant() =
+    f1.isConstant && f2.isConstant
 }
 
 sealed abstract class Predicate {
@@ -141,6 +157,10 @@ case object DateTimeF extends FieldType {
 
 case class FieldDecl(f: FieldExpr, as: String, ftype: FieldType, hidden: Boolean = false)
 object FieldDecl {
+
+  def expr(fieldDecl: FieldDecl) = fieldDecl match {
+    case FieldDecl(e, _, _, _) => e
+  }
 
   def as(fieldDecl: FieldDecl) = fieldDecl match {
     case FieldDecl(_, as, _, _) => as

@@ -150,7 +150,8 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       val anFields = TUtils.mapNonHiddenFields(fields, { case FieldDecl(_, as, _, _) =>
         as + "=" + as
       })
-      "annotate(" + (anFields mkString ", ") + ")"
+      if (anFields.isEmpty) ""
+      else "annotate(" + (anFields mkString ", ") + ")"
     }
 
   def constructGroupBy(groupBy: Set[String]) = groupBy match {
@@ -173,7 +174,6 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
     val fieldVals = s.fields.values
-    val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val hidden = TUtils.filterHidden(fieldVals)
     this.hidden ++= hidden
     val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
@@ -188,7 +188,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
         qStr.ret.get,
         constructAnnotate(nonAggrF),
         constructFilter(nonAggrP),
-        constructGroupBy(groupBy),
+        if (aggrF exists { x => !FieldDecl.hidden(x) }) constructGroupBy(groupBy) else "",
         constructAnnotate(aggrF),
         constructOrderBy(s.orders),
         constructFilter(aggrP),

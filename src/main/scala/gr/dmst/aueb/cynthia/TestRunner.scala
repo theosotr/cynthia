@@ -604,6 +604,75 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(Constant("duySFSo3w", Quoted), "PsJ", StringF, true)
           )
         )
+      ),
+
+      // Query 32
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(
+              Add(
+                Sub(
+                  Add(F("Listing.id"), Min(Mul(F("Listing.sale_price"), F("Listing.sale_price")))),
+                  Constant("7", UnQuoted)
+                ),
+                Add(
+                  F("Listing.sale_price"),
+                  Div(
+                    Add(
+                      Add(Min(Constant("e5LIn", Quoted)), F("Listing.sale_price")),
+                      Count(Some(F("Listing.id")))
+                    ),
+                    F("Listing.sale_price")
+                  )
+                )
+              ),
+              "heTkuJqO",
+              DoubleF,
+              true
+            ),
+            FieldDecl(F("heTkuJqO"), "BIKnH", DoubleF, false)
+          )
+        )
+      ),
+
+      // Query 33
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Avg(F("Listing.id")), "Szgw", DoubleF, false),
+            FieldDecl(Constant("VWSKU7", Quoted), "K", StringF, true),
+            FieldDecl(F("Listing.sale_price"), "ee", DoubleF, false)
+          )
+        )
+      ),
+
+      // Query 34
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(
+              Sub(Min(F("Listing.sale_price")), F("Listing.sale_price")),
+              "ppVMYfS",
+              DoubleF,
+              true
+            )
+          )
+        )
+      ),
+
+      // Query 35
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Count(Some(F("Listing.id"))), "QpUmZQeX", IntF, false),
+            FieldDecl(Mul(Constant("p4d", Quoted), Constant("qYCGT", Quoted)), "dvdddN", DoubleF, true)
+          )
+        )
       )
     )
 
@@ -735,7 +804,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(F("Review.book.author.first_name"), "name", StringF)
           ))
         )
-      )
+      ),
     )
 
   def genQueries(): Seq[Query] = schema match {
