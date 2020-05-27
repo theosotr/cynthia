@@ -126,7 +126,7 @@ abstract class Translator(val target: Target) {
       val (g, c, s) = acc
       x match {
         case FieldDecl(Constant(a, b), as, _, h) =>
-          (g, c + Constant(a, b), s + (as -> (Constant(a, b), h)))
+          (g + as, c + Constant(a, b), s + (as -> (Constant(a, b), h)))
         case FieldDecl(e, as, _, false) =>
           (if (!e.isAggregate) g + as else g, c, s + (as -> (e, false)))
         case FieldDecl(e, as, _, true) => (g, c, s + (as -> (e, true)))

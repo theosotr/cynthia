@@ -673,6 +673,34 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(Mul(Constant("p4d", Quoted), Constant("qYCGT", Quoted)), "dvdddN", DoubleF, true)
           )
         )
+      ),
+
+      // Query 36
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(Count(Some(F("Listing.id"))), "jJqOpWLil", IntF, true),
+            FieldDecl(F("Listing.sale_price"), "ij", DoubleF, true),
+            FieldDecl(F("jJqOpWLil"), "FPCwjJlb", IntF, false)
+          )
+        )
+      ),
+
+      // Query 37
+      SetRes(
+        New(
+          "Listing",
+          Set(
+            FieldDecl(
+              Div(Min(Constant("0", UnQuoted)), F("Listing.sale_price")),
+              "yVmbvGHWe",
+              DoubleF,
+              true
+            ),
+            FieldDecl(Add(F("yVmbvGHWe"), F("yVmbvGHWe")), "Te", DoubleF, false)
+          )
+        )
       )
     )
 
