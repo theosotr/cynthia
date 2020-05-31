@@ -41,6 +41,14 @@ sudo gem install sqlite3 mysql2 postgres
 sudo install scripts/dump-activerecord-models.py /usr/local/bin/dump-activerecord-models
 ```
 
+* sequelize (nodejs)
+
+```bash
+npm install --save sequelize
+npm install --save sequelize-auto
+npm install --save sqlite3
+```
+
 ## Compile Cynthia
 
 Simply run

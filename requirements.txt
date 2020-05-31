@@ -4,3 +4,5 @@ mysql-connector
 django
 sqlalchemy
 sqlacodegen
+peewee
+sqlite3
