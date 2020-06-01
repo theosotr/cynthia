@@ -296,7 +296,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
           constructAttributes(s),
           constructFilter(nonAggrP),
           constructFilter(aggrP, having = true),
-          constructGroupBy(s.groupBy),
+          constructGroupBy(s.nonAggrF),
           constructOrderBy(s.orders),
           if (offset >= 0) s"offset: $offset" else "",
           limit match {

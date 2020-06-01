@@ -144,15 +144,13 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       else s"[:$limit]"
   }
 
-  def constructAnnotate(fields: Iterable[FieldDecl]) =
+  def constructAnnotate(fields: Set[String]) =
     if (fields.isEmpty) ""
-    else {
-      val anFields = TUtils.mapNonHiddenFields(fields, { case FieldDecl(_, as, _, _) =>
-        as + "=" + as
-      })
-      if (anFields.isEmpty) ""
-      else "annotate(" + (anFields mkString ", ") + ")"
-    }
+    else "annotate(" + (fields.map { x => x + "=" + x } mkString ", ") + ")"
+
+  def constructAggrAnnotate(fields: Seq[String]) =
+    if (fields.isEmpty) ""
+    else fields map { x => "annotate(" + x + "=" + x + ")" } mkString "."
 
   def constructGroupBy(groupBy: Set[String]) = groupBy match {
     case Seq() => ""
@@ -171,25 +169,67 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     }
   }
 
+  def computeFieldGraph(fields: Map[String, FieldDecl]) = {
+    def _examineExpr(acc: Map[String, Set[String]],
+      e: FieldExpr, as: String): Map[String, Set[String]] = e match {
+        case F(f) => fields get f match {
+          case None    => acc // the field is native.
+          // here, the expression references a field.
+          case Some(_) => acc + (as -> (acc get as match {
+            case None    => Set(f)
+            case Some(s) => s + f
+          }))
+        }
+        case Constant(_, _) => acc
+        case Count(None)    => acc
+        case Count(Some(e)) => _examineExpr(acc, e, as)
+        case Sum(e)         => _examineExpr(acc, e, as)
+        case Avg(e)         => _examineExpr(acc, e, as)
+        case Min(e)         => _examineExpr(acc, e, as)
+        case Max(e)         => _examineExpr(acc, e, as)
+        case Add(e1, e2)    => Utils.mergeMap(
+                                 _examineExpr(acc, e1, as),
+                                 _examineExpr(acc, e2, as))
+        case Sub(e1, e2)    => Utils.mergeMap(
+                                 _examineExpr(acc, e1, as),
+                                 _examineExpr(acc, e2, as))
+        case Mul(e1, e2)    => Utils.mergeMap(
+                                 _examineExpr(acc, e1, as),
+                                 _examineExpr(acc, e2, as))
+        case Div(e1, e2)    => Utils.mergeMap(
+                                 _examineExpr(acc, e1, as),
+                                 _examineExpr(acc, e2, as))
+    }
+    val initMap = fields.keys.foldLeft(Map[String, Set[String]]()) { (acc, x) =>
+      acc + (x -> Set()) }
+    fields.values.foldLeft(initMap) { (acc, x) =>
+      x match {case FieldDecl(e, as, _, _) => _examineExpr(acc, e, as)}
+    }
+  }
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
     val fieldVals = s.fields.values
     val hidden = TUtils.filterHidden(fieldVals)
     this.hidden ++= hidden
     val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
-    val (aggrF, nonAggrF) = fieldVals partition FieldDecl.isAggregate
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
-    val groupBy: Set[String] = s.groupBy.toSeq match {
-      case Seq(f) => if (f.equals(s.source + ".id")) Set() else s.groupBy
-      case _ => s.groupBy
+    val groupBy: Set[String] = s.nonAggrF.toSeq match {
+      case Seq(f) => if (f.equals(s.source + ".id")) Set() else s.nonAggrF
+      case _ => s.nonAggrF
+    }
+    val tSort = Utils.topologicalSort(computeFieldGraph(s.fields)) filter { x =>
+      s.aggrF.contains(x) }
+    val nonAggrF = TUtils.filterNonAggrHidden(fieldVals).toSet filter { x =>
+      !s.aggrF.contains(x)
     }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
         constructAnnotate(nonAggrF),
         constructFilter(nonAggrP),
-        if (aggrF exists { x => !FieldDecl.hidden(x) }) constructGroupBy(groupBy) else "",
-        constructAnnotate(aggrF),
+        if (!s.aggrF.isEmpty) constructGroupBy(groupBy) else "",
+        constructAggrAnnotate(tSort),
         constructOrderBy(s.orders),
         constructFilter(aggrP),
         constructAggrs(s.aggrs),

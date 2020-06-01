@@ -178,7 +178,7 @@ object FieldDecl {
 sealed trait QuerySet {
   def ordered(): Boolean
 }
-case class New(model: String, fields: Set[FieldDecl]) extends QuerySet {
+case class New(model: String, fields: Seq[FieldDecl]) extends QuerySet {
   def ordered() = false
 }
 case class Apply(op: Operation, q: QuerySet) extends QuerySet {

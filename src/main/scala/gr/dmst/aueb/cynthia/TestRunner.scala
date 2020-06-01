@@ -119,8 +119,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       // Query 1
       SetRes(
         Union(
-          New("Listing", Set()),
-          New("Listing", Set())
+          New("Listing", Seq()),
+          New("Listing", Seq())
         )
       ),
 
@@ -130,10 +130,10 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Count(None), "count", IntF)
         ),
         Union(
-          New("Listing", Set()),
+          New("Listing", Seq()),
           Union(
-            New("Listing", Set()),
-            New("Listing", Set())
+            New("Listing", Seq()),
+            New("Listing", Seq())
           )
         )
       ),
@@ -146,7 +146,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               Eq("Listing.foo", Constant("bar", Quoted))
             )
           ),
-          New("Listing", Set())
+          New("Listing", Seq())
         )
       ),
 
@@ -157,8 +157,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             Seq(("Listing.yearly_rent", Asc))
           ),
           Union(
-            New("Listing", Set()),
-            New("Listing", Set())
+            New("Listing", Seq()),
+            New("Listing", Seq())
           )
         )
       ),
@@ -172,7 +172,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               ("Listing.sale_price", Asc)
             )
           ),
-          New("Listing", Set())
+          New("Listing", Seq())
         )
       ),
 
@@ -182,10 +182,10 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Count(None), "count", IntF)
         ),
         Union(
-          New("Listing", Set()),
+          New("Listing", Seq()),
           Union(
-            New("Listing", Set()),
-            New("Listing", Set())
+            New("Listing", Seq()),
+            New("Listing", Seq())
           )
         )
       ),
@@ -201,7 +201,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               Gte("Listing.sale_price", Constant("100", UnQuoted))
             )
           ),
-          New ("Listing", Set())
+          New ("Listing", Seq())
         )
       ),
 
@@ -210,7 +210,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
         Seq(
           FieldDecl(Count(None), "count", IntF)
         ),
-        New("Listing", Set())
+        New("Listing", Seq())
       ),
 
       // Query 9
@@ -221,7 +221,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Min(F("Listing.sale_price")), "min_sale", DoubleF),
           FieldDecl(Avg(F("Listing.sale_price")), "avg_sale", DoubleF)
         ),
-        New("Listing", Set())
+        New("Listing", Seq())
       ),
 
       // Query 10
@@ -254,7 +254,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             DoubleF
           )
         ),
-        New("Listing", Set())
+        New("Listing", Seq())
       ),
 
       // Query 11
@@ -263,7 +263,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           FieldDecl(Max(F("Listing.foo")), "max", StringF),
           FieldDecl(Min(F("Listing.foo")), "min", StringF)
         ),
-        New("Listing", Set())
+        New("Listing", Seq())
       ),
 
       // Query 12
@@ -280,7 +280,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             DoubleF
           )
         ),
-        New("Listing", Set())
+        New("Listing", Seq())
       ),
 
       // Query 13
@@ -289,7 +289,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           Filter(
             Gte("custom", Constant("50", UnQuoted))
           ),
-          New("Listing", Set(
+          New("Listing", Seq(
             FieldDecl(
               Add(
                 F("Listing.yearly_rent"),
@@ -311,7 +311,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               Eq("text", Constant("foobar", Quoted))
             )
           ),
-          New("Listing", Set(
+          New("Listing", Seq(
             FieldDecl(
               Add(
                 Constant("5", UnQuoted),
@@ -329,7 +329,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 15
       SetRes(
-        New("Listing", Set(
+        New("Listing", Seq(
           FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
           FieldDecl(Sum(F("Listing.yearly_rent")), "sum", DoubleF)
         ))
@@ -339,7 +339,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         Apply(
           Filter(Gte("sales", Constant("1", UnQuoted))),
-          New("Listing", Set(
+          New("Listing", Seq(
             FieldDecl(
               Mul(
                 Constant("10", UnQuoted),
@@ -357,7 +357,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 17
       SetRes(
-        New("Listing", Set(
+        New("Listing", Seq(
           FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
           FieldDecl(
             Avg(
@@ -375,7 +375,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         Apply(
           Filter(Gte("max", Add(Constant("10", UnQuoted), F("sales")))),
-          New("Listing", Set(
+          New("Listing", Seq(
             FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
             FieldDecl(
               Max(
@@ -397,7 +397,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               Gte("max", Add(Constant("10", UnQuoted), F("sales")))
             )
           ),
-          New("Listing", Set(
+          New("Listing", Seq(
             FieldDecl(F("Listing.foo"), "fooF", StringF),
             FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
             FieldDecl(
@@ -413,7 +413,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 20
       SetRes(
-        New("Listing", Set(
+        New("Listing", Seq(
           FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
           FieldDecl(
             Mul(
@@ -432,7 +432,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 21
       SetRes(
-        New("Listing", Set(
+        New("Listing", Seq(
           FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
           FieldDecl(
             Mul(
@@ -447,7 +447,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 22
       SetRes(
-        New("Listing", Set(
+        New("Listing", Seq(
           FieldDecl(F("Listing.sale_price"), "sales", DoubleF),
           FieldDecl(F("Listing.foo"), "fooF", StringF),
           FieldDecl(
@@ -463,7 +463,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
 
       // Query 23
       SetRes(
-        New("Listing", Set(
+        New("Listing", Seq(
           FieldDecl(
             Mul(
               Avg(F("Listing.yearly_rent")),
@@ -479,7 +479,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(F("Listing.sale_price"), "V", DoubleF, false),
             FieldDecl(Mul(F("Listing.id"), F("V")), "jjG", DoubleF, false),
             FieldDecl(
@@ -496,7 +496,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Constant("JB", Quoted), "Jble", StringF, false),
             FieldDecl(Constant("1", UnQuoted), "cn", IntF, true),
             FieldDecl(
@@ -513,7 +513,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Constant("EcwE", Quoted), "wduesdvc", StringF, false),
             FieldDecl(Sub(F("wduesdvc"), F("wduesdvc")), "rrW", DoubleF, false),
             FieldDecl(Add(Constant("2", UnQuoted), F("Listing.sale_price")), "bCGVwr", DoubleF, false)
@@ -525,7 +525,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Sub(F("Listing.sale_price"), F("Listing.sale_price")), "GTfzOMrj", DoubleF, true),
             FieldDecl(Sub(F("Listing.sale_price"), F("GTfzOMrj")), "lqA", DoubleF, false),
             FieldDecl(Min(F("Listing.sale_price")), "Rp", DoubleF, false),
@@ -538,7 +538,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Constant("3", UnQuoted), "WXDdG", IntF, false),
             FieldDecl(
               Mul(Sum(Add(F("Listing.id"), Constant("2", UnQuoted))), F("Listing.id")),
@@ -554,7 +554,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(
               Add(
                 Mul(Constant("3", UnQuoted), Sub(Add(F("Listing.yearly_rent"), F("Listing.id")), Sum(Constant("obAoS5v", Quoted)))),
@@ -588,7 +588,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Constant("6quxR", Quoted), "y", StringF, false),
             FieldDecl(Sum(Div(F("y"), Constant("2", UnQuoted))), "WIhPq", DoubleF, false)
           )
@@ -599,7 +599,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Max(F("Listing.sale_price")), "Bypp", DoubleF, true),
             FieldDecl(F("Bypp"), "XcRfBTT", DoubleF, false),
             FieldDecl(Constant("duySFSo3w", Quoted), "PsJ", StringF, true)
@@ -611,7 +611,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(
               Add(
                 Sub(
@@ -642,7 +642,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Avg(F("Listing.id")), "Szgw", DoubleF, false),
             FieldDecl(Constant("VWSKU7", Quoted), "K", StringF, true),
             FieldDecl(F("Listing.sale_price"), "ee", DoubleF, false)
@@ -654,7 +654,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(
               Sub(Min(F("Listing.sale_price")), F("Listing.sale_price")),
               "ppVMYfS",
@@ -669,7 +669,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Count(Some(F("Listing.id"))), "QpUmZQeX", IntF, false),
             FieldDecl(Mul(Constant("p4d", Quoted), Constant("qYCGT", Quoted)), "dvdddN", DoubleF, true)
           )
@@ -680,7 +680,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(Count(Some(F("Listing.id"))), "jJqOpWLil", IntF, true),
             FieldDecl(F("Listing.sale_price"), "ij", DoubleF, true),
             FieldDecl(F("jJqOpWLil"), "FPCwjJlb", IntF, false)
@@ -692,7 +692,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         New(
           "Listing",
-          Set(
+          Seq(
             FieldDecl(
               Div(Min(Constant("0", UnQuoted)), F("Listing.sale_price")),
               "yVmbvGHWe",
@@ -702,6 +702,52 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(Add(F("yVmbvGHWe"), F("yVmbvGHWe")), "Te", DoubleF, false)
           )
         )
+      ),
+
+      // Query 38
+      SetRes(
+        New(
+          "Listing",
+          List(
+            FieldDecl(Constant("6", UnQuoted), "ORsHBgQ", IntF, false),
+            FieldDecl(
+              Div(Sum(Constant("pD1B", Quoted)), F("Listing.sale_price")),
+              "othaPT",
+              DoubleF,
+              false
+            ),
+            FieldDecl(F("othaPT"), "gOtzP", DoubleF, false),
+            FieldDecl(Avg(Constant("AOjkd", Quoted)), "S", DoubleF, true),
+            FieldDecl(Constant("4", UnQuoted), "x", IntF, true),
+            FieldDecl(F("gOtzP"), "G", DoubleF, true)
+          )
+        )
+      ),
+
+      // Query 39
+      SetRes(
+        New(
+          "Listing",
+          List(
+            FieldDecl(Avg(Constant("1", UnQuoted)), "irOHtSumD", DoubleF, false),
+            FieldDecl(F("irOHtSumD"), "jiAtXcec", DoubleF, false)
+          )
+        )
+      ),
+
+      // Query 40
+      SetRes(
+        New(
+          "Listing",
+          List(
+            FieldDecl(Sum(F("Listing.yearly_rent")), "eqQy", DoubleF, false),
+            FieldDecl(F("eqQy"), "rQe", DoubleF, true),
+            FieldDecl(Count(Some(F("Listing.id"))), "dvcVCurv", IntF, true),
+            FieldDecl(F("eqQy"), "I", DoubleF, false),
+            FieldDecl(F("Listing.sale_price"), "TPH", DoubleF, true),
+            FieldDecl(Constant("5", UnQuoted), "bqZCpnWO", IntF, true)
+          )
+        )
       )
     )
 
@@ -709,13 +755,13 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     Seq(
 
       // Query 1
-      SetRes(New("Book", Set())),
+      SetRes(New("Book", Seq())),
 
       // Query 2
       SetRes(
         Apply(
           Sort(Seq(("Review.rating", Desc))),
-          New("Review", Set())
+          New("Review", Seq())
         )
       ),
 
@@ -723,7 +769,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         Apply(
           Filter(Eq("Review.book.title", Constant("Random book", Quoted))),
-          New("Review", Set())
+          New("Review", Seq())
         )
       ),
 
@@ -731,7 +777,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       SetRes(
         Apply(
           Filter(Eq("Review.book.author.surname", Constant("Coecker", Quoted))),
-          New("Review", Set())
+          New("Review", Seq())
         )
       ),
 
@@ -741,7 +787,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
           Sort(Seq(
             ("Review.book.title", Desc))
           ),
-          New("Review", Set())
+          New("Review", Seq())
         )
       ),
 
@@ -752,7 +798,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             ("Review.book.title", Desc),
             ("Review.reviewer_name", Asc))
           ),
-          New("Review", Set())
+          New("Review", Seq())
         )
       ),
 
@@ -770,7 +816,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 Lte("Review.rating", Constant("4", UnQuoted))
               )
             ),
-            New("Review", Set())
+            New("Review", Seq())
           )
         )
       ),
@@ -790,7 +836,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 Contains("Review.book.author.surname", Constant("o", Quoted))
               )
             ),
-            New("Review", Set())
+            New("Review", Seq())
           )
         )
       ),
@@ -808,7 +854,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             Filter(
               Gte("Review.rating", Constant("2", UnQuoted))
             ),
-            New("Review", Set())
+            New("Review", Seq())
           )
         )
       ),
@@ -822,7 +868,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               Lte("Review.book.author.first_name", Constant("Z", Quoted))
             )
           ),
-          New("Review", Set(
+          New("Review", Seq(
             FieldDecl(
               Mul(
                 F("Review.rating"),
