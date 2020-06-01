@@ -34,10 +34,10 @@ case class QueryStr(
 
 case class State(
   db: DB,
-  source: String = "",
-  fields: Map[String, FieldDecl] = ListMap(),
+  source: String = "",                          // model
+  fields: Map[String, FieldDecl] = ListMap(),   // FieldDecl.as FieldDecl
   preds: Set[Predicate] = Set(),
-  orders: Seq[(String, Order)] = Seq(),
+  orders: Seq[(String, Order)] = Seq(),         // FieldDecl.as asc or desc
   nonAggrF: Set[String] = Set(),
   aggrF: Set[String] = Set(),
   constantF: Set[String] = Set(),
@@ -222,7 +222,7 @@ abstract class Translator(val target: Target) {
         case None => updateJoins(f, s) // the field is native
         case Some(FieldDecl(e2, _, _, _)) => _traverseFieldExpr(s, e2)
       }
-      case Count(None) => s 
+      case Count(None) => s
       case Count(Some(e2)) => _traverseFieldExpr(s, e2)
       case Sum(e2) => _traverseFieldExpr(s, e2)
       case Avg(e2) => _traverseFieldExpr(s, e2)
