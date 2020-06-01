@@ -32,10 +32,10 @@ case class QueryStr(
 
 case class State(
   db: DB,
-  source: String = "",
-  fields: Map[String, FieldDecl] = Map(),
+  source: String = "",                    // model
+  fields: Map[String, FieldDecl] = Map(), // FieldDecl.as FieldDecl
   preds: Set[Predicate] = Set(),
-  orders: Seq[(String, Order)] = Seq(),
+  orders: Seq[(String, Order)] = Seq(),   // FieldDecl.as asc or desc
   groupBy: Set[String] = Set(),
   aggrs: Seq[FieldDecl] = Seq(),
   joins: Set[(String, String)] = Set(),
