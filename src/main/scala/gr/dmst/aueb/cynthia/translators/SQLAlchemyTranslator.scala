@@ -229,7 +229,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         qStr.ret.get,
         constructJoins(s.joins),
         constructFilter(nonAggrP),
-        constructGroupBy(s.groupBy),
+        constructGroupBy(s.nonAggrF),
         constructFilter(aggrP, having = true),
         constructOrderBy(s.orders),
         s.aggrs match {

@@ -1,5 +1,7 @@
 package gr.dmst.aueb.cynthia.translators
 
+import scala.collection.immutable.ListMap
+
 import gr.dmst.aueb.cynthia._
 
 
@@ -32,11 +34,12 @@ case class QueryStr(
 
 case class State(
   db: DB,
-  source: String = "",                    // model
-  fields: Map[String, FieldDecl] = Map(), // FieldDecl.as FieldDecl
+  source: String = "",                         // model
+  fields: Map[String, FieldDecl] = ListMap(),  // FieldDecl.as FieldDecl
   preds: Set[Predicate] = Set(),
-  orders: Seq[(String, Order)] = Seq(),   // FieldDecl.as asc or desc
-  groupBy: Set[String] = Set(),
+  orders: Seq[(String, Order)] = Seq(),        // FieldDecl.as asc or desc
+  nonAggrF: Set[String] = Set(),
+  aggrF: Set[String] = Set(),
   aggrs: Seq[FieldDecl] = Seq(),
   joins: Set[(String, String)] = Set(),
   query: Option[QueryStr] = None,
@@ -44,41 +47,45 @@ case class State(
   ) {
 
   def source(s: String) =
-    State(db, s, fields, preds, orders, groupBy, aggrs, joins, query,
+    State(db, s, fields, preds, orders, nonAggrF, aggrF, aggrs, joins, query,
           numGen)
 
   def f(fd: FieldDecl) = fd match {
     case FieldDecl(_, as, _, _) =>
-      State(db, source, fields + (as -> fd), preds, orders, groupBy, aggrs,
-            joins, query, numGen)
+      State(db, source, fields + (as -> fd), preds, orders, nonAggrF, aggrF,
+            aggrs, joins, query, numGen)
   }
 
   def pred(p: Predicate): State =
-    State(db, source, fields, preds + p, orders, groupBy, aggrs, joins, query,
-          numGen)
+    State(db, source, fields, preds + p, orders, nonAggrF, aggrF, aggrs, joins,
+          query, numGen)
 
   def order(o: (String, Order)): State =
-    State(db, source, fields, preds, orders :+ o, groupBy, aggrs, joins, query,
+    State(db, source, fields, preds, orders :+ o, nonAggrF, aggrF, aggrs,
+          joins, query, numGen)
+
+  def nonAggrF(f: Set[String]): State =
+    State(db, source, fields, preds, orders, f, aggrF, aggrs, joins, query,
           numGen)
 
-  def group(f: Set[String]): State =
-    State(db, source, fields, preds, orders, f, aggrs, joins, query,
+  def aggrF(f: Set[String]): State =
+    State(db, source, fields, preds, orders, nonAggrF, f, aggrs, joins, query,
           numGen)
 
   def aggr(a: Seq[FieldDecl]): State =
-    State(db, source, fields, preds, orders, groupBy, aggrs ++ a, joins, query,
-          numGen)
+    State(db, source, fields, preds, orders, nonAggrF, aggrF, aggrs ++ a,
+          joins, query, numGen)
 
   def join(j: (String, String)): State =
-    State(db, source, fields, preds, orders, groupBy, aggrs, joins + j, query,
-          numGen)
+    State(db, source, fields, preds, orders, nonAggrF, aggrF, aggrs, joins + j,
+          query, numGen)
 
   def >>(qstr: QueryStr): State = query match {
     case None =>
-      State(db, source, fields, preds, orders, groupBy, aggrs, joins,
+      State(db, source, fields, preds, orders, nonAggrF, aggrF, aggrs, joins,
             Some(qstr), numGen)
     case Some(query) =>
-      State(db, source, fields, preds, orders, groupBy, aggrs, joins,
+      State(db, source, fields, preds, orders, nonAggrF, aggrF, aggrs, joins,
             Some(query >> qstr), numGen)
   }
 }
@@ -98,23 +105,25 @@ abstract class Translator(val target: Target) {
     _updateJoins(field.split('.').toList, s)
   }
 
-  def hasAggregate(fields: Set[FieldDecl], store: Map[String, FieldExpr]) = {
-    def _hasAggregate(e: FieldExpr): Boolean = e match {
-      case Constant(_, _) => false
-      case Count(_) | Sum(_) | Avg(_) | Max(_) | Min(_) => true
+  def getAggregate(fields: Seq[FieldDecl], store: Map[String, FieldExpr]) = {
+    def _getAggregate(acc: Set[String], e: FieldExpr, as: String): Set[String] = e match {
+      case Constant(_, _) => acc
+      case Count(_) | Sum(_) | Avg(_) | Max(_) | Min(_) => acc + as
       case F(f) => store get f match {
-        case None    => false
-        case Some(e) => _hasAggregate(e)
+        case None    => acc
+        case Some(e) => _getAggregate(acc, e, as)
       }
-      case Add(e1, e2) => _hasAggregate(e1) || _hasAggregate(e2)
-      case Sub(e1, e2) => _hasAggregate(e1) || _hasAggregate(e2)
-      case Mul(e1, e2) => _hasAggregate(e1) || _hasAggregate(e2)
-      case Div(e1, e2) => _hasAggregate(e1) || _hasAggregate(e2)
+      case Add(e1, e2) => _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
+      case Sub(e1, e2) => _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
+      case Mul(e1, e2) => _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
+      case Div(e1, e2) => _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
     }
-    (fields filter { !FieldDecl.hidden(_) } map FieldDecl.expr) exists _hasAggregate
+    (fields filter { !FieldDecl.hidden(_) }).foldLeft(Set[String]()) { (acc, x) =>
+      x match { case FieldDecl(e, as, _, _) => _getAggregate(acc, e, as) }
+    }
   }
 
-  def computeGroupBy(source: String, fields: Set[FieldDecl]): Set[String] = {
+  def groupFields(source: String, fields: Seq[FieldDecl]): (Set[String], Set[String]) = {
     val init = (
       Set[String](),
       Set[Constant](),
@@ -169,12 +178,12 @@ abstract class Translator(val target: Target) {
       case None         => false
     }}
     // Check if fields contain aggregate functions.
-    val hasAggr = hasAggregate(fields, store map { case (k, v) => (k, v._1) })
-    if (!hasAggr) Set()
+    val aggrF = getAggregate(fields, store map { case (k, v) => (k, v._1) })
+    if (aggrF.isEmpty) (Set(), aggrF)
     // If the list of grouped fields is empty or the list contains only
     // constant values, group by id of table.
-    else if (groupedF.isEmpty || isConstant) Set(source + ".id")
-    else groupedF
+    else if (groupedF.isEmpty || isConstant) (Set(source + ".id"), aggrF)
+    else (groupedF, aggrF)
   }
 
   def traversePredicate(s: State, pred: Predicate): State = pred match {
@@ -195,8 +204,10 @@ abstract class Translator(val target: Target) {
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
     case New(m, f) => { // Add source and fields to state
       val s1 = s source m
-      val s2 = s1 group (computeGroupBy(m, f))
-      f.foldLeft(s2) { (acc, x) => acc f (x) }
+      val (groupF, aggrF) = groupFields(m, f)
+      val s2 = s1 nonAggrF groupF
+      val s3 = s2 aggrF aggrF
+      f.foldLeft(s3) { (acc, x) => acc f (x) }
     }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state

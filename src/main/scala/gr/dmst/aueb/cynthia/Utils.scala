@@ -109,4 +109,35 @@ object Utils {
 
   def quoteStr(str: String, quotes: String = "'") =
     quotes + str + quotes
+
+  def mergeMap[T1, T2](m1: Map[T1, Set[T2]], m2: Map[T1, Set[T2]]): Map[T1, Set[T2]] = {
+    val grouped = (m1.toSeq ++ m2.toSeq).groupBy(_._1)
+    grouped.mapValues(_.foldLeft(Set[T2]()) { (acc, x) => acc ++ x._2 }).toMap
+  }
+
+  def topologicalSort(g: Map[String, Set[String]]): Seq[String] = {
+    def dfs(acc: (Set[String], Seq[String]), n: String): (Set[String], Seq[String]) = {
+      val (v, o) = acc
+      g get n match {
+        case None    => (v + n, o :+ n)
+        case Some(e) =>
+          if (e.isEmpty)
+            (v + n, o :+ n)
+          else {
+            val (v2, o2) = e.foldLeft((v + n, o)) { (acc, v) =>
+              if (acc._1.contains(v)) acc
+              else dfs(acc, v)
+            }
+            // revisit: non tail recursive
+            (v2, o2 :+ n)
+          }
+      }
+    }
+
+    g.keys.foldLeft((Set[String](), Seq[String]())) { (acc, n) =>
+      // Node is already visited
+      if (acc._1.contains(n)) acc
+      else dfs(acc, n)
+    }._2
+  }
 }

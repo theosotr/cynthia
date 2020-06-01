@@ -258,7 +258,7 @@ case object QueryGenerator {
           // Choose a random model to query.
           val model = RUtils.chooseFrom(s.schema.models.values.toSeq)
           val s2 = generateDeclFields(s.++, model)
-          val qs = New(model.name, s2.dfields.toSet)
+          val qs = New(model.name, s2.dfields)
           val s3 = s2 queryset qs
           val s4 = s3 candidates List()
           generateQuerySet(s4 model model)
