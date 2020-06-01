@@ -42,12 +42,28 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     |end
     |""".stripMargin
 
-  override def emitPrint(q: Query, dFields: Seq[String], ret: String) = ""
+  override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
+    q match {
+      case FirstRes(_) => s"dump($ret.id)"
+      case SetRes(_) => s"for i in $ret\n\tdump(i.id)\nend"
+    }
+  }
 
   override def constructCombinedQuery(s: State) = QueryStr(Some("var"))
 
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = QueryStr(Some("var"))
+
+  override def constructQuery(first: Boolean = false, offset: Int = 0,
+      limit: Option[Int] = None)(s: State) = {
+        val model = s.source
+        val qStr =
+          if (first) model + ".first"
+          else model + ".all"
+        QueryStr(Some("ret" + s.numGen.next().toString),
+          Some(qStr)
+        )
+  }
 
   override def unionQueries(s1: State, s2: State) = s1
 
