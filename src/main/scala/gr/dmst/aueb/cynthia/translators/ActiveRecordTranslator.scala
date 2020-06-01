@@ -30,6 +30,16 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     |ActiveRecord::Base.establish_connection(
     |${dbsettings.!}
     |)
+
+    |def dump(var)
+    |  if var.is_a? Integer
+    |    puts "%0.2f" % [var]
+    |  elsif var.is_a? String
+    |    puts var.strip
+    |  else
+    |    puts var
+    |  end
+    |end
     |""".stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = ""
