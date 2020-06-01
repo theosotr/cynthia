@@ -125,8 +125,6 @@ abstract class Translator(val target: Target) {
     val (groupBy, cons, store) = fields.foldLeft(init) { (acc, x) => {
       val (g, c, s) = acc
       x match {
-        case FieldDecl(Constant(a, b), as, _, h) =>
-          (g + as, c + Constant(a, b), s + (as -> (Constant(a, b), h)))
         case FieldDecl(e, as, _, false) =>
           (if (!e.isAggregate) g + as else g, c, s + (as -> (e, false)))
         case FieldDecl(e, as, _, true) => (g, c, s + (as -> (e, true)))
@@ -148,11 +146,9 @@ abstract class Translator(val target: Target) {
       case F(f) =>
         store get f match {
           case None         => g + f // the field is native
-          case Some((e, h)) => if (e.isAggregate) (g - as) else (e, h) match {
-            case (Constant(_, _), _) => g
-            case (_, false)          => g + f
-            case _                   => g
-          }
+          case Some((e, h)) =>
+            if (e.isAggregate) (g - as)
+            else _computeGroupBy(e, as, if (h) g else g + f)
         }
       case Constant(_, _) |
         Count(_) |
@@ -163,17 +159,20 @@ abstract class Translator(val target: Target) {
       case _   => _handleComplexExpr(e, as, g)
     }
     // Compute all fields that must be included in the GROUP BY clause.
-    val groupedF = fields.foldLeft(groupBy) { (s, f) => {
-      f match { case FieldDecl(e, as, _, h) => _computeGroupBy(e, as, s) }
+    // Examine recursively the fields that are not hidden.
+    val groupedF = (fields filter { !FieldDecl.hidden(_) }).foldLeft(groupBy) {
+      (s, f) => { f match { case FieldDecl(e, as, _, h) => _computeGroupBy(e, as, s) }
     }}
     // Check if all grouped fields are constants.
     val isConstant = groupedF forall { x => store get x match {
       case Some((x, _)) => x.isConstant
-      case None    => false
+      case None         => false
     }}
     // Check if fields contain aggregate functions.
     val hasAggr = hasAggregate(fields, store map { case (k, v) => (k, v._1) })
     if (!hasAggr) Set()
+    // If the list of grouped fields is empty or the list contains only
+    // constant values, group by id of table.
     else if (groupedF.isEmpty || isConstant) Set(source + ".id")
     else groupedF
   }

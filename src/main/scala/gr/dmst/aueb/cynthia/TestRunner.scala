@@ -6,6 +6,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
 import scala.language.postfixOps
+import scala.sys.process._
 
 import pprint.PPrinter.BlackWhite
 
@@ -832,7 +833,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(F("Review.book.author.first_name"), "name", StringF)
           ))
         )
-      ),
+      )
     )
 
   def genQueries(): Seq[Query] = schema match {
@@ -869,6 +870,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     val queryFile = Utils.joinPaths(List(reportDir, "query.aql"))
     Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
     mismatches.foreach { case ((_, k), v) => v.foreach { x =>
+        // FIXME: For debugging purposes only.
+        s"cp -r ${x.orm.projectDir} $reportDir".!!
         val filename = s"${x.orm.ormName}_${x.db.getName}.out"
         Utils.writeToFile(Utils.joinPaths(List(reportDir, filename)), k)
       }
