@@ -155,7 +155,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         case _ => {
           val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
             case FieldDecl(f, l, t, _) =>
-              s"(${constructFieldExpr(f)}).alias('$l')"
+              s"(${constructFieldExpr(f)}).coerce(False).alias('$l')"
           })
           val qstr = s"${s.source}.select(${(aggrs mkString ", ")})"
           QueryStr(
@@ -192,8 +192,8 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     if (fields.isEmpty) QueryStr()
     else
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
-        val str = Str("(") << constructFieldExpr(f) << ").alias(" <<
-          Utils.quoteStr(as) << ")"
+        val str = Str("(") << constructFieldExpr(f) << ").coerce(False)" <<
+          ".alias(" << Utils.quoteStr(as) << ")"
         acc >> QueryStr(Some(as), Some(str.!))
       }
     }
