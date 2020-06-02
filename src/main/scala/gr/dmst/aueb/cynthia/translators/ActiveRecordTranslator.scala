@@ -52,6 +52,32 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
   def getActiveRecordFieldName(field: String) =
     field.split('.').array(1);
 
+  def constructJoins(joins: Set[(String, String)], source: String): String = {
+    if (joins.isEmpty) ""
+    else {
+      val g = joins.groupBy(_._1).map { case (k,v) => (k,v.map(_._2))}
+      // https://guides.rubyonrails.org/active_record_querying.html#joins
+      // Revisit: not tail recursive, infinite loop
+      def dfs(g: Map[String, Set[String]], current: String): String = {
+           g.get(current) match {
+             case None => ":" + current.toLowerCase
+             case Some(e) => {
+               val temp = e map {
+                 (x) => {
+                   dfs(g, x)
+                 }
+               }
+               "{" + current.toLowerCase + ":[" + (temp mkString(",")) + "]}"
+             }
+           }
+      }
+      val mpamies = g(source) map {
+        x => dfs(g, x)
+      }
+      "joins(" + (mpamies mkString(",")) + ")"
+    }
+  }
+
   def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
     case Seq() => ""
     case _     =>
@@ -73,8 +99,9 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
         QueryStr(Some("ret" + s.numGen.next().toString),
           Some(Seq(
             model,
-            if (first) "first" else "all",
-            constructOrderBy(s.orders)
+            constructJoins(s.joins, s.source),
+            constructOrderBy(s.orders),
+            if (first) "first" else "all"
           ) filter {
             case "" => false
             case _ => true
