@@ -229,8 +229,8 @@ abstract class Translator(val target: Target) {
       val s1 = s source m
       val (groupF, aggrF) = groupFields(m, f)
       val s2 = s1 nonAggrF groupF
-      val s3 = s2 aggrF aggrF
-      f.foldLeft(traverseDeclaredFields(s3, f)) { (acc, x) => acc f (x) }
+      val s3 = f.foldLeft(s2 aggrF aggrF) { (acc, x) => acc f (x) }
+      traverseDeclaredFields(s3, f)
     }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state
