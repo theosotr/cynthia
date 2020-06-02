@@ -71,7 +71,7 @@ extends ORM("activerecord", name, pDir) {
   Utils.createDir(pDir)
 
   override def getModelsPath() =
-    Utils.joinPaths(List(pDir, "models.rb"))
+    Utils.joinPaths(List(pDir, "models"))
 
   override def getSettingsPath() = ""
 
