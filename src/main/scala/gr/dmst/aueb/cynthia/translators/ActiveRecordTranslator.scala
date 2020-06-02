@@ -49,15 +49,36 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     }
   }
 
+  def getActiveRecordFieldName(field: String) =
+    field.split('.').array(1);
+
+  def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
+    case Seq() => ""
+    case _     =>
+      (
+        Str("order(") << (
+          spec map { x =>
+            x match {
+              case (k, Desc) => getActiveRecordFieldName(k) + ": :desc"
+              case (k, Asc)  => getActiveRecordFieldName(k) + ": :asc"
+            }
+          } mkString(",")
+        ) << ")"
+      ).!
+  }
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
         val model = s.source
-        val qStr =
-          if (first) model + ".first"
-          else model + ".all"
         QueryStr(Some("ret" + s.numGen.next().toString),
-          Some(qStr)
-        )
+          Some(Seq(
+            model,
+            if (first) "first" else "all",
+            constructOrderBy(s.orders)
+          ) filter {
+            case "" => false
+            case _ => true
+          } mkString "."))
   }
 
   override def unionQueries(s1: State, s2: State) = s1
