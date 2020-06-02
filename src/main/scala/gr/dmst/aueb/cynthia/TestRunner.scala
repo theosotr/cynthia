@@ -100,18 +100,47 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
 class TestRunner(schema: String, targets: Seq[Target]) {
   val mismatchEnumerator = Stream.from(1).iterator
 
-  val model = Model("Listing", Seq(
+  val listingModel = Model("Listing", Seq(
     Field("id", Serial),
     Field("yearly_rent", Numeric),
     Field("sale_price", Numeric)
   ))
 
-  val schemad = Schema("listing", Map("Listing" -> model))
+  var authorModel = Model("Author", Seq(
+    Field("id", Serial),
+    Field("first_name", VarChar(50)),
+    Field("surname", VarChar(50))
+  ))
 
-  def genQuery(i: Int = 0): LazyList[Query] = {
-    val q = QueryGenerator(schemad)
-    if (i >= 5000) q #:: LazyList.empty
-    else q #:: genQuery(i + 1)
+  val bookModel = Model("Book", Seq(
+    Field("id", Serial),
+    Field("title", VarChar(100)),
+    Field("isbn", VarChar(100)),
+    Field("author", Foreign("Author"))
+  ))
+
+  val reviewModel = Model("Review", Seq(
+    Field("id", Serial),
+    Field("reviewer_name", VarChar(255)),
+    Field("content", VarChar(255)),
+    Field("rating", Int16),
+    Field("book", Foreign("Book"))
+  ))
+
+  val listingSchema = Schema("listing", Map("Listing" -> listingModel))
+  val bookSchema = Schema("book", Map(
+    "Author" -> authorModel,
+    "Book" -> bookModel,
+    "Review" -> reviewModel
+  ))
+
+  def genQuery(schema: Schema, limit: Int = 10) = {
+    def _genQuery(i: Int): LazyList[Query] = {
+      val q = QueryGenerator(schema)
+      if (i >= limit) q #:: LazyList.empty
+      else q #:: _genQuery(i + 1)
+    }
+    _genQuery(1)
   }
 
   def genListingQueries() =
@@ -748,6 +777,18 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(Constant("5", UnQuoted), "bqZCpnWO", IntF, true)
           )
         )
+      ),
+
+      // Query 41
+      SetRes(
+        New(
+          "Listing",
+          List(
+            FieldDecl(Sub(F("Listing.sale_price"), F("Listing.yearly_rent")), "EoDFfvD", DoubleF, true),
+            FieldDecl(Min(Constant("8", Quoted)), "aJZXPcub", StringF, false),
+            FieldDecl(Div(F("Listing.sale_price"), F("EoDFfvD")), "KWpgDGBLp", DoubleF, false)
+          )
+        )
       )
     )
 
@@ -879,11 +920,22 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(F("Review.book.author.first_name"), "name", StringF)
           ))
         )
+      ),
+
+      // Query 11
+      SetRes(
+        New(
+          "Review",
+          List(
+            FieldDecl(Constant("3", UnQuoted), "dqBZvjQX", IntF, true),
+            FieldDecl(F("Review.book.author.first_name"), "TbPEVGKp", StringF, false)
+          )
+        )
       )
     )
 
   def genQueries(): Seq[Query] = schema match {
-    case "listing" => genListingQueries()
+    case "listing" => genQuery(listingSchema, limit = 10)
     case "books"   => genBooksQueries()
     case _         => genListingQueries()
   }
@@ -928,7 +980,6 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     println(s"Starting testing session for $schema...")
     val stats = genQueries()
       .foldLeft(Stats()) { (acc, q) => {
-        genQuery(0)
         val futures = targets map { t =>
           Future {
             (t, QueryExecutor(q, t))
