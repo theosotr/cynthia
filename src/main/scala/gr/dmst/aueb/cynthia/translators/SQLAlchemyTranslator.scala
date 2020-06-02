@@ -234,7 +234,11 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         qStr.ret.get,
         constructJoins(s.joins),
         constructFilter(nonAggrP),
-        constructGroupBy(s.nonAggrF),
+        constructGroupBy(s.nonAggrF filter { x => s.fields get x match {
+          // do not group by constants
+          case Some(FieldDecl(Constant(_, _), _, _, _)) => false
+          case _ => true
+        } }),
         constructFilter(aggrP, having = true),
         constructOrderBy(s.orders),
         s.aggrs match {
