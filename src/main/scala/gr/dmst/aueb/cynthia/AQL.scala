@@ -145,7 +145,7 @@ case object IntF extends FieldType {
 case object DoubleF extends FieldType {
   override def convertType(db: DB) = db match {
     case SQLite(_) => "float"
-    case _         => "decimal(9, 2)"
+    case _         => "decimal(10, 2)"
   }
 }
 case object BooleanF extends FieldType {
