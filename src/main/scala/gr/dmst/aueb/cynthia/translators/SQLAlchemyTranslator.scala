@@ -113,14 +113,19 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   def constructCompoundAggr(fexpr: FieldExpr) = {
     val (a1, a2, op) = fexpr match {
-      case Add(a1, a2) => (a1, a2, " + ")
+      // For addition, we explicitly use the '+' operator because when the
+      // operands are strings, sqlalchemy generates the '||' db operator.
+      case Add(a1, a2) => (a1, a2, ".op('+')(")
       case Sub(a1, a2) => (a1, a2, " - ")
       case Mul(a1, a2) => (a1, a2, " * ")
       case Div(a1, a2) => (a1, a2, " / ")
       case _           => ??? // Unreachable case
     }
     val str = Str("(") << constructFieldExpr(a1) << op << constructFieldExpr(a2) << ")"
-    str.!
+    fexpr match {
+      case Add(_, _) => (str << ")").!
+      case _         => str.!
+    }
   }
 
   def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {

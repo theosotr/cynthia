@@ -186,6 +186,29 @@ abstract class Translator(val target: Target) {
     else (groupedF, aggrF)
   }
 
+  def traverseDeclaredFields(s: State, fields: Seq[FieldDecl]): State = {
+    def _traverseFieldExpr(s: State, e: FieldExpr): State = e match {
+      case Constant(_, _) => s
+      case F(f) => s.fields get f match {
+        case None => updateJoins(f, s) // the field is native
+        case Some(FieldDecl(e2, _, _, _)) => _traverseFieldExpr(s, e2)
+      }
+      case Count(None) => s 
+      case Count(Some(e2)) => _traverseFieldExpr(s, e2)
+      case Sum(e2) => _traverseFieldExpr(s, e2)
+      case Avg(e2) => _traverseFieldExpr(s, e2)
+      case Max(e2) => _traverseFieldExpr(s, e2)
+      case Min(e2) => _traverseFieldExpr(s, e2)
+      case Add(e1, e2) => _traverseFieldExpr(_traverseFieldExpr(s, e1), e2)
+      case Sub(e1, e2) => _traverseFieldExpr(_traverseFieldExpr(s, e1), e2)
+      case Mul(e1, e2) => _traverseFieldExpr(_traverseFieldExpr(s, e1), e2)
+      case Div(e1, e2) => _traverseFieldExpr(_traverseFieldExpr(s, e1), e2)
+    }
+    (fields filter { !FieldDecl.hidden(_) } map FieldDecl.expr).foldLeft (s) {
+      (acc, e) => _traverseFieldExpr(acc, e)
+    }
+  }
+
   def traversePredicate(s: State, pred: Predicate): State = pred match {
     case Eq(k, _)       => updateJoins(k, s)
     case Gt(k, _)       => updateJoins(k, s)
@@ -198,7 +221,7 @@ abstract class Translator(val target: Target) {
     case And(p1, p2)    => traversePredicate(traversePredicate(s, p1), p2)
   }
 
-  def traverseFields(s: State, fields: Seq[String]): State =
+  def traverseSortedFields(s: State, fields: Seq[String]): State =
     fields.foldLeft (s) { (acc, x) => updateJoins(x, acc) }
 
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
@@ -207,14 +230,14 @@ abstract class Translator(val target: Target) {
       val (groupF, aggrF) = groupFields(m, f)
       val s2 = s1 nonAggrF groupF
       val s3 = s2 aggrF aggrF
-      f.foldLeft(s3) { (acc, x) => acc f (x) }
+      f.foldLeft(traverseDeclaredFields(s3, f)) { (acc, x) => acc f (x) }
     }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state
       traversePredicate(s1, pred) // update joins
     }
     case Apply(Sort(spec), qs) => {
-      val s1 = traverseFields(s, spec map { _._1 })
+      val s1 = traverseSortedFields(s, spec map { _._1 })
       spec.foldLeft(evalQuerySet(s1)(qs)) { (s, x) => s order x } // Add order spec to state
     }
     case Union (qs1, qs2) =>
