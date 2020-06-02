@@ -53,17 +53,29 @@ object ProjectCreator {
       }
     }
     case ActiveRecord(_, pdir) => {
-      val bcmd = "dump-activerecord-models"
+      val bcmd = "rmre"
       val cmd = dbs(0) match {
         case Postgres(user, password, dbname) =>
-          Seq(bcmd, "postgres", user, password, dbname).mkString(" ")
+          Seq(
+            bcmd, "-a", "postgresql",
+            "-d", dbname, "-u", user, "-p", password,
+            "-o", orm.getModelsPath()
+          ).mkString(" ")
         case MySQL(user, password, dbname) =>
-          Seq(bcmd, "mysql", user, password, dbname).mkString(" ")
+          Seq(
+            bcmd, "-a", "mysql2",
+            "-d", dbname, "-u", user, "-p", password,
+            "-o", orm.getModelsPath()
+          ).mkString(" ")
         case SQLite(dbname) =>
-          Seq(bcmd, "sqlite", dbname).mkString(" ")
+          Seq(
+            bcmd, "-a", "postgresql",
+            "-d", dbname.split("/").last,
+            "-u", "orm_testing", "-p", "orm_testing",
+            "-o", orm.getModelsPath()
+          ).mkString(" ")
       }
-      val models = Utils.runCmd(cmd, None)
-      Utils.writeToFile(orm.getModelsPath(), models)
+      Utils.runCmd(cmd, None)
     }
     case Sequelize(_, pdir) => {
       val db = dbs(0)
