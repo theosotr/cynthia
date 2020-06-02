@@ -25,7 +25,7 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
 
   override val preamble =
     s"""require 'active_record'
-    |require_relative 'models'
+    |Dir[File.join(__dir__, 'models', '*.rb')].each {|file| require_relative file }
     |
     |ActiveRecord::Base.establish_connection(
     |${dbsettings.!}

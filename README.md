@@ -35,11 +35,16 @@ pip install -r requirements.txt
 
 * ActiveRecord (Ruby)
 
+The first time you should run Cynthia with postgres backend to initialize
+the Database
+
 ```bash
 sudo apt install ruby-full ruby-activerecord rudy-dev
-sudo gem install sqlite3 mysql2 postgres
+sudo gem install sqlite3 mysql2 postgres rmre
 sudo install scripts/dump-activerecord-models.py /usr/local/bin/dump-activerecord-models
 ```
+
+__Redirect stderr to hide ruby warnings__
 
 * sequelize (nodejs)
 
