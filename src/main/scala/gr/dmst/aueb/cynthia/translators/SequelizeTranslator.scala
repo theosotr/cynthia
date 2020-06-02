@@ -35,6 +35,10 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     |const sequelize = ${setstr.!}
     |
     |function dump(x) {
+    |  if (x === null) {
+    |    console.log('None')
+    |    return;
+    |  }
     |  if (typeof x === 'number') {
     |    console.log(x.toFixed(2))
     |  } else {
@@ -272,11 +276,11 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     else "include: [\n" + _findIncludes(source) + "\n]"
   }
 
-  def constructGroupBy(groupBy: Set[String]) = groupBy match {
-    case Seq() => ""
-    case _     => "group: [" + (
+  def constructGroupBy(groupBy: Set[String]) =
+    if (groupBy.isEmpty) ""
+    else
+      "group: [" + (
       groupBy map { x => getSeqFieldName(x, false) } mkString ", ") + "]"
-  }
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State): QueryStr = {
