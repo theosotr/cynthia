@@ -6,7 +6,8 @@ import gr.dmst.aueb.cynthia._
 case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   override val preamble =
-    s"""from sqlalchemy import create_engine, or_, and_, not_, func, type_coerce, types, literal
+    s"""from sqlalchemy import (create_engine, or_, and_, not_, func,
+    |     type_coerce, types, literal, asc, desc)
     |from sqlalchemy.orm import sessionmaker
     |from sqlalchemy.exc import SAWarning
     |from models import *
@@ -90,8 +91,8 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         Str("order_by(") << (
           spec map { x =>
             x match {
-              case (k, Desc) => getSQLAlchemyFieldName(k) + ".desc()"
-              case (k, Asc)  => getSQLAlchemyFieldName(k) + ".asc()"
+              case (k, Desc) => "desc(" + getSQLAlchemyFieldName(k) + ")"
+              case (k, Asc)  => "asc(" + getSQLAlchemyFieldName(k) + ")"
             }
           } mkString ","
         ) << ")"
