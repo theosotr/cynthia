@@ -223,6 +223,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         } }),
         constructFilter(aggrP, having = true),
         constructOrderBy(s.orders),
+        "objects()",
         s.aggrs match {
           case Seq() => ""
           case Seq(FieldDecl(Count(_), _, _, _)) => "count()"
