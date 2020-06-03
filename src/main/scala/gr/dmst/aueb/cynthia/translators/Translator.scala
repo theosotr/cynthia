@@ -65,8 +65,12 @@ case class State(
           joins, query, numGen)
 
   def nonAggrF(f: Set[String]): State =
-    State(db, source, fields, preds, orders, f, aggrF, aggrs, joins, query,
-          numGen)
+    State(db, source, fields, preds, orders, nonAggrF ++ f, aggrF, aggrs, joins,
+          query, numGen)
+
+  def addGroupF(f: String): State =
+    State(db, source, fields, preds, orders, nonAggrF + f, aggrF, aggrs, joins,
+          query, numGen)
 
   def aggrF(f: Set[String]): State =
     State(db, source, fields, preds, orders, nonAggrF, f, aggrs, joins, query,
@@ -237,8 +241,17 @@ abstract class Translator(val target: Target) {
       traversePredicate(s1, pred) // update joins
     }
     case Apply(Sort(spec), qs) => {
-      val s1 = traverseSortedFields(s, spec map { _._1 })
-      spec.foldLeft(evalQuerySet(s1)(qs)) { (s, x) => s order x } // Add order spec to state
+      val s1 = traverseSortedFields(evalQuerySet(s)(qs), spec map { _._1 })
+      spec.foldLeft(s1) { (s, x) => {
+        val s2 = s order x // Add order spec to state
+        val (f, _) = x
+        s2.fields get f match {
+          // the field is native so add it to grouping fields
+          case None => if (!s2.aggrF.isEmpty) s2 addGroupF f else s2
+          // we have already examined this field because is declared.
+          case _    => s2
+        }
+      }}
     }
     case Union (qs1, qs2) =>
       unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)) // Merge queries
