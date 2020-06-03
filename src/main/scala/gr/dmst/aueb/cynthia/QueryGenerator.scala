@@ -260,19 +260,27 @@ case object QueryGenerator {
           val s2 = generateDeclFields(s.++, model)
           val qs = New(model.name, s2.dfields)
           val s3 = s2 queryset qs
-          val s4 = s3 candidates List()
+          val s4 = s3 candidates List(ApplySort)
           generateQuerySet(s4 model model)
         }
         case ApplySort => {
           assert(s.model.isDefined)
-          val sortedFields = RUtils.sample(s.dfields map { FieldDecl.as }) 
-          val orderSpec = sortedFields map { x =>
-            (x, RUtils.chooseFrom(List(Asc, Desc)))
+          val sortedFields = RUtils.sample(
+            (s.dfields filter { !FieldDecl.hidden(_) } map FieldDecl.as) ++
+            (s.model.get.fields map { x => x match {
+              case Field(n, Foreign(_)) => s.model.get.name + "." + n + ".id"
+              case Field(n, _)          => s.model.get.name + "." + n
+            }})
+          )
+          val s2 = s candidates (s.cands filter { x => x != ApplySort })
+          if (sortedFields.isEmpty) generateQuerySet(s2)
+          else {
+            val orderSpec = sortedFields map { x =>
+              (x, RUtils.chooseFrom(List(Asc, Desc)))
+            }
+            val qs = Apply(Sort(orderSpec), s2.qs.get)
+            generateQuerySet(s2 queryset qs)
           }
-          val qs = Apply(Sort(orderSpec), s.qs.get)
-          val s2 = s queryset qs
-          val s3 = s2 candidates (s2.cands filter { x => x != ApplySort })
-          generateQuerySet(s3)
         }
         case ApplyFilter => {
           assert(s.model.isDefined)
