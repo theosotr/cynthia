@@ -79,7 +79,7 @@ case class GenState(
 
 case object QueryGenerator {
 
-  val maxDepth = 10
+  val maxDepth = 25
 
   val predNodes = Seq(
     EqPred,
