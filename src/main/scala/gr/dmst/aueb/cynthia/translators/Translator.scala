@@ -40,6 +40,7 @@ case class State(
   orders: Seq[(String, Order)] = Seq(),
   nonAggrF: Set[String] = Set(),
   aggrF: Set[String] = Set(),
+  constantF: Set[String] = Set(),
   aggrs: Seq[FieldDecl] = Seq(),
   joins: Set[(String, String)] = Set(),
   query: Option[QueryStr] = None,
@@ -47,50 +48,54 @@ case class State(
   ) {
 
   def source(s: String) =
-    State(db, s, fields, preds, orders, nonAggrF, aggrF, aggrs, joins, query,
-          numGen)
+    State(db, s, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
+          joins, query, numGen)
 
   def f(fd: FieldDecl) = fd match {
     case FieldDecl(_, as, _, _) =>
       State(db, source, fields + (as -> fd), preds, orders, nonAggrF, aggrF,
-            aggrs, joins, query, numGen)
+            constantF, aggrs, joins, query, numGen)
   }
 
   def pred(p: Predicate): State =
-    State(db, source, fields, preds + p, orders, nonAggrF, aggrF, aggrs, joins,
-          query, numGen)
+    State(db, source, fields, preds + p, orders, nonAggrF, aggrF, constantF,
+          aggrs, joins, query, numGen)
 
   def order(o: (String, Order)): State =
-    State(db, source, fields, preds, orders :+ o, nonAggrF, aggrF, aggrs,
-          joins, query, numGen)
+    State(db, source, fields, preds, orders :+ o, nonAggrF, aggrF, constantF,
+          aggrs, joins, query, numGen)
 
   def nonAggrF(f: Set[String]): State =
-    State(db, source, fields, preds, orders, nonAggrF ++ f, aggrF, aggrs, joins,
-          query, numGen)
+    State(db, source, fields, preds, orders, nonAggrF ++ f, aggrF, constantF,
+          aggrs, joins, query, numGen)
 
   def addGroupF(f: String): State =
-    State(db, source, fields, preds, orders, nonAggrF + f, aggrF, aggrs, joins,
-          query, numGen)
+    State(db, source, fields, preds, orders, nonAggrF + f, aggrF, constantF,
+          aggrs, joins, query, numGen)
 
   def aggrF(f: Set[String]): State =
-    State(db, source, fields, preds, orders, nonAggrF, f, aggrs, joins, query,
-          numGen)
-
-  def aggr(a: Seq[FieldDecl]): State =
-    State(db, source, fields, preds, orders, nonAggrF, aggrF, aggrs ++ a,
+    State(db, source, fields, preds, orders, nonAggrF, f, constantF, aggrs,
           joins, query, numGen)
 
+  def constantFields(c: Set[String]): State =
+    State(db, source, fields, preds, orders, nonAggrF, aggrF, c, aggrs,
+          joins, query, numGen)
+
+  def aggr(a: Seq[FieldDecl]): State =
+    State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
+          aggrs ++ a, joins, query, numGen)
+
   def join(j: (String, String)): State =
-    State(db, source, fields, preds, orders, nonAggrF, aggrF, aggrs, joins + j,
-          query, numGen)
+    State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
+          joins + j, query, numGen)
 
   def >>(qstr: QueryStr): State = query match {
     case None =>
-      State(db, source, fields, preds, orders, nonAggrF, aggrF, aggrs, joins,
-            Some(qstr), numGen)
+      State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
+            aggrs, joins, Some(qstr), numGen)
     case Some(query) =>
-      State(db, source, fields, preds, orders, nonAggrF, aggrF, aggrs, joins,
-            Some(query >> qstr), numGen)
+      State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
+            aggrs, joins, Some(query >> qstr), numGen)
   }
 }
 
@@ -107,6 +112,20 @@ abstract class Translator(val target: Target) {
       }
     }
     _updateJoins(field.split('.').toList, s)
+  }
+
+  def getConstants(fields: Seq[FieldDecl], store: Map[String, FieldDecl]) = {
+    def _getConstants(acc: Set[String], e: FieldExpr, as: String): Set[String] = e match {
+      case Constant(_, _) => acc + as
+      case F(f) => store get f match {
+        case None => acc
+        case Some(FieldDecl(e, _, _, _)) => _getConstants(acc, e, as)
+      }
+      case _ => acc
+    }
+    (fields filter { !FieldDecl.hidden(_) }).foldLeft(Set[String]()) { (acc, x) =>
+      x match { case FieldDecl(e, as, _, _) => _getConstants(acc, e, as) }
+    }
   }
 
   def getAggregate(fields: Seq[FieldDecl], store: Map[String, FieldExpr]) = {
@@ -234,7 +253,7 @@ abstract class Translator(val target: Target) {
       val (groupF, aggrF) = groupFields(m, f)
       val s2 = s1 nonAggrF groupF
       val s3 = f.foldLeft(s2 aggrF aggrF) { (acc, x) => acc f (x) }
-      traverseDeclaredFields(s3, f)
+      traverseDeclaredFields(s3.constantFields(getConstants(f, s3.fields)), f)
     }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state
@@ -243,7 +262,9 @@ abstract class Translator(val target: Target) {
     case Apply(Sort(spec), qs) => {
       val s1 = traverseSortedFields(evalQuerySet(s)(qs), spec map { _._1 })
       spec.foldLeft(s1) { (s, x) => {
-        val s2 = s order x // Add order spec to state
+        // If this field is a constant, we do not add to the set of the sorted
+        // fields.
+        val s2 = if (s.constantF.contains(x._1)) s else s order x
         val (f, _) = x
         s2.fields get f match {
           // the field is native so add it to grouping fields
