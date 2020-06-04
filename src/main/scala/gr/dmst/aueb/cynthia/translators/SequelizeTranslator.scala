@@ -141,16 +141,19 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
-  def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
+  def constructOrderBy(spec: Seq[(String, Order)],
+      fields: Map[String, FieldDecl]) = spec match {
     case Seq() => ""
     case _     =>
       (
         Str("order: [\n") << (
-          spec map { x => x match {
-            case (k, Asc)  => "  [" + getSeqOrderSpec(k) + ", 'ASC']"
-            case (k, Desc) => "  [" + getSeqOrderSpec(k) + ", 'DESC']"
+          spec map { x => {
+            val name = if (fields.contains(x._1)) x._1 else getSeqOrderSpec(x._1)
+            x._2 match {
+              case Asc  => "  [" + name + ", 'ASC']"
+              case Desc => "  [" + name + ", 'DESC']"
             }
-          } mkString(",")
+          }} mkString ","
         ) << "]"
       ).!
   }
@@ -301,7 +304,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
           constructFilter(nonAggrP),
           constructFilter(aggrP, having = true),
           constructGroupBy(s.nonAggrF),
-          constructOrderBy(s.orders),
+          constructOrderBy(s.orders, s.fields),
           if (offset >= 0) s"offset: $offset" else "",
           limit match {
             case None        => ""
