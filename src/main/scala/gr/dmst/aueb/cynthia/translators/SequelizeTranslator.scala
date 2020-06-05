@@ -162,7 +162,10 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     def _f(expr: FieldExpr) = expr match {
       case Constant(v, UnQuoted) => v
       case Constant(v, Quoted)   => s"\\'${v}\\'"
-      case F(f)                  => f.toLowerCase
+      case F(f)                  => {
+        val segs = f split '.'
+        ((segs drop (segs.size - 2)) mkString ".").toLowerCase
+      }
       case _ => throw new UnsupportedException(
         "Unsupported field expression: " + fexpr.toString)
     }
