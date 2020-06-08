@@ -35,7 +35,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         s"for r in $ret:\n${_dumpField("r", dFields, ident = " " * 4)}"
       case FirstRes(_) => _dumpField(ret, dFields)
       case AggrRes(aggrs, _) => aggrs match {
-        case Seq(FieldDecl(Count(_), _, _, _)) => s"dump($ret)"
+        case Seq(FieldDecl(Count(None), _, _, _)) => s"dump($ret)"
         case _ => {
           val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
           _dumpField(ret, aggrF)
@@ -152,7 +152,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>
       s.aggrs match {
-        case Seq() | Seq(FieldDecl(Count(_), _, _, _)) => {
+        case Seq() | Seq(FieldDecl(Count(None), _, _, _)) => {
           val dFields = TUtils.mapNonHiddenFields(
             s.fields.values, FieldDecl.as)
           val sourceStr = s.source
@@ -244,7 +244,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         constructOrderBy(s.orders),
         s.aggrs match {
           case Seq() => ""
-          case Seq(FieldDecl(Count(_), _, _, _)) => "count()"
+          case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
           case _ => "first()"
         },
         constructFirst(first),
