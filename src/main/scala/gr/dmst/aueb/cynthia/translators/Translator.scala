@@ -89,6 +89,14 @@ case class State(
     State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
           joins + j, query, numGen)
 
+  def getNonConstantGroupingFields(): Set[String] =
+    if (nonAggrF.isEmpty) nonAggrF
+    else {
+      val allConstant = nonAggrF forall { x => constantF.contains(x) }
+      if (allConstant) Set(source + ".id")
+      else nonAggrF
+    }
+
   def >>(qstr: QueryStr): State = query match {
     case None =>
       State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
@@ -149,17 +157,16 @@ abstract class Translator(val target: Target) {
   def groupFields(s: State, fields: Seq[FieldDecl]): (Set[String], Set[String]) = {
     val init = (
       Set[String](),
-      Set[Constant](),
       Map[String, (FieldExpr, Boolean)]()
     )
     //  Compute a map of field names to their corresponding expression
-    //  and an the initial sets of group bys.
-    val (groupBy, cons, store) = fields.foldLeft(init) { (acc, x) => {
-      val (g, c, s) = acc
+    //  and an the initial sets of grouping fields.
+    val (groupBy, store) = fields.foldLeft(init) { (acc, x) => {
+      val (g, s) = acc
       x match {
         case FieldDecl(e, as, _, false) =>
-          (if (!e.isAggregate) g + as else g, c, s + (as -> (e, false)))
-        case FieldDecl(e, as, _, true) => (g, c, s + (as -> (e, true)))
+          (if (!e.isAggregate) g + as else g, s + (as -> (e, false)))
+        case FieldDecl(e, as, _, true) => (g, s + (as -> (e, true)))
       }
     }}
     def _handleComplexExpr(e: FieldExpr, as: String, g: Set[String]): Set[String] = {
@@ -200,14 +207,11 @@ abstract class Translator(val target: Target) {
     val groupedF = (fields filter { !FieldDecl.hidden(_) }).foldLeft(groupBy) {
       (s, f) => { f match { case FieldDecl(e, as, _, h) => _computeGroupBy(e, as, s) }
     }}
-    // Check if all grouped fields are constants.
-    val isConstant = groupedF forall { x => s.constantF.contains(x) }
     // Check if fields contain aggregate functions.
     val aggrF = getAggregate(fields, store map { case (k, v) => (k, v._1) })
     if (aggrF.isEmpty) (Set(), aggrF)
-    // If the list of grouped fields is empty or the list contains only
-    // constant values, group by id of table.
-    else if (groupedF.isEmpty || isConstant) (Set(s.source + ".id"), aggrF)
+    // If the list of grouped fields is empty, group by the id of table.
+    else if (groupedF.isEmpty) (Set(s.source + ".id"), aggrF)
     else (groupedF, aggrF)
   }
 

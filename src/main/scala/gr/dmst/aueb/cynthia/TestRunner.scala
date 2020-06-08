@@ -1140,11 +1140,27 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             )
           )
         )
+      ),
+
+      // Query 18
+      SetRes(
+        Apply(
+          Sort(List(("Book.isbn", Desc), ("Book.title", Desc), ("ODQw", Desc), ("Book.id", Desc))),
+          New(
+            "Book",
+            List(
+              FieldDecl(Constant("0", UnQuoted), "gLMHoT", IntF, true),
+              FieldDecl(Add(Sum(F("Book.title")), Max(F("Book.isbn"))), "caxccB", DoubleF, false),
+              FieldDecl(Constant("8", UnQuoted), "VUV", IntF, false),
+              FieldDecl(Sum(Div(F("gLMHoT"), Constant("VY", Quoted))), "ODQw", DoubleF, false)
+            )
+          )
+        )
       )
     )
 
   def genQueries(): Seq[Query] = schema match {
-    case "listing" => genListingQueries()
+    case "listing" => genQuery(listingSchema, limit = 10)
     case "books"   => genBooksQueries()
     case _         => genListingQueries()
   }
