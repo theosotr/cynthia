@@ -34,15 +34,15 @@ case class QueryStr(
 
 case class State(
   db: DB,
-  source: String = "",                          // model
-  fields: Map[String, FieldDecl] = ListMap(),   // FieldDecl.as FieldDecl
+  source: String = "",                         // model
+  fields: Map[String, FieldDecl] = ListMap(),  // FieldDecl.as FieldDecl
   preds: Set[Predicate] = Set(),
-  orders: Seq[(String, Order)] = Seq(),         // FieldDecl.as asc or desc
-  nonAggrF: Set[String] = Set(),                // Fields for group by (Translator)
-  aggrF: Set[String] = Set(),                   // FieldDecl connected with aggregate functions
+  orders: Seq[(String, Order)] = Seq(),        // FieldDecl.as asc or desc
+  nonAggrF: Set[String] = Set(),               // Fields for group by (Translator)
+  aggrF: Set[String] = Set(),                  // FieldDecl connected with aggregate functions
   constantF: Set[String] = Set(),
-  aggrs: Seq[FieldDecl] = Seq(),                // Aggregate functions to apply
-  joins: Set[(String, String)] = Set(),         // Models to join with source
+  aggrs: Seq[FieldDecl] = Seq(),               // Aggregate functions to apply
+  joins: Set[(String, String)] = Set(),        // Models to join with source
   query: Option[QueryStr] = None,              // Query string (target), e.g. Unions
   numGen: Iterator[Int] = Stream.from(1).iterator
   ) {
