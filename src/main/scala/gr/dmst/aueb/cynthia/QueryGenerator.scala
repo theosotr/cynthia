@@ -42,7 +42,8 @@ case class GenState(
   cands: Seq[QuerySetNode] = Seq(NewQS),
   exprCands: Seq[ExprNode] = Seq(),
   qs: Option[QuerySet] = None,
-  dfields: Seq[FieldDecl] = Seq()) {
+  dfields: Seq[FieldDecl] = Seq(),
+  aggrF: Seq[FieldDecl] = Seq()) {
 
   val aggregateNodes = Seq(
     CountExpr,
@@ -52,27 +53,42 @@ case class GenState(
     MaxExpr
   )
 
+  val exprNodes = Seq(
+    ConstantExpr,
+    FExpr,
+    AddExpr,
+    SubExpr,
+    MulExpr,
+    DivExpr
+  )
+
   def ++() =
-    GenState(schema, model, depth + 1, cands, exprCands, qs, dfields)
+    GenState(schema, model, depth + 1, cands, exprCands, qs, dfields, aggrF)
 
   def queryset(qs: QuerySet) =
-    GenState(schema, model, depth, cands, exprCands, Some(qs), dfields)
+    GenState(schema, model, depth, cands, exprCands, Some(qs), dfields, aggrF)
 
   def model(m: Model) =
-    GenState(schema, Some(m), depth, cands, exprCands, qs, dfields)
+    GenState(schema, Some(m), depth, cands, exprCands, qs, dfields, aggrF)
 
   def candidates(c: Seq[QuerySetNode]) =
-    GenState(schema, model, depth, c, exprCands, qs, dfields)
+    GenState(schema, model, depth, c, exprCands, qs, dfields, aggrF)
 
   def exprCandidates(c: Seq[ExprNode]) =
-    GenState(schema, model, depth, cands, c, qs, dfields)
+    GenState(schema, model, depth, cands, c, qs, dfields, aggrF)
 
   def dfield(f: FieldDecl) =
-    GenState(schema, model, depth, cands, exprCands, qs, dfields :+ f)
+    GenState(schema, model, depth, cands, exprCands, qs, dfields :+ f, aggrF)
+
+  def afield(f: FieldDecl) =
+    GenState(schema, model, depth, cands, exprCands, qs, dfields, aggrF :+ f)
 
   def disgardAggregates() = {
-    val c = exprCands filter { !aggregateNodes.contains(_) }
-    GenState(schema, model, depth, cands, c, qs, dfields)
+    GenState(schema, model, depth, cands, exprNodes, qs, dfields, aggrF)
+  }
+
+  def disgardExprs() = {
+    GenState(schema, model, depth, cands, aggregateNodes, qs, dfields, aggrF)
   }
 }
 
@@ -131,9 +147,10 @@ case object QueryGenerator {
     }
   }
 
-  def generateFieldExpr(s: GenState, model: Model): (FieldExpr, FieldType) = {
+  def generateFieldExpr(s: GenState, model: Model,
+      forAggr: Boolean = false): (FieldExpr, FieldType) = {
     val exprNode =
-      if (s.depth >= maxDepth || RUtils.bool())
+      if (!forAggr && (s.depth >= maxDepth || RUtils.bool()))
         // If we reached the maximum depth, generate a leaf node.
         RUtils.chooseFrom(Seq(FExpr, ConstantExpr))
       else RUtils.chooseFrom(s.exprCands)
@@ -238,18 +255,24 @@ case object QueryGenerator {
     }
   }
 
-  def generateDeclFields(s: GenState, model: Model): GenState =
-      if (RUtils.bool()) s
-      else {
-        val (e, eType) = generateFieldExpr(s.++, model)
-        val f = FieldDecl(e, RUtils.word(), eType, RUtils.bool())
-        generateDeclFields(s dfield f, model)
-      }
+  def generateDeclFields(s: GenState, model: Model,
+      nonHidden: Boolean = true, forAggr: Boolean = false): GenState = {
+    val stopCond =
+      if(forAggr) !s.aggrF.isEmpty && RUtils.bool()
+      else RUtils.bool()
+    if (stopCond) s
+    else {
+      val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr)
+      val f = FieldDecl(e, RUtils.word(), eType,
+                        if (nonHidden) RUtils.bool() else false)
+      generateDeclFields(if (forAggr) s afield f else s dfield f, model)
+    }
+  }
 
 
-  def generateQuerySet(s: GenState): QuerySet =
+  def generateQuerySet(s: GenState): GenState =
     // We randomly decide if we should stop query generation or not.
-    if (s.qs.isDefined && RUtils.bool() || s.cands.isEmpty) s.qs.get
+    if (s.qs.isDefined && RUtils.bool() || s.cands.isEmpty) s
     else {
       assert(!s.cands.isEmpty)
       val next = RUtils.chooseFrom(s.cands)
@@ -294,12 +317,24 @@ case object QueryGenerator {
     }
 
   def apply(schema: Schema): Query = {
-    val qs = generateQuerySet(GenState(schema, exprCands = exprNodes))
     val qType = RUtils.chooseFrom(List(
-      "set"
+      "set",
+      "aggr"
     ))
     qType match {
-      case "set" => SetRes(qs)
+      case "set" =>
+        SetRes(generateQuerySet(GenState(schema, exprCands = exprNodes)).qs.get)
+      case "aggr" => {
+        val exprCands = exprNodes filter { x => x match {
+          case CountExpr | SumExpr | AvgExpr | MaxExpr | MinExpr => false
+          case _ => true
+        } }
+        val s1 = generateQuerySet(GenState(schema, exprCands = exprCands))
+        val s2 = s1.disgardExprs
+        val f = generateDeclFields(s2.++, s2.model.get, nonHidden = false,
+                                   forAggr = true)
+        AggrRes(f.aggrF, s2.qs.get)
+      }
     }
   }
 }

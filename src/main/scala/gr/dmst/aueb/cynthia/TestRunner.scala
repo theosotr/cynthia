@@ -789,7 +789,111 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(Div(F("Listing.sale_price"), F("EoDFfvD")), "KWpgDGBLp", DoubleF, false)
           )
         )
+      ),
+
+      // Query 42
+      SetRes(
+        New(
+          "Listing",
+          List(
+            FieldDecl(
+              Div(
+                Sub(Constant("M0rf", Quoted), Mul(F("Listing.sale_price"), Max(F("Listing.yearly_rent")))),
+                F("Listing.sale_price")
+              ),
+              "nbos",
+              DoubleF,
+              true
+            ),
+            FieldDecl(
+              Mul(
+                Div(Count(Some(F("Listing.id"))), Div(F("nbos"), Constant("7G", Quoted))),
+                Add(F("nbos"), Constant("ilkQN", Quoted))
+              ),
+              "lxg",
+              DoubleF,
+              false
+            ),
+            FieldDecl(Constant("L", Quoted), "xoOkrOnc", StringF, false),
+            FieldDecl(Div(Constant("5", UnQuoted), F("Listing.id")), "vHtTZ", DoubleF, true),
+            FieldDecl(F("xoOkrOnc"), "UBXB", StringF, false),
+            FieldDecl(Constant("NZ2", Quoted), "SNzkSd", StringF, false),
+            FieldDecl(Avg(F("Listing.yearly_rent")), "MdHFe", DoubleF, false)
+          )
+        )
+      ),
+
+      // Query 43
+      SetRes(
+        Apply(
+          Sort(List(("cCqQb", Asc))),
+          New(
+            "Listing",
+            List(
+              FieldDecl(Div(F("Listing.yearly_rent"), F("Listing.sale_price")), "WrTj", DoubleF, false),
+              FieldDecl(Constant("5", UnQuoted), "MPi", IntF, true),
+              FieldDecl(Count(Some(Constant("wAi8pi4f", Quoted))), "jcVbPimsG", IntF, false),
+              FieldDecl(F("WrTj"), "hj", DoubleF, true),
+              FieldDecl(Constant("0", UnQuoted), "cCqQb", IntF, false)
+            )
+          )
+        )
+      ),
+      AggrRes(
+        List(FieldDecl(Count(Some(F("EfLr"))), "KiqJoUU", IntF, false)),
+        New(
+          "Listing",
+          List(
+            FieldDecl(
+              Sub(
+                Add(
+                  F("Listing.id"),
+                  Div(
+                    Add(
+                      Div(Constant("9", UnQuoted), Constant("n3zKcdj2", Quoted)),
+                      Add(
+                        Div(Div(Constant("8", UnQuoted), Constant("1", UnQuoted)), F("Listing.id")),
+                        F("Listing.yearly_rent")
+                      )
+                    ),
+                    Constant("px5me", Quoted)
+                  )
+                ),
+                Sub(Constant("y1e8rj", Quoted), Constant("f1cay92kV", Quoted))
+              ),
+              "EfLr",
+              DoubleF,
+              false
+            )
+          )
+        )
+      ),
+
+
+      AggrRes(
+        List(FieldDecl(Count(Some(F("R"))), "R", IntF, false)),
+        New(
+          "Listing",
+          List(
+            FieldDecl(F("Listing.sale_price"), "R", DoubleF, false),
+            FieldDecl(Div(F("Listing.sale_price"), F("R")), "vlrkx", DoubleF, false),
+            FieldDecl(F("vlrkx"), "mUoSMAxdl", DoubleF, false),
+            FieldDecl(
+              Div(Mul(Constant("8", UnQuoted), F("Listing.id")), Constant("PHoJX5b", Quoted)),
+              "uBnSWipsi",
+              DoubleF,
+              false
+            ),
+            FieldDecl(
+              Div(Constant("9", UnQuoted), Add(Constant("", Quoted), Constant("1", UnQuoted))),
+              "OAYwxOOET",
+              DoubleF,
+              false
+            )
+          )
+        )
       )
+
     )
 
   def genBooksQueries() =
@@ -931,11 +1035,116 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(F("Review.book.author.first_name"), "TbPEVGKp", StringF, false)
           )
         )
+      ),
+
+      // Query 12
+      SetRes(
+        New(
+          "Review",
+          List(
+            FieldDecl(Constant("3", UnQuoted), "dqBZvjQX", IntF, true),
+            FieldDecl(F("Review.book.author.first_name"), "TbPEVGKp", StringF, false)
+          )
+        )
+      ),
+
+      // Query 13
+      SetRes(
+        Apply(
+          Sort(
+            List(
+              ("Review.content", Asc),
+              ("Review.book.id", Asc),
+              ("Review.id", Asc),
+              ("Review.reviewer_name", Asc)
+            )
+          ),
+          New(
+            "Review",
+            List(
+              FieldDecl(
+                Sub(Constant("8", UnQuoted), Sum(Add(Constant("t7nVx", Quoted), F("Review.content")))),
+                "DniIHgWk",
+                DoubleF,
+                false
+              )
+            )
+          )
+        )
+      ),
+
+      // Query 14
+      SetRes(
+        New(
+          "Author",
+          List(
+            FieldDecl(
+              Add(
+                Mul(
+                  Sub(Add(Min(Constant("T26", Quoted)), F("Author.first_name")), Constant("5", UnQuoted)),
+                  Constant("8", UnQuoted)
+                ),
+                Add(F("Author.first_name"), Avg(Constant("4", UnQuoted)))
+              ),
+              "YUA",
+              DoubleF,
+              false
+            ),
+            FieldDecl(Avg(Div(Constant("2BRyR3", Quoted), Constant("3", UnQuoted))), "oD", DoubleF, false),
+            FieldDecl(Constant("7", UnQuoted), "C", IntF, true)
+          )
+        )
+      ),
+
+      // Query 15
+      SetRes(
+        Apply(
+          Sort(
+            List(
+              ("Review.id", Asc),
+              ("V", Desc),
+              ("Review.reviewer_name", Desc),
+              ("Review.content", Desc),
+              ("Review.book.id", Desc)
+            )
+          ),
+          New("Review", List(FieldDecl(Constant("0", UnQuoted), "V", IntF, false)))
+        )
+      ),
+
+      // Query 16
+      SetRes(
+        Apply(
+          Sort(List(("Book.author.id", Asc), ("Book.isbn", Asc), ("Book.id", Desc))),
+          New(
+            "Book",
+            List(
+              FieldDecl(F("Book.title"), "e", StringF, true),
+              FieldDecl(Constant("", Quoted), "YejRlb", StringF, true),
+              FieldDecl(Sub(F("YejRlb"), F("Book.isbn")), "aqVzP", DoubleF, false),
+              FieldDecl(Constant("0", UnQuoted), "PYBKyS", IntF, true)
+            )
+          )
+        )
+      ),
+
+      // Query 17
+      SetRes(
+        Apply(
+          Sort(List(("Book.isbn", Desc), ("Izi", Desc), ("Book.author.id", Asc))),
+          New(
+            "Book",
+            List(
+              FieldDecl(Sub(F("Book.author.first_name"), F("Book.title")), "RvimPPZOm", DoubleF, false),
+              FieldDecl(Max(Constant("Xl950", Quoted)), "Izi", StringF, false)
+            )
+          )
+        )
       )
     )
 
   def genQueries(): Seq[Query] = schema match {
-    case "listing" => genQuery(listingSchema, limit = 10)
+    case "listing" => genListingQueries()
     case "books"   => genBooksQueries()
     case _         => genListingQueries()
   }
