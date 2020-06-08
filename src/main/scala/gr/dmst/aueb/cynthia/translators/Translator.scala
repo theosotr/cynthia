@@ -263,7 +263,11 @@ abstract class Translator(val target: Target) {
     }
     case Apply(Sort(spec), qs) => {
       val s1 = traverseSortedFields(evalQuerySet(s)(qs), spec map { _._1 })
-      spec.foldLeft(s1) { (s, x) => {
+      // Finally, always sort by id to eliminate non-deterministic results.
+      // Some backends (e.g., MySQL, Postgres) fetch results in an unpredictive
+      // manner when the ordering is unspecified.
+      val spec2 = spec :+ (s1.source + ".id", Desc)
+      spec2.foldLeft(s1) { (s, x) => {
         // If this field is a constant, we do not add to the set of the sorted
         // fields.
         val s2 = if (s.constantF.contains(x._1)) s else s order x
