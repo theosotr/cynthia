@@ -1156,6 +1156,20 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             )
           )
         )
+      ),
+
+      AggrRes(
+        List(FieldDecl(Count(Some(F("Review.content"))), "g", IntF, false)),
+        New(
+          "Review",
+          List(
+            FieldDecl(Constant("SBkK", Quoted), "vICp", StringF, false),
+            FieldDecl(Add(F("Review.content"), Div(F("vICp"), F("vICp"))), "OIeH", DoubleF, false),
+            FieldDecl(F("vICp"), "sEwe", StringF, false),
+            FieldDecl(Mul(F("Review.id"), F("Review.id")), "KB", DoubleF, false),
+            FieldDecl(Constant("4", UnQuoted), "JFSL", IntF, false)
+          )
+        )
       )
     )
 

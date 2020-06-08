@@ -144,11 +144,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       else s"[:$limit]"
   }
 
-  def constructAnnotate(fields: Set[String]) =
-    if (fields.isEmpty) ""
-    else "annotate(" + (fields.map { x => x + "=" + x } mkString ", ") + ")"
-
-  def constructAggrAnnotate(fields: Seq[String]) =
+  def constructAnnotate(fields: Seq[String]) =
     if (fields.isEmpty) ""
     else fields map { x => "annotate(" + x + "=" + x + ")" } mkString "."
 
@@ -215,21 +211,20 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     val groupBy: Set[String] = s.nonAggrF.toSeq match {
-      case Seq(f) => if (f.equals(s.source + ".id")) Set() else s.nonAggrF
-      case _ => s.nonAggrF
+      case Seq(f) =>
+        if (f.equals(s.source + ".id")) Set()
+        else s.getNonConstantGroupingFields
+      case _ => s.getNonConstantGroupingFields
     }
-    val tSort = Utils.topologicalSort(computeFieldGraph(s.fields)) filter { x =>
-      s.aggrF.contains(x) }
-    val nonAggrF = TUtils.filterNonAggrHidden(fieldVals).toSet filter { x =>
-      !s.aggrF.contains(x)
-    }
+    val fieldsTopSort = Utils.topologicalSort(computeFieldGraph(s.fields))
+    val (aggrF, nonAggrF) = fieldsTopSort partition { x => s.aggrF.contains(x) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
         constructAnnotate(nonAggrF),
         constructFilter(nonAggrP),
-        if (!s.aggrF.isEmpty) constructGroupBy(groupBy) else "",
-        constructAggrAnnotate(tSort),
+        if (!s.aggrF.isEmpty) constructGroupBy(groupBy ++ s.constantF) else "",
+        constructAnnotate(aggrF),
         constructOrderBy(s.orders),
         constructFilter(aggrP),
         constructAggrs(s.aggrs),
