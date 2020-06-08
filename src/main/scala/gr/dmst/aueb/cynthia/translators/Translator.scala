@@ -146,7 +146,7 @@ abstract class Translator(val target: Target) {
     }
   }
 
-  def groupFields(source: String, fields: Seq[FieldDecl]): (Set[String], Set[String]) = {
+  def groupFields(s: State, fields: Seq[FieldDecl]): (Set[String], Set[String]) = {
     val init = (
       Set[String](),
       Set[Constant](),
@@ -201,16 +201,13 @@ abstract class Translator(val target: Target) {
       (s, f) => { f match { case FieldDecl(e, as, _, h) => _computeGroupBy(e, as, s) }
     }}
     // Check if all grouped fields are constants.
-    val isConstant = groupedF forall { x => store get x match {
-      case Some((x, _)) => x.isConstant
-      case None         => false
-    }}
+    val isConstant = groupedF forall { x => s.constantF.contains(x) }
     // Check if fields contain aggregate functions.
     val aggrF = getAggregate(fields, store map { case (k, v) => (k, v._1) })
     if (aggrF.isEmpty) (Set(), aggrF)
     // If the list of grouped fields is empty or the list contains only
     // constant values, group by id of table.
-    else if (groupedF.isEmpty || isConstant) (Set(source + ".id"), aggrF)
+    else if (groupedF.isEmpty || isConstant) (Set(s.source + ".id"), aggrF)
     else (groupedF, aggrF)
   }
 
@@ -254,11 +251,11 @@ abstract class Translator(val target: Target) {
 
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
     case New(m, f) => { // Add source and fields to state
-      val s1 = s source m
-      val (groupF, aggrF) = groupFields(m, f)
-      val s2 = s1 nonAggrF groupF
-      val s3 = f.foldLeft(s2 aggrF aggrF) { (acc, x) => acc f (x) }
-      traverseDeclaredFields(s3.constantFields(getConstants(f, s3.fields)), f)
+      val s1 = f.foldLeft(s source m) { (acc, x) => acc f x }
+      val s2 = s1.constantFields(getConstants(f, s1.fields))
+      val (groupF, aggrF) = groupFields(s2, f)
+      val s3 = s2 nonAggrF groupF
+      traverseDeclaredFields(s3 aggrF aggrF, f)
     }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state
