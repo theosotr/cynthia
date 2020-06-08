@@ -178,9 +178,14 @@ abstract class Translator(val target: Target) {
       case F(f) =>
         store get f match {
           case None         => g + f // the field is native
-          case Some((e, h)) =>
-            if (e.isAggregate) (g - as)
-            else _computeGroupBy(e, as, if (h) g else g + f)
+          case Some((e, h)) => {
+            val g2 =
+              if (e.isAggregate)
+                if (h) g - as else (g - as) + f
+              else
+                if (h) g else g + f
+            _computeGroupBy(e, as, g2)
+          }
         }
       case Constant(_, _) |
         Count(_) |
