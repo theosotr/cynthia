@@ -221,7 +221,11 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
-        constructAnnotate(nonAggrF),
+        // filter out hidden fields
+        constructAnnotate(nonAggrF filter { x => s.fields get x match {
+          case None    => false
+          case Some(f) => !FieldDecl.hidden(f)
+        }}),
         constructFilter(nonAggrP),
         if (!s.aggrF.isEmpty) constructGroupBy(groupBy ++ s.constantF) else "",
         constructAnnotate(aggrF),
