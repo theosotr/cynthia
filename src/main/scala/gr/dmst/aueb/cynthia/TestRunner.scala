@@ -1170,12 +1170,23 @@ class TestRunner(schema: String, targets: Seq[Target]) {
             FieldDecl(Constant("4", UnQuoted), "JFSL", IntF, false)
           )
         )
+      ),
+
+      
+      SetRes(
+        New(
+          "Review",
+          List(
+            FieldDecl(Sum(Div(F("Review.rating"), F("Review.book.title"))), "TkhJ", DoubleF, false),
+            FieldDecl(Sub(F("Review.rating"), F("TkhJ")), "II", DoubleF, true)
+          )
+        )
       )
     )
 
   def genQueries(): Seq[Query] = schema match {
-    case "listing" => genQuery(listingSchema, limit = 10)
-    case "books"   => genBooksQueries()
+    case "listing" => genQuery(listingSchema, limit = 5000)
+    case "books"   => genQuery(bookSchema, limit = 5000)
     case _         => genListingQueries()
   }
 

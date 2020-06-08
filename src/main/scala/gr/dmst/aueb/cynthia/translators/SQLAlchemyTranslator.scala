@@ -155,13 +155,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         case Seq() | Seq(FieldDecl(Count(None), _, _, _)) => {
           val dFields = TUtils.mapNonHiddenFields(
             s.fields.values, FieldDecl.as)
-          val sourceStr = s.source
           val fieldStr = dFields mkString ","
           val q =
             if (fieldStr.equals(""))
-              "session.query(" + sourceStr + ")"
+              "session.query(" + s.source + ")"
             else
-              "session.query(" + fieldStr + ").select_from(" + sourceStr + ")"
+              "session.query(" + fieldStr + ").select_from(" + s.source + ")"
           QueryStr(
             Some("ret" + s.numGen.next().toString),
             Some(q)
@@ -172,7 +171,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
             case FieldDecl(f, l, t, _) =>
               s"type_coerce(${constructFieldExpr(f)}, ${getType(t)}).label('$l')"
           })
-          val qstr = "session.query(" + (aggrs mkString ", ") + ")"
+          val qstr = "session.query(" + (aggrs mkString ", ") + ").select_from(" + s.source + ")"
           QueryStr(
             Some("ret" + s.numGen.next().toString),
             Some(qstr)

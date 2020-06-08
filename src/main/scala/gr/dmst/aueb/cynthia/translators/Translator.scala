@@ -92,9 +92,9 @@ case class State(
   def getNonConstantGroupingFields(): Set[String] =
     if (nonAggrF.isEmpty) nonAggrF
     else {
-      val allConstant = nonAggrF forall { x => constantF.contains(x) }
-      if (allConstant) Set(source + ".id")
-      else nonAggrF
+      val groupingF = nonAggrF filter { x => !constantF.contains(x) }
+      if (groupingF.isEmpty) Set(source + ".id")
+      else groupingF
     }
 
   def >>(qstr: QueryStr): State = query match {
@@ -271,16 +271,17 @@ abstract class Translator(val target: Target) {
       // Some backends (e.g., MySQL, Postgres) fetch results in an unpredictive
       // manner when the ordering is unspecified.
       val spec2 = spec :+ (s1.source + ".id", Desc)
-      spec2.foldLeft(s1) { (s, x) => {
+      val s2 = if (!s1.nonAggrF.isEmpty) s1 addGroupF (s1.source + ".id") else s1
+      spec2.foldLeft(s2) { (s, x) => {
         // If this field is a constant, we do not add to the set of the sorted
         // fields.
-        val s2 = if (s.constantF.contains(x._1)) s else s order x
+        val s3 = if (s.constantF.contains(x._1)) s else s order x
         val (f, _) = x
-        s2.fields get f match {
+        s3.fields get f match {
           // the field is native so add it to grouping fields
-          case None => if (!s2.aggrF.isEmpty) s2 addGroupF f else s2
+          case None => if (!s3.aggrF.isEmpty) s3 addGroupF f else s3
           // we have already examined this field because is declared.
-          case _    => s2
+          case _    => s3
         }
       }}
     }
@@ -309,9 +310,9 @@ abstract class Translator(val target: Target) {
         val s2 = evalQuerySet(s1)(qs)
         (s2, constructQuery()(s2))
       }
-      case AggrRes(_, _) => {
+      case AggrRes(f, _) => {
         val s2 = evalAggrQuery(s1)(q)
-        (s2, constructQuery()(s2))
+        (s2, constructQuery()(traverseDeclaredFields(s2, f)))
       }
       case SubsetRes(offset, limit, qs) => {
         val s2 = evalQuerySet(s1)(qs)
