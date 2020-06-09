@@ -265,7 +265,8 @@ case object QueryGenerator {
       val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr)
       val f = FieldDecl(e, RUtils.word(), eType,
                         if (nonHidden) RUtils.bool() else false)
-      generateDeclFields(if (forAggr) s afield f else s dfield f, model)
+      generateDeclFields(if (forAggr) s afield f else s dfield f, model,
+                         nonHidden = nonHidden, forAggr = forAggr)
     }
   }
 
