@@ -45,7 +45,7 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     q match {
       case FirstRes(_) => s"dump($ret.id)"
-      case SetRes(_) => s"for i in $ret\n\tdump(i.id)\nend"
+      case SetRes(_) | SubsetRes(_, _, _) => s"for i in $ret\n\tdump(i.id)\nend"
       case _ => ""
     }
   }
@@ -153,6 +153,15 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       (Str("where([\"") << translatePredArgs(x) << "\"" << translatePredVals(x) << "])").!
     } mkString(".")
 
+  def constructOffsetLimit(offset: Int, limit: Option[Int]) = limit match {
+    case None =>
+      if (offset > 0) s"offset($offset)"
+      else ""
+    case Some(limit) =>
+      if (offset > 0)
+        s"offset($offset).limit($limit)"
+      else s"limit($limit)"
+  }
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
@@ -166,7 +175,8 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
             constructJoins(s.joins, s.source),
             constructOrderBy(s.orders),
             constructFilter(nonAggrP),
-            if (first) "first" else "all"
+            if (first) "first" else "all",
+            constructOffsetLimit(offset, limit)
           ) filter {
             case "" => false
             case _ => true
