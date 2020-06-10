@@ -1282,7 +1282,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
               acc ++ (invd = true)
             } else acc.++()
         }
-        Await.result(f, 5 seconds)
+        Await.result(f, 10 seconds)
       }
     }
     val msg =
