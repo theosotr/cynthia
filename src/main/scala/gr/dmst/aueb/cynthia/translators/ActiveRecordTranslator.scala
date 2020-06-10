@@ -100,20 +100,51 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
-  def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {
-    case Constant(v, UnQuoted) => v
-    case Constant(v, Quoted)   => Utils.quoteStr(v)
+  def constructFieldExpr(fexpr: FieldExpr, unquoted: Boolean = false): String = fexpr match {
+    case F(f)                  => getActiveRecordFieldName(f)
+    case Constant(v, UnQuoted) => if (unquoted) v else Utils.quoteStr(v)
+    case Constant(v, Quoted)   => if (unquoted) v else Utils.quoteStr(v)
+    // case _    =>
+      // if (!fexpr.compound) constructPrimAggr(fexpr)
+      /* else constructCompoundAggr(fexpr) */
     case _ => ""
   }
 
   def translatePredArgs(pred: Predicate): String = pred match {
     case Eq(k, _) =>
       (Str(getActiveRecordFieldName(k)) << " = ?").!
+    case Gt(k, _) =>
+      (Str(getActiveRecordFieldName(k)) << " > ?").!
+    case Gte(k, _) =>
+      (Str(getActiveRecordFieldName(k)) << " >= ?").!
+    case Lt(k, _) =>
+      (Str(getActiveRecordFieldName(k)) << " < ?").!
+    case Lte(k, _) =>
+      (Str(getActiveRecordFieldName(k)) << " <= ?").!
+    case Contains(k, _) =>
+      (Str(getActiveRecordFieldName(k)) << " LIKE ?").!
+    // case Not(pred)                  =>
+      // (Str("not_(") << translatePred(pred) << ")").!
+    case Or(p1, p2)                 =>
+      (Str(translatePredArgs(p1)) << " OR " << translatePredArgs(p2)).!
+    case And(p1, p2)                =>
+      (Str(translatePredArgs(p1)) << " AND " << translatePredArgs(p2)).!
     case _ => ""
   }
 
   def translatePredVals(pred: Predicate): String = pred match {
     case Eq(_, e) => ", " + constructFieldExpr(e)
+    case Gt(k, e) => ", " + constructFieldExpr(e)
+    case Gte(k, e) => ", " + constructFieldExpr(e)
+    case Lt(k, e) => ", " + constructFieldExpr(e)
+    case Lte(k, e) => ", " + constructFieldExpr(e)
+    case Contains(k, e) => ", '%" + constructFieldExpr(e, true) + "%'"
+    // case Not(pred)                  =>
+      // (Str("not_(") << translatePred(pred) << ")").!
+    case Or(p1, p2)                 =>
+      (Str(translatePredVals(p1)) << translatePredVals(p2)).!
+    case And(p1, p2)                =>
+      (Str(translatePredVals(p1)) << translatePredVals(p2)).!
     case _ => ""
   }
 
@@ -134,8 +165,8 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
             model,
             constructJoins(s.joins, s.source),
             constructOrderBy(s.orders),
-            if (first) "first" else "all",
-            constructFilter(nonAggrP)
+            constructFilter(nonAggrP),
+            if (first) "first" else "all"
           ) filter {
             case "" => false
             case _ => true
