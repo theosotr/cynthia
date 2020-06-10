@@ -165,7 +165,7 @@ case object QueryGenerator {
         }
       }
       case ConstantExpr =>
-        if (RUtils.bool) (Constant(RUtils.string(), Quoted), StringF)
+        if (RUtils.bool) (Constant(RUtils.word, Quoted), StringF)
         else (Constant(s"${RUtils.integer()}", UnQuoted), IntF)
       case CountExpr => {
         // It's not meaningful to count a compound expression. revisit

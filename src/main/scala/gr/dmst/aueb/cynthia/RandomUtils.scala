@@ -19,8 +19,8 @@ object RUtils {
   def string(n: Int = 10): String =
     r.alphanumeric.take(r.nextInt(n)) mkString ""
 
-  def word(n: Int = 9): String =
-    r.alphanumeric.filter { _.isLetter }.take(r.nextInt(n) + 1) mkString ""
+  def word(): String =
+    Words.value(r.nextInt(Words.value.size))
 
   def integer(n: Int = 10): Int =
     r.nextInt(n)
