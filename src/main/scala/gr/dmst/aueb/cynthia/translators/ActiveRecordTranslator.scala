@@ -55,8 +55,9 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = QueryStr(Some("var"))
 
-  def getActiveRecordFieldName(field: String, el: Int = 1) =
-    if(field.contains(".")) field.split('.').array(el) else field;
+  def getActiveRecordFieldName(field: String) =
+    if (field.contains(".")) field.split('.').array(field.count(_ == '.')) else
+      field
 
   def constructJoins(joins: Set[(String, String)], source: String): String = {
     if (joins.isEmpty) ""
@@ -107,7 +108,7 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
 
   def translatePredArgs(pred: Predicate): String = pred match {
     case Eq(k, _) =>
-      (Str(getActiveRecordFieldName(k, 2)) << " = ?").!
+      (Str(getActiveRecordFieldName(k)) << " = ?").!
     case _ => ""
   }
 
