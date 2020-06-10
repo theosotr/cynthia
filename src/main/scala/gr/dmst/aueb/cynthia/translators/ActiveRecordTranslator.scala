@@ -105,48 +105,61 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     case _ => ""
   }
 
-  def translatePredArgs(pred: Predicate): String = pred match {
-    case Eq(k, _) =>
-      (Str(getActiveRecordFieldName(k)) << " = ?").!
-    case Gt(k, _) =>
-      (Str(getActiveRecordFieldName(k)) << " > ?").!
-    case Gte(k, _) =>
-      (Str(getActiveRecordFieldName(k)) << " >= ?").!
-    case Lt(k, _) =>
-      (Str(getActiveRecordFieldName(k)) << " < ?").!
-    case Lte(k, _) =>
-      (Str(getActiveRecordFieldName(k)) << " <= ?").!
-    case Contains(k, _) =>
-      (Str(getActiveRecordFieldName(k)) << " LIKE ?").!
+  def translatePred(pred: Predicate): (String, String) = pred match {
+    case Eq(k, e) =>
+      ((Str(getActiveRecordFieldName(k)) << " = ?").!, ", " + constructFieldExpr(e))
+    case Gt(k, e) =>
+      ((Str(getActiveRecordFieldName(k)) << " > ?").!, ", " + constructFieldExpr(e))
+    case Gte(k, e) =>
+      ((Str(getActiveRecordFieldName(k)) << " >= ?").!, ", " + constructFieldExpr(e))
+    case Lt(k, e) =>
+      ((Str(getActiveRecordFieldName(k)) << " < ?").!, ", " + constructFieldExpr(e))
+    case Lte(k, e) =>
+      ((Str(getActiveRecordFieldName(k)) << " <= ?").!, ", " + constructFieldExpr(e))
+    case Contains(k, e) =>
+      ((Str(getActiveRecordFieldName(k)) << " LIKE ?").!, ", '%" + constructFieldExpr(e, true) + "%'")
     // case Not(pred)                  =>
       // (Str("not_(") << translatePred(pred) << ")").!
-    case Or(p1, p2)                 =>
-      (Str(translatePredArgs(p1)) << " OR " << translatePredArgs(p2)).!
-    case And(p1, p2)                =>
-      (Str(translatePredArgs(p1)) << " AND " << translatePredArgs(p2)).!
-    case _ => ""
+   case Or(p1, p2) =>
+      val res1 = translatePred(p1)
+      val res2 = translatePred(p2)
+      (res1._1 + " AND " + res2._1, res1._2 + res2._2)
+    case And(p1, p2) => {
+      val res1 = translatePred(p1)
+      val res2 = translatePred(p2)
+      (res1._1 + " AND " + res2._1, res1._2 + res2._2)
+    }
+    case _ => ("", "")
   }
 
-  def translatePredVals(pred: Predicate): String = pred match {
-    case Eq(_, e) => ", " + constructFieldExpr(e)
-    case Gt(k, e) => ", " + constructFieldExpr(e)
-    case Gte(k, e) => ", " + constructFieldExpr(e)
-    case Lt(k, e) => ", " + constructFieldExpr(e)
-    case Lte(k, e) => ", " + constructFieldExpr(e)
-    case Contains(k, e) => ", '%" + constructFieldExpr(e, true) + "%'"
-    // case Not(pred)                  =>
-      // (Str("not_(") << translatePred(pred) << ")").!
-    case Or(p1, p2)                 =>
-      (Str(translatePredVals(p1)) << translatePredVals(p2)).!
-    case And(p1, p2)                =>
-      (Str(translatePredVals(p1)) << translatePredVals(p2)).!
-    case _ => ""
-  }
-
-  def constructFilter(preds: Set[Predicate]) =
-    preds map { x =>
-      (Str("where([\"") << translatePredArgs(x) << "\"" << translatePredVals(x) << "])").!
+  def constructFilter(preds: Set[Predicate]): String = {
+    preds map { x => x match {
+      case Not(x) => {
+        val res = translatePred(x)
+        (Str("where.not([\"") << res._1 << "\"" << res._2 << "])").!
+      }
+      case And(p1, p2) => {
+        p1 match {
+          case Not(p1) => {
+            val res1 = translatePred(p1)
+            val res2 = constructFilter(Set(p2))
+            (Str("where.not([\"") << res1._1 << "\"" << res1._2 << "])."
+              << res2
+            ).!
+          }
+          case _ => {
+            val res = translatePred(x)
+            (Str("where([\"") << res._1 << "\"" << res._2 << "])").!
+          }
+        }
+      }
+      case _ => {
+        val res = translatePred(x)
+        (Str("where([\"") << res._1 << "\"" << res._2 << "])").!
+      }
+     }
     } mkString(".")
+  }
 
   def constructOffsetLimit(offset: Int, limit: Option[Int]) = limit match {
     case None =>
