@@ -46,6 +46,7 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     q match {
       case FirstRes(_) => s"dump($ret.id)"
       case SetRes(_) => s"for i in $ret\n\tdump(i.id)\nend"
+      case _ => ""
     }
   }
 
@@ -54,8 +55,8 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = QueryStr(Some("var"))
 
-  def getActiveRecordFieldName(field: String) =
-    field.split('.').array(1);
+  def getActiveRecordFieldName(field: String, el: Int = 1) =
+    if(field.contains(".")) field.split('.').array(el) else field;
 
   def constructJoins(joins: Set[(String, String)], source: String): String = {
     if (joins.isEmpty) ""
@@ -98,15 +99,42 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
+  def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {
+    case Constant(v, UnQuoted) => v
+    case Constant(v, Quoted)   => Utils.quoteStr(v)
+    case _ => ""
+  }
+
+  def translatePredArgs(pred: Predicate): String = pred match {
+    case Eq(k, _) =>
+      (Str(getActiveRecordFieldName(k, 2)) << " = ?").!
+    case _ => ""
+  }
+
+  def translatePredVals(pred: Predicate): String = pred match {
+    case Eq(_, e) => ", " + constructFieldExpr(e)
+    case _ => ""
+  }
+
+  def constructFilter(preds: Set[Predicate]) =
+    preds map { x =>
+      (Str("where([\"") << translatePredArgs(x) << "\"" << translatePredVals(x) << "])").!
+    } mkString(".")
+
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
+        println(s)
         val model = s.source
+        val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
+        println(nonAggrP)
         QueryStr(Some("ret" + s.numGen.next().toString),
           Some(Seq(
             model,
             constructJoins(s.joins, s.source),
             constructOrderBy(s.orders),
-            if (first) "first" else "all"
+            if (first) "first" else "all",
+            constructFilter(nonAggrP)
           ) filter {
             case "" => false
             case _ => true
