@@ -34,6 +34,8 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     |def dump(var)
     |  if var.is_a? Integer
     |    puts "%0.2f" % [var]
+    |  elsif var.is_a? Numeric
+    |    puts "%0.2f" % [var]
     |  elsif var.is_a? String
     |    puts var.strip
     |  else
@@ -46,6 +48,14 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     q match {
       case FirstRes(_) => s"dump($ret.id)"
       case SetRes(_) | SubsetRes(_, _, _) => s"for i in $ret\n\tdump(i.id)\nend"
+      case AggrRes (aggrs, _) => {
+        aggrs map { x => x match {
+          case x => {
+            val (qfield, _, _) = x match { case FieldDecl(f, l, t, _) => (f, l, t) }
+            s"dump($ret." + constructAggrExpr(qfield) + ")"
+          }
+        } } mkString("\n")
+      }
       case _ => ""
     }
   }
@@ -176,12 +186,32 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       else s"limit($limit)"
   }
 
+def constructAggrExpr(fexpr: FieldExpr) = {
+    fexpr match {
+      case Count(None)        => "count"
+      case Count(Some(field)) => "count(\"" + constructFieldExpr(field) + "\")"
+      case Sum(field)         => "sum(\"" + constructFieldExpr(field) + "\")"
+      case Avg(field)         => "average(\"" + constructFieldExpr(field) + "\")"
+      case Min(field)         => "minimum(\"" + constructFieldExpr(field) + "\")"
+      case Max(field)         => "maximum(\"" + constructFieldExpr(field) + "\")"
+      case _                  => ??? // Unreachable case
+    }
+  }
+
+  def constructAggr(aggrs: Seq[FieldDecl]) = aggrs match {
+    case Seq()  => ""
+    case Seq(x) => {
+      val (qfield, as, t) = x match { case FieldDecl(f, l, t, _) => (f, l, t) }
+      constructAggrExpr(qfield)
+    }
+    case _      => ""
+  }
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
         println(s)
         val model = s.source
         val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
-        println(nonAggrP)
         QueryStr(Some("ret" + s.numGen.next().toString),
           Some(Seq(
             model,
@@ -189,14 +219,16 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
             constructOrderBy(s.orders),
             constructFilter(nonAggrP),
             if (first) "first" else "all",
-            constructOffsetLimit(offset, limit)
+            constructOffsetLimit(offset, limit),
           ) filter {
             case "" => false
             case _ => true
           } mkString "."))
   }
 
-  override def unionQueries(s1: State, s2: State) = s1
+  override def unionQueries(s1: State, s2: State) =
+    throw new UnsupportedException("unions are not supported")
 
-  override def intersectQueries(s1: State, s2: State) = s1
+  override def intersectQueries(s1: State, s2: State) =
+    throw new UnsupportedException("unions are not supported")
 }
