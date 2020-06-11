@@ -1,7 +1,7 @@
 package gr.dmst.aueb.cynthia
 
 import java.io.File
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
@@ -1185,8 +1185,8 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     )
 
   def genQueries(): Seq[Query] = schema match {
-    case "listing" => genQuery(listingSchema, limit = 5000)
-    case "books"   => genQuery(bookSchema, limit = 5000)
+    case "listing" => genQuery(listingSchema, limit = 200)
+    case "books"   => genQuery(bookSchema, limit = 200)
     case _         => genListingQueries()
   }
 
@@ -1230,59 +1230,66 @@ class TestRunner(schema: String, targets: Seq[Target]) {
     println(s"Starting testing session for $schema...")
     val stats = genQueries()
       .foldLeft(Stats()) { (acc, q) => {
-        val futures = targets map { t =>
-          Future {
-            (t, QueryExecutor(q, t))
+        try {
+          val futures = targets map { t =>
+            Future {
+              (t, QueryExecutor(q, t))
+            }
+          }
+          val f = Future.sequence(futures) map { res =>
+              val results = (
+                Map[(String, String), Seq[Target]](),
+                Map[(String, String), Seq[Target]]()
+              )
+              val (oks, failed) =
+                res.foldLeft(results) { case ((oks, failed), x) => {
+                  x match {
+                    case (target, Unsupported(_)) => (oks, failed)
+                    case (_, Invalid(_)) => (oks, failed)
+                    case (target, Ok(res)) => {
+                      val k = (target.db.getName(), res)
+                      val targets = oks getOrElse(k, Seq())
+                      (oks + (k -> (targets :+ target)), failed)
+                    }
+                    case (target, Fail(err)) => {
+                      val k = (target.db.getName(), err)
+                      val targets = failed getOrElse(k, Seq())
+                      (oks, failed + (k -> (targets :+ target)))
+                    }
+                  }
+                }}
+              // Get the number of backends
+              val ndbs = targets.map(x => x.db).toSet.size
+              val okDbs = oks.keys.map { case (k, _) => k }.toSet
+              if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
+                  oks.size > ndbs) {
+                val qid = mismatchEnumerator.next()
+                val reportDir = getMismatchesDir(qid)
+                val msg =
+                  s"""${Console.GREEN}[INFO]: Mismatch found in schema '$schema':${Console.WHITE}
+                  |  - Query ID: $qid
+                  |  - Report Directory: $reportDir
+                  |  - OK Target Groups:\n${oks.map { case (_, v) =>
+                      "    * " + (v.map {_.toString} mkString ", ")
+                    } mkString "\n"}
+                  |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
+                  """.stripMargin
+                storeMismatch(q, oks ++ failed, reportDir)
+                println(msg)
+                acc ++ (mism = true)
+              } else if (failed.size == 0 && oks.size == 0) {
+                val qid = mismatchEnumerator.next()
+                storeInvalid(q, qid)
+                acc ++ (invd = true)
+              } else acc.++()
+          }
+          Await.result(f, 10 seconds)
+        } catch {
+          case e: TimeoutException => {
+            BlackWhite.tokenize(q).mkString
+            acc
           }
         }
-        val f = Future.sequence(futures) map { res =>
-            val results = (
-              Map[(String, String), Seq[Target]](),
-              Map[(String, String), Seq[Target]]()
-            )
-            val (oks, failed) =
-              res.foldLeft(results) { case ((oks, failed), x) => {
-                x match {
-                  case (target, Unsupported(_)) => (oks, failed)
-                  case (_, Invalid(_)) => (oks, failed)
-                  case (target, Ok(res)) => {
-                    val k = (target.db.getName(), res)
-                    val targets = oks getOrElse(k, Seq())
-                    (oks + (k -> (targets :+ target)), failed)
-                  }
-                  case (target, Fail(err)) => {
-                    val k = (target.db.getName(), err)
-                    val targets = failed getOrElse(k, Seq())
-                    (oks, failed + (k -> (targets :+ target)))
-                  }
-                }
-              }}
-            // Get the number of backends
-            val ndbs = targets.map(x => x.db).toSet.size
-            val okDbs = oks.keys.map { case (k, _) => k }.toSet
-            if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
-                oks.size > ndbs) {
-              val qid = mismatchEnumerator.next()
-              val reportDir = getMismatchesDir(qid)
-              val msg =
-                s"""${Console.GREEN}[INFO]: Mismatch found in schema '$schema':${Console.WHITE}
-                |  - Query ID: $qid
-                |  - Report Directory: $reportDir
-                |  - OK Target Groups:\n${oks.map { case (_, v) =>
-                    "    * " + (v.map {_.toString} mkString ", ")
-                  } mkString "\n"}
-                |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
-                """.stripMargin
-              storeMismatch(q, oks ++ failed, reportDir)
-              println(msg)
-              acc ++ (mism = true)
-            } else if (failed.size == 0 && oks.size == 0) {
-              val qid = mismatchEnumerator.next()
-              storeInvalid(q, qid)
-              acc ++ (invd = true)
-            } else acc.++()
-        }
-        Await.result(f, 10 seconds)
       }
     }
     val msg =
