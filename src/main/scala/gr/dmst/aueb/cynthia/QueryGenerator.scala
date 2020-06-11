@@ -90,6 +90,13 @@ case class GenState(
   def disgardExprs() = {
     GenState(schema, model, depth, cands, aggregateNodes, qs, dfields, aggrF)
   }
+
+  def getFields() =
+    (dfields filter { !FieldDecl.hidden(_) } map FieldDecl.as) ++
+    (model.get.fields map { x => x match {
+      case Field(n, Foreign(_)) => model.get.name + "." + n + ".id"
+      case Field(n, _)          => model.get.name + "." + n
+    }})
 }
 
 
@@ -216,7 +223,7 @@ case object QueryGenerator {
 
   def generatePredicate(s: GenState, model: Model): Predicate = {
     assert(s.model.isDefined)
-    val fields = s.dfields map { FieldDecl.as }
+    val fields = s.getFields
     val predNode = RUtils.chooseFrom(predNodes)
     predNode match {
       case EqPred => {
@@ -255,19 +262,25 @@ case object QueryGenerator {
     }
   }
 
-  def generateDeclFields(s: GenState, model: Model,
-      nonHidden: Boolean = true, forAggr: Boolean = false): GenState = {
-    val stopCond =
-      if(forAggr) !s.aggrF.isEmpty && RUtils.bool()
-      else RUtils.bool()
-    if (stopCond) s
-    else {
-      val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr)
-      val f = FieldDecl(e, RUtils.word(), eType,
-                        if (nonHidden) RUtils.bool() else false)
-      generateDeclFields(if (forAggr) s afield f else s dfield f, model,
-                         nonHidden = nonHidden, forAggr = forAggr)
+  def generateDeclFields(s: GenState, model: Model, nonHidden: Boolean = true,
+      number: Option[Int] = None, forAggr: Boolean = false) = {
+    def _generateFieldDecl(s: GenState, i: Int): GenState = {
+      val stopCond =
+        if(forAggr) !s.aggrF.isEmpty && RUtils.bool()
+        else number match {
+          case None    => RUtils.bool() // We randomly choose whether to stop or not.
+          case Some(n) => i >= n
+        }
+      if (stopCond) s
+      else {
+        val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr)
+        val f = FieldDecl(e, RUtils.word(), eType,
+                          if (nonHidden) RUtils.bool() else false)
+        println(i)
+        _generateFieldDecl(if (forAggr) s afield f else s dfield f, i + 1)
+      }
     }
+    _generateFieldDecl(s, 0)
   }
 
 
@@ -289,13 +302,7 @@ case object QueryGenerator {
         }
         case ApplySort => {
           assert(s.model.isDefined)
-          val sortedFields = RUtils.sample(
-            (s.dfields filter { !FieldDecl.hidden(_) } map FieldDecl.as) ++
-            (s.model.get.fields map { x => x match {
-              case Field(n, Foreign(_)) => s.model.get.name + "." + n + ".id"
-              case Field(n, _)          => s.model.get.name + "." + n
-            }})
-          )
+          val sortedFields = RUtils.sample(s.getFields)
           val s2 = s candidates (s.cands filter { x => x != ApplySort })
           if (sortedFields.isEmpty) generateQuerySet(s2)
           else {
