@@ -148,7 +148,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     if (fields.isEmpty) ""
     else fields map { x => "annotate(" + x + "=" + x + ")" } mkString "."
 
-  def constructGroupBy(groupBy: Set[String]) = groupBy match {
+  def constructValues(groupBy: Set[String]) = groupBy match {
     case Seq() => ""
     case _     => "values(" + (
       groupBy map { x => Utils.quoteStr(getDjangoFieldName(x)) } mkString ", ") + ")"
@@ -227,10 +227,11 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
           case Some(f) => !FieldDecl.hidden(f)
         }}),
         constructFilter(nonAggrP),
-        if (!s.aggrF.isEmpty) constructGroupBy(groupBy ++ s.constantF) else "",
+        if (!s.aggrF.isEmpty) constructValues(groupBy ++ s.constantF) else "",
         constructAnnotate(aggrF),
         constructOrderBy(s.orders),
         constructFilter(aggrP),
+        constructValues((fieldVals filter { !FieldDecl.hidden(_) } map FieldDecl.as).toSet),
         constructAggrs(s.aggrs),
         constructFirst(first)
       ) filter {
