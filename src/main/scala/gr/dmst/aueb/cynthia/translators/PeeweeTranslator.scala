@@ -10,13 +10,14 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     |from peewee import *
     |from models_${target.db.getName} import *
     |
-    |def dump(x):
-    |    if isinstance(x, numbers.Number):
-    |        print(round(decimal.Decimal(x), 2))
-    |    elif isinstance(x, str):
-    |        print(x.strip())
-    |    else:
-    |        print(x)
+   |def dump(x):
+   |    if isinstance(x, numbers.Number):
+   |        print(round(decimal.Decimal(x), 2))
+   |    else:
+   |        try:
+   |            print(round(decimal.Decimal(float(x)), 2))
+   |        except:
+   |            print(x)
     |""".stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {

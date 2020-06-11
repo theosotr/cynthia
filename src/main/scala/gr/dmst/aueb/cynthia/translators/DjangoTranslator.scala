@@ -19,7 +19,10 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
    |    if isinstance(x, numbers.Number):
    |        print(round(decimal.Decimal(x), 2))
    |    else:
-   |        print(x)
+   |        try:
+   |            print(round(decimal.Decimal(float(x)), 2))
+   |        except:
+   |            print(x)
    |""".stripMargin
 
   def getDjangoFieldName(field: String) =
@@ -159,7 +162,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     else {
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
         val str = Str("ExpressionWrapper(") << constructFieldExpr(f) <<
-          ", output_field=" << getType(t) << ")"
+          ", output_field=TextField())"
         acc >> QueryStr(Some(as), Some(str.!))
       }
     }
