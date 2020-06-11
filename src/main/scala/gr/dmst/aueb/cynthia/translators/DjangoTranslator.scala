@@ -203,8 +203,22 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  override def constructQuery(first: Boolean = false, offset: Int = 0,
-      limit: Option[Int] = None)(s: State) = {
+  def constructCombinedQuery(s: State) = {
+    val qstr = constructQueryPrefix(s)
+    qstr >> QueryStr(
+      Some("ret" + s.numGen.next().toString),
+      Some((Seq(
+        qstr.ret.get,
+        constructOrderBy(s.orders)
+      ) filter {
+        case "" => false
+        case _  => true
+      }  mkString (".")))
+    )
+  }
+
+  def constructSimpleQuery(s: State, first: Boolean, offset: Int,
+      limit: Option[Int]) = {
     val fieldVals = s.fields.values
     val hidden = TUtils.filterHidden(fieldVals)
     this.hidden ++= hidden
@@ -240,6 +254,11 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       }  mkString (".")) + constructOffsetLimit(offset, limit))
     )
   }
+
+  override def constructQuery(first: Boolean = false, offset: Int = 0,
+      limit: Option[Int] = None)(s: State) =
+    if (s.combined) constructCombinedQuery(s)
+    else constructSimpleQuery(s, first, offset, limit)
 
   override def unionQueries(s1: State, s2: State) = {
     val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))

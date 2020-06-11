@@ -44,50 +44,51 @@ case class State(
   aggrs: Seq[FieldDecl] = Seq(),
   joins: Set[(String, String)] = Set(),
   query: Option[QueryStr] = None,
+  combined: Boolean = false,
   numGen: Iterator[Int] = Stream.from(1).iterator
   ) {
 
   def source(s: String) =
     State(db, s, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins, query, numGen)
+          joins, query, combined, numGen)
 
   def f(fd: FieldDecl) = fd match {
     case FieldDecl(_, as, _, _) =>
       State(db, source, fields + (as -> fd), preds, orders, nonAggrF, aggrF,
-            constantF, aggrs, joins, query, numGen)
+            constantF, aggrs, joins, query, combined, numGen)
   }
 
   def pred(p: Predicate): State =
     State(db, source, fields, preds + p, orders, nonAggrF, aggrF, constantF,
-          aggrs, joins, query, numGen)
+          aggrs, joins, query, combined, numGen)
 
   def order(o: (String, Order)): State =
     State(db, source, fields, preds, orders :+ o, nonAggrF, aggrF, constantF,
-          aggrs, joins, query, numGen)
+          aggrs, joins, query, combined, numGen)
 
   def nonAggrF(f: Set[String]): State =
     State(db, source, fields, preds, orders, nonAggrF ++ f, aggrF, constantF,
-          aggrs, joins, query, numGen)
+          aggrs, joins, query, combined, numGen)
 
   def addGroupF(f: String): State =
     State(db, source, fields, preds, orders, nonAggrF + f, aggrF, constantF,
-          aggrs, joins, query, numGen)
+          aggrs, joins, query, combined, numGen)
 
   def aggrF(f: Set[String]): State =
     State(db, source, fields, preds, orders, nonAggrF, f, constantF, aggrs,
-          joins, query, numGen)
+          joins, query, combined, numGen)
 
   def constantFields(c: Set[String]): State =
     State(db, source, fields, preds, orders, nonAggrF, aggrF, c, aggrs,
-          joins, query, numGen)
+          joins, query, combined, numGen)
 
   def aggr(a: Seq[FieldDecl]): State =
     State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
-          aggrs ++ a, joins, query, numGen)
+          aggrs ++ a, joins, query, combined, numGen)
 
   def join(j: (String, String)): State =
     State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins + j, query, numGen)
+          joins + j, query, combined, numGen)
 
   def getNonConstantGroupingFields(): Set[String] =
     if (nonAggrF.isEmpty) nonAggrF
@@ -100,11 +101,15 @@ case class State(
   def >>(qstr: QueryStr): State = query match {
     case None =>
       State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
-            aggrs, joins, Some(qstr), numGen)
+            aggrs, joins, Some(qstr), combined, numGen)
     case Some(query) =>
       State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
-            aggrs, joins, Some(query >> qstr), numGen)
+        aggrs, joins, Some(query >> qstr), combined, numGen)
   }
+
+  def combinedQ(): State =
+    State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
+          aggrs, joins, query, true, numGen)
 }
 
 
@@ -286,9 +291,9 @@ abstract class Translator(val target: Target) {
       }}
     }
     case Union (qs1, qs2) =>
-      unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)) // Merge queries
+      unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)).combinedQ // Merge queries
     case Intersect (qs1, qs2) =>
-      intersectQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)) // Intersect queries
+      intersectQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)).combinedQ // Intersect queries
   }
 
   def evalAggrQuery(s: State)(q: Query): State = q match {

@@ -4,7 +4,6 @@ package gr.dmst.aueb.cynthia
 sealed trait QuerySetNode
 case object NewQS extends QuerySetNode
 case object ApplySort extends QuerySetNode
-case object ApplyGroup extends QuerySetNode
 case object ApplyFilter extends QuerySetNode
 case object UnionQS extends QuerySetNode
 case object IntersectQS extends QuerySetNode
@@ -39,7 +38,7 @@ case class GenState(
   schema: Schema,
   model: Option[Model] = None,
   depth: Int = 0,
-  cands: Seq[QuerySetNode] = Seq(NewQS),
+  cands: Seq[QuerySetNode] = Seq(NewQS, UnionQS),
   exprCands: Seq[ExprNode] = Seq(),
   qs: Option[QuerySet] = None,
   dfields: Seq[FieldDecl] = Seq(),
@@ -276,7 +275,6 @@ case object QueryGenerator {
         val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr)
         val f = FieldDecl(e, RUtils.word(), eType,
                           if (nonHidden) RUtils.bool() else false)
-        println(i)
         _generateFieldDecl(if (forAggr) s afield f else s dfield f, i + 1)
       }
     }
@@ -284,7 +282,8 @@ case object QueryGenerator {
   }
 
 
-  def generateQuerySet(s: GenState): GenState =
+  def generateQuerySet(s: GenState, declF: Option[Int] = None,
+      hiddenF: Boolean = false): GenState =
     // We randomly decide if we should stop query generation or not.
     if (s.qs.isDefined && RUtils.bool() || s.cands.isEmpty) s
     else {
@@ -294,11 +293,23 @@ case object QueryGenerator {
         case NewQS => {
           // Choose a random model to query.
           val model = RUtils.chooseFrom(s.schema.models.values.toSeq)
-          val s2 = generateDeclFields(s.++, model)
+          val s2 = generateDeclFields(s.++, model, nonHidden = hiddenF,
+                                      number = declF)
           val qs = New(model.name, s2.dfields)
           val s3 = s2 queryset qs
           val s4 = s3 candidates List(ApplySort)
           generateQuerySet(s4 model model)
+        }
+        case UnionQS => {
+          val nuf = RUtils.integer() + 1
+          val s1 = generateQuerySet(
+            GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
+            declF = Some(nuf), hiddenF = false)
+          val s2 = generateQuerySet(
+            GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
+            declF = Some(nuf), hiddenF = false)
+          val s3 = s1 queryset (Union(s1.qs.get, s2.qs.get))
+          generateQuerySet(s3 candidates List(ApplySort, UnionQS))
         }
         case ApplySort => {
           assert(s.model.isDefined)
@@ -327,7 +338,8 @@ case object QueryGenerator {
   def apply(schema: Schema): Query = {
     val qType = RUtils.chooseFrom(List(
       "set",
-      "aggr"
+      "aggr",
+      "union"
     ))
     qType match {
       case "set" =>
@@ -343,6 +355,8 @@ case object QueryGenerator {
                                    forAggr = true)
         AggrRes(f.aggrF, s2.qs.get)
       }
+      case "union" =>
+        SetRes(generateQuerySet(GenState(schema, exprCands = exprNodes)).qs.get)
     }
   }
 }
