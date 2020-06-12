@@ -38,7 +38,7 @@ case class GenState(
   schema: Schema,
   model: Option[Model] = None,
   depth: Int = 0,
-  cands: Seq[QuerySetNode] = Seq(NewQS, UnionQS),
+  cands: Seq[QuerySetNode] = Seq(NewQS, UnionQS, IntersectQS),
   exprCands: Seq[ExprNode] = Seq(),
   qs: Option[QuerySet] = None,
   dfields: Seq[FieldDecl] = Seq(),
@@ -284,6 +284,20 @@ case object QueryGenerator {
     _generateFieldDecl(s, 0)
   }
 
+  def generateQuerySetforCombined(s: GenState) = {
+    // Determine the number of fields in each sub-query
+    val nuf = RUtils.integer() + 1
+    (
+      // first sub-query
+      generateQuerySet(
+        GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
+        declF = Some(nuf), hiddenF = false),
+      // second sub-query
+      generateQuerySet(
+        GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
+        declF = Some(nuf), hiddenF = false)
+    )
+  }
 
   def generateQuerySet(s: GenState, declF: Option[Int] = None,
       hiddenF: Boolean = false, declaredOnly: Boolean = false): GenState =
@@ -304,16 +318,15 @@ case object QueryGenerator {
           generateQuerySet(s4 model model)
         }
         case UnionQS => {
-          // Determine the number of fields in each sub-query
-          val nuf = RUtils.integer() + 1
-          val s1 = generateQuerySet(
-            GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
-            declF = Some(nuf), hiddenF = false)
-          val s2 = generateQuerySet(
-            GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
-            declF = Some(nuf), hiddenF = false)
-          val s3 = s1 queryset (Union(s1.qs.get, s2.qs.get))
-          generateQuerySet(s3 candidates List(ApplySort, UnionQS),
+          val (s1, s2) = generateQuerySetforCombined(s)
+          val combined = s1 queryset (Union(s1.qs.get, s2.qs.get))
+          generateQuerySet(combined candidates List(ApplySort, UnionQS, IntersectQS),
+                           declaredOnly = true)
+        }
+        case IntersectQS => {
+          val (s1, s2) = generateQuerySetforCombined(s)
+          val combined = s1 queryset (Intersect(s1.qs.get, s2.qs.get))
+          generateQuerySet(combined candidates List(ApplySort, UnionQS, IntersectQS),
                            declaredOnly = true)
         }
         case ApplySort => {
