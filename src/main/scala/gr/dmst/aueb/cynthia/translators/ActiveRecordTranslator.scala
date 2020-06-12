@@ -38,6 +38,8 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     |    puts "%0.2f" % [var]
     |  elsif var.is_a? String
     |    puts var.strip
+    |  elsif var == nil
+    |    puts "None"
     |  else
     |    puts var
     |  end
@@ -45,9 +47,12 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     |""".stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
+    def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
+      fields map { as => s"${ident}dump($v.$as)" } mkString "\n"
     q match {
-      case FirstRes(_) => s"dump($ret.id)"
-      case SetRes(_) | SubsetRes(_, _, _) => s"for i in $ret\n\tdump(i.id)\nend"
+      case FirstRes(_) => _dumpField(ret, dFields)
+      case SetRes(_) | SubsetRes(_, _, _) =>
+        s"for i in $ret\n${_dumpField("i", dFields, ident = " " * 2)}\nend"
       case AggrRes (aggrs, _) => {
         aggrs map { x => x match {
           case x => {
@@ -56,7 +61,6 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
           }
         } } mkString("\n")
       }
-      case _ => ""
     }
   }
 
@@ -90,29 +94,29 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
-    case Seq() => ""
-    case _     =>
-      (
-        Str("order(") << (
-          spec map { x =>
-            x match {
-              case (k, Desc) => getActiveRecordFieldName(k) + ": :desc"
-              case (k, Asc)  => getActiveRecordFieldName(k) + ": :asc"
-            }
-          } mkString(",")
-        ) << ")"
-      ).!
-  }
-
-  def constructFieldExpr(fexpr: FieldExpr, unquoted: Boolean = false): String = fexpr match {
-    case F(f)                  => getActiveRecordFieldName(f)
-    case Constant(v, UnQuoted) => if (unquoted) v else Utils.quoteStr(v)
-    case Constant(v, Quoted)   => if (unquoted) v else Utils.quoteStr(v)
-    // case _    =>
-      // if (!fexpr.compound) constructPrimAggr(fexpr)
-      /* else constructCompoundAggr(fexpr) */
-    case _ => ""
+  def constructOrderBy(spec: Seq[(String, Order)], fields: Map[String, String]) = {
+    def getOrderFieldName(k: String): String =
+      k split '.' match {
+        case Array(_) => fields(k)
+        case x => {
+          val Array(a, b) = x takeRight 2
+          s"${a.toLowerCase}.${b.toLowerCase}"
+        }
+      }
+    spec match {
+      case Seq() => ""
+      case _     =>
+        (
+          Str("order(") << (
+            spec map { x =>
+              x match {
+                case (k, Desc) => "\"" + getOrderFieldName(k) + " DESC\""
+                case (k, Asc)  => "\"" + getOrderFieldName(k) + " ASC\""
+              }
+            } mkString(",")
+          ) << ")"
+        ).!
+    }
   }
 
   def translatePred(pred: Predicate): (String, String) = pred match {
@@ -128,8 +132,6 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       ((Str(getActiveRecordFieldName(k)) << " <= ?").!, ", " + constructFieldExpr(e))
     case Contains(k, e) =>
       ((Str(getActiveRecordFieldName(k)) << " LIKE ?").!, ", '%" + constructFieldExpr(e, true) + "%'")
-    // case Not(pred)                  =>
-      // (Str("not_(") << translatePred(pred) << ")").!
    case Or(p1, p2) =>
       val res1 = translatePred(p1)
       val res2 = translatePred(p2)
@@ -181,6 +183,16 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       else s"limit($limit)"
   }
 
+  def constructFieldExpr(fexpr: FieldExpr, unquoted: Boolean = false): String = fexpr match {
+    case F(f)                  => getActiveRecordFieldName(f)
+    case Constant(v, UnQuoted) => if (unquoted) v else Utils.quoteStr(v)
+    case Constant(v, Quoted)   => if (unquoted) v else Utils.quoteStr(v)
+    // case _    =>
+      // if (!fexpr.compound) constructPrimAggr(fexpr)
+      /* else constructCompoundAggr(fexpr) */
+    case _ => ""
+  }
+
 def constructAggrExpr(fexpr: FieldExpr) = {
     fexpr match {
       case Count(None)        => "count"
@@ -189,7 +201,7 @@ def constructAggrExpr(fexpr: FieldExpr) = {
       case Avg(field)         => "average(\"" + constructFieldExpr(field) + "\")"
       case Min(field)         => "minimum(\"" + constructFieldExpr(field) + "\")"
       case Max(field)         => "maximum(\"" + constructFieldExpr(field) + "\")"
-      case _                  => ??? // Unreachable case
+      case _                  =>  throw new UnsupportedException("unions are not supported") // Revisit
     }
   }
 
@@ -202,19 +214,74 @@ def constructAggrExpr(fexpr: FieldExpr) = {
     case _      => ""
   }
 
+  def constructPrimField(acc: Map[String, String], fexpr: FieldExpr) = {
+    val (field, op) = fexpr match {
+      case Count(None)        => ("", "count")
+      case Count(Some(field)) => (constructField(acc, field), "count")
+      case Sum(field)         => (constructField(acc, field), "sum")
+      case Avg(field)         => (constructField(acc, field), "avg")
+      case Min(field)         => (constructField(acc, field), "min")
+      case Max(field)         => (constructField(acc, field), "max")
+      case _                  => ??? // Unreachable case
+    }
+    op + "(" + field + ")"
+  }
+
+  def constructField(acc: Map[String, String], fexpr: FieldExpr): String = fexpr match {
+    case F(f) => acc.get(f) match {
+      case None     => f.split('.').takeRight(2).mkString(".").toLowerCase()
+      case Some(s)  => s
+    }
+    case Constant(v, UnQuoted) => v
+    case Constant(v, Quoted)   => Utils.quoteStr(v)
+    case Add(e1, e2) => "(" + constructField(acc, e1) + "+" + constructField(acc, e2) + ")"
+    case Sub(e1, e2) => "(" + constructField(acc, e1) + "-" + constructField(acc, e2) + ")"
+    case Mul(e1, e2) => "(" + constructField(acc, e1) + "*" + constructField(acc, e2) + ")"
+    case Div(e1, e2) => "(" + constructField(acc, e1) + "/" + constructField(acc, e2) + ")"
+    case _    => constructPrimField(acc, fexpr)
+  }
+
+  def extractFields(fields: Map[String, FieldDecl]): Map[String, String] = {
+    fields.foldLeft(Map[String, String]()) ({ (acc, x) =>
+        x._2 match {
+          case FieldDecl(e, as, _, _) => acc + (as -> constructField(acc, e))
+        }
+      })
+  }
+
+  def constructSelects(fields: Map[String, String]) =
+    fields.foldLeft(List[String]()) { (acc, x) => {
+      val (name, expr) = x match { case (k, v) => (k, v) }
+      acc :+ "select(" + Utils.quoteStr(s"$expr as $name", "\"") + ")"
+    }} mkString(".")
+
+  def constructGroupBy(groupBy: Set[String]) =
+    if (groupBy.isEmpty)
+      ""
+    else
+      "group(" + (
+        groupBy map { case x => {
+          Utils.quoteStr(getActiveRecordFieldName(x), "\"")
+        }} mkString ", ") + ")"
+
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
         println(s)
         val model = s.source
+        val fields = extractFields(s.fields)
+        println(fields)
+        println(s.getNonConstantGroupingFields)
         val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
         QueryStr(Some("ret" + s.numGen.next().toString),
           Some(Seq(
             model,
             constructJoins(s.joins, s.source),
-            constructOrderBy(s.orders),
+            constructOrderBy(s.orders, fields),
             constructFilter(nonAggrP),
             if (first) "first" else "all",
             constructOffsetLimit(offset, limit),
+            constructSelects(fields),
+            constructGroupBy(s.getNonConstantGroupingFields),
           ) filter {
             case "" => false
             case _ => true
