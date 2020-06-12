@@ -40,7 +40,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def getPeeweeFieldName(field: String, withAlias: Boolean = true) = {
+  def getPeeweeFieldName(field: String, withAlias: Boolean = false) = {
     def _getPeeweeFieldName(segs: List[String]): String = segs match {
       case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString "."
       case _ :: (h :: t) => _getPeeweeFieldName(h.capitalize :: t)
@@ -48,7 +48,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     val segs = field.split('.').toList
     segs match {
       // Revert alias for declared fields.
-      case _ :: Nil => if (withAlias) field + ".alias()" else field
+      case _ :: Nil => if (withAlias) field else field + ".alias()"
       case _        => _getPeeweeFieldName(field.split('.').toList)
     }
   }
@@ -215,7 +215,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qstr.ret.get,
-        constructOrderBy(s.orders, false),
+        constructOrderBy(s.orders, true),
         "objects()",
         s.aggrs match {
           case Seq() => ""
@@ -242,7 +242,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
-        constructOrderBy(s.orders, true),
+        constructOrderBy(s.orders, false),
         "objects()",
         s.aggrs match {
           case Seq() => ""
