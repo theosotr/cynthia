@@ -307,8 +307,11 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       "group: [" + (
       groupBy map { x => getSeqFieldName(x, false) } mkString ", ") + "]"
 
-  override def constructQuery(first: Boolean = false, offset: Int = 0,
-      limit: Option[Int] = None)(s: State): QueryStr = {
+  override def constructCombinedQuery(s: State) =
+    throw new UnsupportedException("Sequelize does not support combined queries")
+
+  override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
+      limit: Option[Int]) = {
     val fieldVals = s.fields.values
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val method = if (first) ".findOne" else ".findAll"

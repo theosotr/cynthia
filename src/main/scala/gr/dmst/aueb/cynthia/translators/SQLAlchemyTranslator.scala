@@ -24,7 +24,13 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     |    if isinstance(x, numbers.Number):
     |        print(round(decimal.Decimal(x), 2))
     |    else:
-    |        print(x)
+    |        try:
+    |            print(round(decimal.Decimal(float(x)), 2))
+    |        except:
+    |            if type(x) is bytes:
+    |                print(str(x.decode('utf-8')))
+    |            else:
+    |                print(x)
     |""".stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
@@ -210,7 +216,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     if (fields.isEmpty) QueryStr()
     else
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
-        val str = Str("type_coerce(") << constructFieldExpr(f) << ", " << getType(t) <<
+        val str = Str("type_coerce(") << constructFieldExpr(f) << ", " << getType(StringF) <<
           ").label(" << Utils.quoteStr(as) << ")"
         acc >> QueryStr(Some(as), Some(str.!))
       }
@@ -223,8 +229,26 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         groupBy map { getSQLAlchemyFieldName } mkString ", ") + ")"
   }
 
-  override def constructQuery(first: Boolean = false, offset: Int = 0,
-      limit: Option[Int] = None)(s: State) = {
+  override def constructCombinedQuery(s: State) = {
+    val qstr = constructQueryPrefix(s)
+    qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
+      Some(Seq(
+        qstr.ret.get,
+        constructOrderBy(s.orders),
+        s.aggrs match {
+          case Seq() => ""
+          case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
+          case _ => "first()"
+        }
+      ) filter {
+        case "" => false
+        case _  => true
+      }  mkString("."))
+    )
+  }
+
+  override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
+      limit: Option[Int]) = {
     val fieldVals = s.fields.values
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
@@ -252,13 +276,13 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   }
 
   override def unionQueries(s1: State, s2: State) = {
-    val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))
+    val (q1, q2) = (constructQuery(s1), constructQuery(s2))
     s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
                                 Some(q1.ret.get + ".union(" + q2.ret.get + ")")))
   }
 
   override def intersectQueries(s1: State, s2: State) = {
-    val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))
+    val (q1, q2) = (constructQuery(s1), constructQuery(s2))
     s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
                                 Some(q1.ret.get + ".intersect(" + q2.ret.get + ")")))
   }

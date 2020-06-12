@@ -22,7 +22,10 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
    |        try:
    |            print(round(decimal.Decimal(float(x)), 2))
    |        except:
-   |            print(x)
+   |            if type(x) is bytes:
+   |                print(str(x.decode('utf-8')))
+   |            else:
+   |                print(x)
    |""".stripMargin
 
   def getDjangoFieldName(field: String) =
@@ -206,7 +209,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def constructCombinedQuery(s: State) = {
+  override def constructCombinedQuery(s: State) = {
     val qstr = constructQueryPrefix(s)
     qstr >> QueryStr(
       Some("ret" + s.numGen.next().toString),
@@ -220,7 +223,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     )
   }
 
-  def constructSimpleQuery(s: State, first: Boolean, offset: Int,
+  override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = {
     val fieldVals = s.fields.values
     val hidden = TUtils.filterHidden(fieldVals)
@@ -258,19 +261,14 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     )
   }
 
-  override def constructQuery(first: Boolean = false, offset: Int = 0,
-      limit: Option[Int] = None)(s: State) =
-    if (s.combined) constructCombinedQuery(s)
-    else constructSimpleQuery(s, first, offset, limit)
-
   override def unionQueries(s1: State, s2: State) = {
-    val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))
+    val (q1, q2) = (constructQuery(s1), constructQuery(s2))
     s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
                                 Some(q1.ret.get + ".union(" + q2.ret.get + ")")))
   }
 
   override def intersectQueries(s1: State, s2: State) = {
-    val (q1, q2) = (constructQuery()(s1), constructQuery()(s2))
+    val (q1, q2) = (constructQuery(s1), constructQuery(s2))
     s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
                                 Some(q1.ret.get + ".intersect(" + q2.ret.get + ")")))
   }

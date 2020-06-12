@@ -309,22 +309,22 @@ abstract class Translator(val target: Target) {
         if (s2.orders.isEmpty)
           throw new InvalidQuery(
             "You have to make queryset ordered in order to perform safe comparisons")
-        (s2, constructQuery(first = true)(s2))
+        (s2, constructQuery(s2, first = true))
       }
       case SetRes(qs) => {
         val s2 = evalQuerySet(s1)(qs)
-        (s2, constructQuery()(s2))
+        (s2, constructQuery(s2))
       }
       case AggrRes(f, _) => {
         val s2 = evalAggrQuery(s1)(q)
-        (s2, constructQuery()(traverseDeclaredFields(s2, f)))
+        (s2, constructQuery(traverseDeclaredFields(s2, f)))
       }
       case SubsetRes(offset, limit, qs) => {
         val s2 = evalQuerySet(s1)(qs)
         if (s2.orders.isEmpty)
           throw new InvalidQuery(
             "You have to make queryset ordered in order to perform safe comparisons")
-        (s2, constructQuery(offset = offset, limit = limit)(s2))
+        (s2, constructQuery(s2, offset = offset, limit = limit))
       }
     }
     val dfields = s.fields.values.filter { !FieldDecl.hidden(_) }.toSeq match {
@@ -335,9 +335,15 @@ abstract class Translator(val target: Target) {
       q, dfields, qStr.ret.get)
   }
 
+  def constructQuery(s: State, first: Boolean = false, offset: Int = 0,
+      limit: Option[Int] = None): QueryStr =
+    if (s.combined) constructCombinedQuery(s)
+    else constructNaiveQuery(s, first, offset, limit)
+
+  def constructNaiveQuery(s: State, first: Boolean , offset: Int,
+                          limit: Option[Int]): QueryStr
+  def constructCombinedQuery(s: State): QueryStr
   def emitPrint(q: Query, dFields: Seq[String], ret: String): String
-  def constructQuery(first: Boolean = false, offset: Int = 0,
-    limit: Option[Int] = None)(state: State): QueryStr
   def unionQueries(s1: State, s2: State): State
   def intersectQueries(s1: State, s2: State): State
 }

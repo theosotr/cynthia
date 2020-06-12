@@ -34,8 +34,10 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = ""
 
-  override def constructQuery(first: Boolean = false, offset: Int = 0,
-      limit: Option[Int] = None)(s: State) = QueryStr(Some("var"))
+  override def constructCombinedQuery(s: State) = QueryStr(Some("var"))
+
+  override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
+      limit: Option[Int]) = QueryStr(Some("var"))
 
   override def unionQueries(s1: State, s2: State) = s1
 
