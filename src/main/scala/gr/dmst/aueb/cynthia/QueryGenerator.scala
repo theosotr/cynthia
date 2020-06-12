@@ -90,12 +90,15 @@ case class GenState(
     GenState(schema, model, depth, cands, aggregateNodes, qs, dfields, aggrF)
   }
 
-  def getFields() =
-    (dfields filter { !FieldDecl.hidden(_) } map FieldDecl.as) ++
-    (model.get.fields map { x => x match {
-      case Field(n, Foreign(_)) => model.get.name + "." + n + ".id"
-      case Field(n, _)          => model.get.name + "." + n
-    }})
+  def getFields(declaredOnly: Boolean) = {
+    val declFields = dfields filter { !FieldDecl.hidden(_) } map FieldDecl.as
+    if (declaredOnly) declFields
+    else declFields ++
+      (model.get.fields map { x => x match {
+        case Field(n, Foreign(_)) => model.get.name + "." + n + ".id"
+        case Field(n, _)          => model.get.name + "." + n
+      }})
+  }
 }
 
 
@@ -222,7 +225,7 @@ case object QueryGenerator {
 
   def generatePredicate(s: GenState, model: Model): Predicate = {
     assert(s.model.isDefined)
-    val fields = s.getFields
+    val fields = s.getFields(false)
     val predNode = RUtils.chooseFrom(predNodes)
     predNode match {
       case EqPred => {
@@ -283,7 +286,7 @@ case object QueryGenerator {
 
 
   def generateQuerySet(s: GenState, declF: Option[Int] = None,
-      hiddenF: Boolean = false): GenState =
+      hiddenF: Boolean = false, declaredOnly: Boolean = false): GenState =
     // We randomly decide if we should stop query generation or not.
     if (s.qs.isDefined && RUtils.bool() || s.cands.isEmpty) s
     else {
@@ -301,6 +304,7 @@ case object QueryGenerator {
           generateQuerySet(s4 model model)
         }
         case UnionQS => {
+          // Determine the number of fields in each sub-query
           val nuf = RUtils.integer() + 1
           val s1 = generateQuerySet(
             GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
@@ -309,11 +313,12 @@ case object QueryGenerator {
             GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
             declF = Some(nuf), hiddenF = false)
           val s3 = s1 queryset (Union(s1.qs.get, s2.qs.get))
-          generateQuerySet(s3 candidates List(ApplySort, UnionQS))
+          generateQuerySet(s3 candidates List(ApplySort, UnionQS),
+                           declaredOnly = true)
         }
         case ApplySort => {
           assert(s.model.isDefined)
-          val sortedFields = RUtils.sample(s.getFields)
+          val sortedFields = RUtils.sample(s.getFields(declaredOnly))
           val s2 = s candidates (s.cands filter { x => x != ApplySort })
           if (sortedFields.isEmpty) generateQuerySet(s2)
           else {
