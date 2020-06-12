@@ -276,7 +276,7 @@ abstract class Translator(val target: Target) {
       // Finally, always sort by id to eliminate non-deterministic results.
       // Some backends (e.g., MySQL, Postgres) fetch results in an unpredictive
       // manner when the ordering is unspecified.
-      val spec2 = spec :+ (s1.source + ".id", Desc)
+      val spec2 = if (s1.combined) spec else spec :+ (s1.source + ".id", Desc)
       val s2 = if (!s1.nonAggrF.isEmpty) s1 addGroupF (s1.source + ".id") else s1
       spec2.foldLeft(s2) { (s, x) => {
         // If this field is a constant, we do not add to the set of the sorted
