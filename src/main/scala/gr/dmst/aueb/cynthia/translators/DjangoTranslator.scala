@@ -270,7 +270,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   override def intersectQueries(s1: State, s2: State) = {
     val (q1, q2) = (constructQuery(s1), constructQuery(s2))
     s1 >> (q1 << q2 >> QueryStr(Some("ret" + s1.numGen.next().toString),
-                                Some(q1.ret.get + ".intersect(" + q2.ret.get + ")")))
+                                Some(q1.ret.get + ".intersection(" + q2.ret.get + ")")))
   }
 
   def translatePred(pred: Predicate): String = pred match {
