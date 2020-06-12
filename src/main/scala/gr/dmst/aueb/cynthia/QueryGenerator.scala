@@ -284,19 +284,33 @@ case object QueryGenerator {
     _generateFieldDecl(s, 0)
   }
 
-  def generateQuerySetforCombined(s: GenState) = {
-    // Determine the number of fields in each sub-query
-    val nuf = RUtils.integer() + 1
-    (
-      // first sub-query
-      generateQuerySet(
-        GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
-        declF = Some(nuf), hiddenF = false),
-      // second sub-query
-      generateQuerySet(
-        GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
-        declF = Some(nuf), hiddenF = false)
-    )
+  def generateQuerySetforCombined(s: GenState) = s.qs match {
+    // First option: there is not any generated query. So
+    // generate two random query sets and combine the two.
+    case None => {
+      // Determine the number of fields in each sub-query
+      val nuf = RUtils.integer() + 1
+      (
+        // first sub-query
+        generateQuerySet(
+          GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
+          declF = Some(nuf), hiddenF = false),
+        // second sub-query
+        generateQuerySet(
+          GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
+          declF = Some(nuf), hiddenF = false)
+      )
+    }
+    // Second option: generate a single query, and combine it
+    // with the already generated one.
+    case Some(qs) => {
+      (
+        s,
+        generateQuerySet(
+          GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
+          declF = Some(s.dfields.size), hiddenF = false)
+      )
+    }
   }
 
   def generateQuerySet(s: GenState, declF: Option[Int] = None,
@@ -319,13 +333,13 @@ case object QueryGenerator {
         }
         case UnionQS => {
           val (s1, s2) = generateQuerySetforCombined(s)
-          val combined = s1 queryset (Union(s1.qs.get, s2.qs.get))
+          val combined = (s1 queryset (Union(s1.qs.get, s2.qs.get))).++
           generateQuerySet(combined candidates List(ApplySort, UnionQS, IntersectQS),
                            declaredOnly = true)
         }
         case IntersectQS => {
           val (s1, s2) = generateQuerySetforCombined(s)
-          val combined = s1 queryset (Intersect(s1.qs.get, s2.qs.get))
+          val combined = (s1 queryset (Intersect(s1.qs.get, s2.qs.get))).++
           generateQuerySet(combined candidates List(ApplySort, UnionQS, IntersectQS),
                            declaredOnly = true)
         }
