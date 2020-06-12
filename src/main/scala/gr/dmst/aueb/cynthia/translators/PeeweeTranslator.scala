@@ -85,15 +85,16 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       } mkString(".")
     }
 
-  def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
+  def constructOrderBy(spec: Seq[(String, Order)],
+                       withAlias: Boolean) = spec match {
     case Seq() => ""
     case _     =>
       (
         Str("order_by(") << (
           spec map { x =>
             x match {
-              case (k, Desc) => getPeeweeFieldName(k, withAlias = false) + ".desc()"
-              case (k, Asc)  => getPeeweeFieldName(k, withAlias = false) + ".asc()"
+              case (k, Desc) => getPeeweeFieldName(k, withAlias = withAlias) + ".desc()"
+              case (k, Asc)  => getPeeweeFieldName(k, withAlias = withAlias) + ".asc()"
             }
           } mkString ","
         ) << ")"
@@ -214,7 +215,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qstr.ret.get,
-        constructOrderBy(s.orders),
+        constructOrderBy(s.orders, false),
         "objects()",
         s.aggrs match {
           case Seq() => ""
@@ -241,7 +242,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
-        constructOrderBy(s.orders),
+        constructOrderBy(s.orders, true),
         "objects()",
         s.aggrs match {
           case Seq() => ""
