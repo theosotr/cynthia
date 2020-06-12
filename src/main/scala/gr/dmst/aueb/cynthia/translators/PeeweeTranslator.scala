@@ -40,7 +40,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def getPeeweeFieldName(field: String) = {
+  def getPeeweeFieldName(field: String, withAlias: Boolean = true) = {
     def _getPeeweeFieldName(segs: List[String]): String = segs match {
       case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString "."
       case _ :: (h :: t) => _getPeeweeFieldName(h.capitalize :: t)
@@ -48,7 +48,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     val segs = field.split('.').toList
     segs match {
       // Revert alias for declared fields.
-      case _ :: Nil => field + ".alias()"
+      case _ :: Nil => if (withAlias) field + ".alias()" else field
       case _        => _getPeeweeFieldName(field.split('.').toList)
     }
   }
@@ -92,8 +92,8 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         Str("order_by(") << (
           spec map { x =>
             x match {
-              case (k, Desc) => getPeeweeFieldName(k) + ".desc()"
-              case (k, Asc)  => getPeeweeFieldName(k) + ".asc()"
+              case (k, Desc) => getPeeweeFieldName(k, withAlias = false) + ".desc()"
+              case (k, Asc)  => getPeeweeFieldName(k, withAlias = false) + ".asc()"
             }
           } mkString ","
         ) << ")"
@@ -206,7 +206,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     case Seq() => ""
     case _     =>
       "group_by(" + (
-        groupBy map { getPeeweeFieldName } mkString ", ") + ")"
+        groupBy map { x => getPeeweeFieldName(x) } mkString ", ") + ")"
   }
 
   override def constructCombinedQuery(s: State) = {
