@@ -108,7 +108,8 @@ case class State(
   }
 
   def combinedQ(): State =
-    State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
+    // revisit
+    State(db, source, fields, Set(), Seq(), nonAggrF, aggrF, constantF,
           aggrs, joins, query, true, numGen)
 }
 
