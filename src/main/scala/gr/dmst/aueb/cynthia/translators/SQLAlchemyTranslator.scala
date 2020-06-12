@@ -50,12 +50,13 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def getSQLAlchemyFieldName(field: String) = {
+  def getSQLAlchemyFieldName(field: String, withAlias: Boolean = false) = {
     def _getSQLAlchemyFieldName(segs: List[String]): String = segs match {
       case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString "."
       case _ :: (h :: t) => _getSQLAlchemyFieldName(h.capitalize :: t)
     }
-    _getSQLAlchemyFieldName(field.split('.').toList)
+    val f = _getSQLAlchemyFieldName(field.split('.').toList)
+    if (withAlias) Utils.quoteStr(f) else f
   }
 
   def translatePred(pred: Predicate): String = pred match {
@@ -90,15 +91,15 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       } mkString(".")
     }
 
-  def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
+  def constructOrderBy(spec: Seq[(String, Order)], withAlias: Boolean) = spec match {
     case Seq() => ""
     case _     =>
       (
         Str("order_by(") << (
           spec map { x =>
             x match {
-              case (k, Desc) => "desc(" + getSQLAlchemyFieldName(k) + ")"
-              case (k, Asc)  => "asc(" + getSQLAlchemyFieldName(k) + ")"
+              case (k, Desc) => "desc(" + getSQLAlchemyFieldName(k, withAlias) + ")"
+              case (k, Asc)  => "asc(" + getSQLAlchemyFieldName(k, withAlias) + ")"
             }
           } mkString ","
         ) << ")"
@@ -226,7 +227,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case Seq() => ""
     case _     =>
       "group_by(" + (
-        groupBy map { getSQLAlchemyFieldName } mkString ", ") + ")"
+        groupBy map { x => getSQLAlchemyFieldName(x) } mkString ", ") + ")"
   }
 
   override def constructCombinedQuery(s: State) = {
@@ -234,7 +235,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qstr.ret.get,
-        constructOrderBy(s.orders),
+        constructOrderBy(s.orders, true),
         s.aggrs match {
           case Seq() => ""
           case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
@@ -260,7 +261,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
-        constructOrderBy(s.orders),
+        constructOrderBy(s.orders, false),
         s.aggrs match {
           case Seq() => ""
           case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
