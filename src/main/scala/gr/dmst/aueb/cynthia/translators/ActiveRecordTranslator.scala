@@ -22,6 +22,8 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       Str("\tadapter: 'sqlite3',\n") <<
         "\tdatabase: " << Utils.quoteStr(dbname)
   }
+  var fieldsMap = Map[String, String]()
+  var nonHiddenFieldsMap = Map[String, String]()
 
   override val preamble =
     s"""require 'active_record'
@@ -31,11 +33,13 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     |${dbsettings.!}
     |)
 
+    |# ActiveRecord::Base.logger = Logger.new(STDOUT)
+
     |def dump(var)
     |  if var.is_a? Integer
     |    puts "%0.2f" % [var]
     |  elsif var.is_a? Numeric
-    |    puts "%0.2f" % [var]
+    |    puts "%0.2f" % [var.round(2)]
     |  elsif var.is_a? String
     |    puts var.strip
     |  elsif var == nil
@@ -57,7 +61,7 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
         aggrs map { x => x match {
           case x => {
             val (qfield, _, _) = x match { case FieldDecl(f, l, t, _) => (f, l, t) }
-            s"dump($ret." + constructAggrExpr(qfield) + ")"
+            s"dump($ret." + constructAggrExpr(qfield, nonHiddenFieldsMap) + ")"
           }
         } } mkString("\n")
       }
@@ -124,54 +128,62 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def translatePred(pred: Predicate): (String, String) = pred match {
-    case Eq(k, e) =>
-      ((Str(getActiveRecordFieldName(k)) << " = ?").!, ", " + constructFieldExpr(e))
-    case Gt(k, e) =>
-      ((Str(getActiveRecordFieldName(k)) << " > ?").!, ", " + constructFieldExpr(e))
-    case Gte(k, e) =>
-      ((Str(getActiveRecordFieldName(k)) << " >= ?").!, ", " + constructFieldExpr(e))
-    case Lt(k, e) =>
-      ((Str(getActiveRecordFieldName(k)) << " < ?").!, ", " + constructFieldExpr(e))
-    case Lte(k, e) =>
-      ((Str(getActiveRecordFieldName(k)) << " <= ?").!, ", " + constructFieldExpr(e))
-    case Contains(k, e) =>
-      ((Str(getActiveRecordFieldName(k)) << " LIKE ?").!, ", '%" + constructFieldExpr(e, true) + "%'")
-   case Or(p1, p2) =>
-      val res1 = translatePred(p1)
-      val res2 = translatePred(p2)
-      (res1._1 + " AND " + res2._1, res1._2 + res2._2)
-    case And(p1, p2) => {
-      val res1 = translatePred(p1)
-      val res2 = translatePred(p2)
-      (res1._1 + " AND " + res2._1, res1._2 + res2._2)
+  def translatePred(pred: Predicate, fields: Map[String, String]): (String, String) = {
+    def handlePredicate(k: String, e: FieldExpr, symbol: String, unquoted: Boolean = false): (String, String) = {
+      if (!e.isConstant) throw new UnsupportedException("complex where clauses are not supported")
+      val key = fields.get(k) match {
+          case None     => k.split('.').takeRight(2).mkString(".").toLowerCase()
+          case Some(s)  => s
+      }
+      if (symbol == "LIKE")
+        (key + s" $symbol '%${constructFieldExpr(e, fields, unquoted)}%'", "")
+      else
+        (key + s" $symbol ?", ", " + constructFieldExpr(e, fields, unquoted))
     }
-    case _ => ("", "")
+    pred match {
+      case Eq(k, e)       => handlePredicate(k, e, "=")
+      case Gt(k, e)       => handlePredicate(k, e, ">")
+      case Gte(k, e)      => handlePredicate(k, e, ">=")
+      case Lt(k, e)       => handlePredicate(k, e, "<")
+      case Lte(k, e)      => handlePredicate(k, e, "<=")
+      case Contains(k, e) => handlePredicate(k, e, "LIKE", true)
+      case Or(p1, p2)     => {
+        val res1 = translatePred(p1, fields)
+        val res2 = translatePred(p2, fields)
+        (res1._1 + " AND " + res2._1, res1._2 + res2._2)
+      }
+      case And(p1, p2)    => {
+        val res1 = translatePred(p1, fields)
+        val res2 = translatePred(p2, fields)
+        (res1._1 + " AND " + res2._1, res1._2 + res2._2)
+      }
+      case _ => ("", "")
+    }
   }
 
-  def constructFilter(preds: Set[Predicate]): String = {
+  def constructFilter(preds: Set[Predicate], fields: Map[String, String], having: Boolean = false): String = {
     preds map { x => x match {
       case Not(x) => {
-        val res = translatePred(x)
+        val res = translatePred(x, fields)
         (Str("where.not([\"") << res._1 << "\"" << res._2 << "])").!
       }
       case And(p1, p2) => {
         p1 match {
           case Not(p1) => {
-            val res1 = translatePred(p1)
-            val res2 = constructFilter(Set(p2))
+            val res1 = translatePred(p1, fields)
+            val res2 = constructFilter(Set(p2), fields, having)
             (Str("where.not([\"") << res1._1 << "\"" << res1._2 << "])."
               << res2
             ).!
           }
           case _ => {
-            val res = translatePred(x)
+            val res = translatePred(x, fields)
             (Str("where([\"") << res._1 << "\"" << res._2 << "])").!
           }
         }
       }
       case _ => {
-        val res = translatePred(x)
+        val res = translatePred(x, fields)
         (Str("where([\"") << res._1 << "\"" << res._2 << "])").!
       }
      }
@@ -188,35 +200,30 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       else s"limit($limit)"
   }
 
-  def constructFieldExpr(fexpr: FieldExpr, unquoted: Boolean = false): String = fexpr match {
-    case F(f)                  => getActiveRecordFieldName(f)
-    case Constant(v, UnQuoted) => if (unquoted) v else Utils.quoteStr(v)
-    case Constant(v, Quoted)   => if (unquoted) v else Utils.quoteStr(v)
-    // case _    =>
-      // if (!fexpr.compound) constructPrimAggr(fexpr)
-      /* else constructCompoundAggr(fexpr) */
-    case _ => ""
+  def constructFieldExpr(fexpr: FieldExpr, fields: Map[String, String], unquoted: Boolean = false): String = fexpr match {
+    case F(f) => fields.get(f) match {
+      case None     => f.split('.').takeRight(2).mkString(".").toLowerCase()
+      case Some(s)  => s
+    }
+    case Constant(v, UnQuoted) => v
+    case Constant(v, Quoted)   => if (unquoted) v else Utils.quoteStr(v) // LIKE case
+    case Add(e1, e2) => "(" + constructFieldExpr(e1, fields) + "+" + constructFieldExpr(e2, fields) + ")"
+    case Sub(e1, e2) => "(" + constructFieldExpr(e1, fields) + "-" + constructFieldExpr(e2, fields) + ")"
+    case Mul(e1, e2) => "(" + constructFieldExpr(e1, fields) + "*" + constructFieldExpr(e2, fields) + ")"
+    case Div(e1, e2) => "(" + constructFieldExpr(e1, fields) + "/" + constructFieldExpr(e2, fields) + ")"
+    case _ => ???
   }
 
-def constructAggrExpr(fexpr: FieldExpr) = {
+def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
     fexpr match {
       case Count(None)        => "count"
-      case Count(Some(field)) => "count(\"" + constructFieldExpr(field) + "\")"
-      case Sum(field)         => "sum(\"" + constructFieldExpr(field) + "\")"
-      case Avg(field)         => "average(\"" + constructFieldExpr(field) + "\")"
-      case Min(field)         => "minimum(\"" + constructFieldExpr(field) + "\")"
-      case Max(field)         => "maximum(\"" + constructFieldExpr(field) + "\")"
-      case _                  =>  throw new UnsupportedException("unions are not supported") // Revisit
+      case Count(Some(field)) => "count(\"" + constructFieldExpr(field, fields) + "\")"
+      case Sum(field)         => "sum(\"" + constructFieldExpr(field, fields) + "\")"
+      case Avg(field)         => "average(\"" + constructFieldExpr(field, fields) + "\")"
+      case Min(field)         => "minimum(\"" + constructFieldExpr(field, fields) + "\")"
+      case Max(field)         => "maximum(\"" + constructFieldExpr(field, fields) + "\")"
+      case _                  =>  throw new UnsupportedException("compound aggrates not supported") // Revisit
     }
-  }
-
-  def constructAggr(aggrs: Seq[FieldDecl]) = aggrs match {
-    case Seq()  => ""
-    case Seq(x) => {
-      val (qfield, as, t) = x match { case FieldDecl(f, l, t, _) => (f, l, t) }
-      constructAggrExpr(qfield)
-    }
-    case _      => ""
   }
 
   def constructPrimField(acc: Map[String, String], fexpr: FieldExpr) = {
@@ -271,21 +278,21 @@ def constructAggrExpr(fexpr: FieldExpr) = {
 
   override def constructQuery(first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None)(s: State) = {
-        println(s)
+        def filterNonHiddenFieldDecls(i: String) = !FieldDecl.hidden(s.fields.get(i).get)
         val model = s.source
-        val fields = extractFields(s.fields)
-        println(fields)
-        println(s.getNonConstantGroupingFields)
+        fieldsMap = extractFields(s.fields)
+        nonHiddenFieldsMap = fieldsMap.filterKeys(filterNonHiddenFieldDecls).toMap
         val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
         QueryStr(Some("ret" + s.numGen.next().toString),
           Some(Seq(
             model,
             constructJoins(s.joins, s.source),
-            constructOrderBy(s.orders, fields),
-            constructFilter(nonAggrP),
+            constructOrderBy(s.orders, fieldsMap),
+            constructFilter(nonAggrP, fieldsMap),
+            constructFilter(aggrP, fieldsMap, having=true),
             if (first) "first" else "all",
             constructOffsetLimit(offset, limit),
-            constructSelects(fields),
+            constructSelects(nonHiddenFieldsMap),
             constructGroupBy(s.getNonConstantGroupingFields),
           ) filter {
             case "" => false
