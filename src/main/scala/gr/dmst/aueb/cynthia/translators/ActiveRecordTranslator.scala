@@ -68,11 +68,6 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  override def constructCombinedQuery(s: State) = QueryStr(Some("var"))
-
-  override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
-      limit: Option[Int]) = QueryStr(Some("var"))
-
   def getActiveRecordFieldName(field: String) =
     if (field.contains(".")) field.split('.').array(field.count(_ == '.')) else
       field
@@ -273,31 +268,37 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
     else
       "group(" + (
         groupBy map { case x => {
-          Utils.quoteStr(getActiveRecordFieldName(x), "\"")
+          fieldsMap.get(x) match {
+            case None     => Utils.quoteStr(getActiveRecordFieldName(x), "\"")
+            case Some(s)  => Utils.quoteStr(s, "\"")
+          }
         }} mkString ", ") + ")"
 
-  override def constructQuery(first: Boolean = false, offset: Int = 0,
-      limit: Option[Int] = None)(s: State) = {
-        def filterNonHiddenFieldDecls(i: String) = !FieldDecl.hidden(s.fields.get(i).get)
-        val model = s.source
-        fieldsMap = extractFields(s.fields)
-        nonHiddenFieldsMap = fieldsMap.filterKeys(filterNonHiddenFieldDecls).toMap
-        val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
-        QueryStr(Some("ret" + s.numGen.next().toString),
-          Some(Seq(
-            model,
-            constructJoins(s.joins, s.source),
-            constructOrderBy(s.orders, fieldsMap),
-            constructFilter(nonAggrP, fieldsMap),
-            constructFilter(aggrP, fieldsMap, having=true),
-            if (first) "first" else "all",
-            constructOffsetLimit(offset, limit),
-            constructSelects(nonHiddenFieldsMap),
-            constructGroupBy(s.getNonConstantGroupingFields),
-          ) filter {
-            case "" => false
-            case _ => true
-          } mkString "."))
+  override def constructCombinedQuery(s: State) =
+    throw new UnsupportedException("combined queries not supported")
+
+  override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
+      limit: Option[Int]) = {
+    def filterNonHiddenFieldDecls(i: String) = !FieldDecl.hidden(s.fields.get(i).get)
+    val model = s.source
+    fieldsMap = extractFields(s.fields)
+    nonHiddenFieldsMap = fieldsMap.filterKeys(filterNonHiddenFieldDecls).toMap
+    val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
+    QueryStr(Some("ret" + s.numGen.next().toString),
+      Some(Seq(
+        model,
+        constructJoins(s.joins, s.source),
+        constructOrderBy(s.orders, fieldsMap),
+        constructFilter(nonAggrP, fieldsMap),
+        constructFilter(aggrP, fieldsMap, having=true),
+        if (first) "first" else "all",
+        constructOffsetLimit(offset, limit),
+        constructSelects(nonHiddenFieldsMap),
+        constructGroupBy(s.getNonConstantGroupingFields),
+      ) filter {
+        case "" => false
+        case _ => true
+      } mkString "."))
   }
 
   override def unionQueries(s1: State, s2: State) =
