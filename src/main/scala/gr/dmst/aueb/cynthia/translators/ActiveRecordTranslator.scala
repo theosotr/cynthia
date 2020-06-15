@@ -40,13 +40,13 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     |    puts "%0.2f" % [var]
     |  elsif var.is_a? Numeric
     |    puts "%0.2f" % [var.round(2)]
-    |  elsif var.is_a? String
-    |    puts var.strip
     |  elsif var == nil
     |    puts "None"
     |  else
-    |    puts var
+    |    puts "%0.2f" % Float(var)
     |  end
+    |rescue
+    |  puts var
     |end
     |""".stripMargin
 
