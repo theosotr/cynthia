@@ -55,8 +55,9 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString "."
       case _ :: (h :: t) => _getSQLAlchemyFieldName(h.capitalize :: t)
     }
-    val f = _getSQLAlchemyFieldName(field.split('.').toList)
-    if (withAlias) Utils.quoteStr(f) else f
+    val segs = (field split '.').toList
+    val f = _getSQLAlchemyFieldName(segs)
+    if (withAlias && segs.size == 1) Utils.quoteStr(f) else f
   }
 
   def translatePred(pred: Predicate): String = pred match {
