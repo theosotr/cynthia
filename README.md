@@ -40,8 +40,7 @@ the Database
 
 ```bash
 sudo apt install ruby-full ruby-activerecord rudy-dev
-sudo gem install sqlite3 mysql2 postgres rmre
-sudo install scripts/dump-activerecord-models.py /usr/local/bin/dump-activerecord-models
+sudo gem install sqlite3 mysql2 postgres rmre pg
 ```
 
 __Redirect stderr to hide ruby warnings__
