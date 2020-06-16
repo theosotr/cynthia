@@ -21,4 +21,12 @@ case object Field {
   }
 }
 case class Model(name: String, fields: Seq[Field])
-case class Schema(name: String, models: Map[String, Model])
+case class Schema(name: String, models: Map[String, Model]) {
+
+  // Adds a new model to the existing schema.
+  def +(m: Model): Schema =
+    Schema(name, models + (m.name -> m))
+
+  def getModels() =
+    models.keys.toSeq
+}
