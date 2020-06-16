@@ -215,7 +215,8 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qstr.ret.get,
-        constructOrderBy(s.orders)
+        constructOrderBy(s.orders),
+        constructAggrs(s.aggrs)
       ) filter {
         case "" => false
         case _  => true
