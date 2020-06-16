@@ -256,10 +256,15 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
       })
   }
 
+  def getDBAliasName(name: String) = target.db match {
+    case MySQL(_, _, _) => Utils.quoteStr(name, quotes ="`")
+    case _              => Utils.quoteStr(name, quotes = "\\\"")
+  }
+
   def constructSelects(fields: Map[String, String]) =
     fields.foldLeft(List[String]()) { (acc, x) => {
       val (name, expr) = x match { case (k, v) => (k, v) }
-      acc :+ "select(" + Utils.quoteStr(s"$expr as $name", "\"") + ")"
+      acc :+ "select(" + Utils.quoteStr(s"$expr as ${getDBAliasName(name)}", "\"") + ")"
     }} mkString(".")
 
   def constructGroupBy(groupBy: Set[String]) =
