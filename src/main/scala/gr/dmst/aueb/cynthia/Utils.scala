@@ -16,6 +16,9 @@ case class Str(str: String) {
 
   def !() =
     buff.toString
+
+  override def toString() =
+    buff.toString
 }
 
 

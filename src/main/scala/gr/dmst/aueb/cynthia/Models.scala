@@ -19,6 +19,11 @@ case object Field {
   def name(f: Field) = f match {
     case Field(n, _) => n
   }
+
+  def isForeign(f: Field) = f match {
+    case Field(_, Foreign(_)) => true
+    case _                    => false
+  }
 }
 case class Model(name: String, fields: Seq[Field])
 case class Schema(name: String, models: Map[String, Model]) {
