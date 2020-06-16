@@ -7,7 +7,7 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
 
   val dbsettings = target.db match {
     case Postgres(user, password, dbname) =>
-      Str("\tadapter: 'postgres',\n") <<
+      Str("\tadapter: 'postgresql',\n") <<
         "\thost: 'localhost',\n" <<
         "\tusername: " << Utils.quoteStr(user) << ",\n" <<
         "\tpassword: " << Utils.quoteStr(password) << ",\n" <<
