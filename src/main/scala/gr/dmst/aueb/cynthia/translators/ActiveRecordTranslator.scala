@@ -282,7 +282,7 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
     def filterNonHiddenFieldDecls(i: String) = !FieldDecl.hidden(s.fields.get(i).get)
     val model = s.source
     fieldsMap = extractFields(s.fields)
-    nonHiddenFieldsMap = fieldsMap.filterKeys(filterNonHiddenFieldDecls).toMap
+    nonHiddenFieldsMap = (fieldsMap.view filterKeys filterNonHiddenFieldDecls).toMap
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(

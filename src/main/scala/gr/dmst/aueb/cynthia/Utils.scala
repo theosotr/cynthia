@@ -112,7 +112,7 @@ object Utils {
 
   def mergeMap[T1, T2](m1: Map[T1, Set[T2]], m2: Map[T1, Set[T2]]): Map[T1, Set[T2]] = {
     val grouped = (m1.toSeq ++ m2.toSeq).groupBy(_._1)
-    grouped.mapValues(_.foldLeft(Set[T2]()) { (acc, x) => acc ++ x._2 }).toMap
+    grouped.view.mapValues(_.foldLeft(Set[T2]()) { (acc, x) => acc ++ x._2 }).toMap
   }
 
   def topologicalSort(g: Map[String, Set[String]]): Seq[String] = {
