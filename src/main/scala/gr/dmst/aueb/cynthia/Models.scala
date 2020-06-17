@@ -20,6 +20,11 @@ case object Field {
     case Field(n, _) => n
   }
 
+  def dbname(f: Field) = f match {
+    case Field(n, Foreign(_)) => n + "_id"
+    case Field(n, _)          => n
+  }
+
   def isForeign(f: Field) = f match {
     case Field(_, Foreign(_)) => true
     case _                    => false
@@ -34,4 +39,7 @@ case class Schema(name: String, models: Map[String, Model]) {
 
   def getModels() =
     models.keys.toSeq
+
+  def getSchemaPath() =
+    Utils.joinPaths(List(Utils.getSchemaDir(), name))
 }

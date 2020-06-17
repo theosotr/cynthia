@@ -33,8 +33,8 @@ object SchemaTranslator {
 
     def getInsertStms() =
       DataGenerator(m, dataLimit, limit = dataLimit).foldLeft(Str("")) { (acc, row) =>
-        acc << "INSERT VALUES " << m.name.toLowerCase << "(" <<
-          (m.fields map Field.name mkString ",") << ") VALUES (" <<
+        acc << "INSERT INTO " << m.name.toLowerCase << "(" <<
+          (m.fields map Field.dbname mkString ",") << ") VALUES (" <<
           (row map {
             case Constant(v, Quoted)  => Utils.quoteStr(v)
             case Constant(v, UnQuoted) => v
@@ -49,8 +49,25 @@ object SchemaTranslator {
   }
 
   def apply(schema: Schema): String = {
-    schema.models.foldLeft(QueryStr()) { case (acc, (_, m)) =>
-      acc >> translateModel(m)
+    // First we create a map that holds the dependencies among models
+    val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) { case (acc, (k, v)) => {
+      val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
+      (v.fields filter Field.isForeign).foldLeft(acc2) { case (acc, Field(_, Foreign(n))) => {
+        acc get k match {
+          case None    => acc + (k -> Set(n))
+          case Some(e) => acc + (k -> (e + n))
+        }
+      }}
+    }}
+    val topSort = Utils.topologicalSort(modelMap)
+    // Create drop statements in reverse topological order
+    val qstr = topSort.reverse.foldLeft(QueryStr()) { case (acc, m) => {
+      acc >> QueryStr(None, Some("DROP TABLE IF EXISTS " + m.toLowerCase + ";"))
+    }}
+    // Traverse models in topological order and create the corresponding
+    // CREATE TABLE statements.
+    topSort.foldLeft(qstr) { case (acc, m) =>
+      acc >> translateModel(schema.models(m))
     }.toString
   }
 }

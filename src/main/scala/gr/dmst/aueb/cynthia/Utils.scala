@@ -27,6 +27,7 @@ object Utils {
   val dbDir = "dbs"
   val projectDir = "projects"
   val reportDir = "report"
+  val schemaDir = "schemas"
 
   def exists(file: String) =
     new File(file).exists
@@ -85,6 +86,9 @@ object Utils {
   def getReportDir() =
     joinPaths(List(".", cwdDir, reportDir))
 
+  def getSchemaDir() =
+    joinPaths(List(".", cwdDir, schemaDir))
+
   def createDir(dir: String) = {
     val file = new File(dir)
     if (!(file.exists && file.isDirectory)) {
@@ -94,7 +98,7 @@ object Utils {
 
   def setWorkDir() = {
      val workdir = getWorkdir()
-     List(dbDir, projectDir, reportDir)
+     List(dbDir, projectDir, reportDir, schemaDir)
        .foreach { dir => {
            val fdir = Utils.joinPaths(List(workdir, dir))
            if (dir.equals(reportDir)) {
