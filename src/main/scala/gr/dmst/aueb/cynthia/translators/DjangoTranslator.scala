@@ -25,7 +25,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
    |            if type(x) is bytes:
    |                print(str(x.decode('utf-8')))
    |            else:
-   |                print(x)
+    |                print(x if x is not None else 0.00)
    |""".stripMargin
 
   def getDjangoFieldName(field: String) =

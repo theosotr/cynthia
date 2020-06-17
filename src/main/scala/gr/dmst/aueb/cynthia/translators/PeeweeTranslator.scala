@@ -20,12 +20,12 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     |            if type(x) is bytes:
     |                print(str(x.decode('utf-8')))
     |            else:
-    |                print(x)
+    |                print(x if x is not None else 0.00)
     |""".stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
-      fields map { as => s"${ident}dump($v.$as)" } mkString "\n"
+      fields map { as => s"${ident}dump(getattr($v, '$as', None))" } mkString "\n"
     q match {
       case SetRes(_) | SubsetRes(_, _, _) =>
         s"for r in $ret:\n${_dumpField("r", dFields, ident = " " * 4)}"

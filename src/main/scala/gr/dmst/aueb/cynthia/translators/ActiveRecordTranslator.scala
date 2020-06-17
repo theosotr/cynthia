@@ -41,7 +41,7 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     |  elsif var.is_a? Numeric
     |    puts "%0.2f" % [var.round(2)]
     |  elsif var == nil
-    |    puts "None"
+    |    puts "0.00"
     |  else
     |    puts "%0.2f" % Float(var)
     |  end

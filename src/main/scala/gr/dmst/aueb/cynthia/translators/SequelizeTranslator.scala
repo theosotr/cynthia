@@ -52,7 +52,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     |
     |function dump(x) {
     |  if (x === null) {
-    |    console.log('None')
+    |    console.log('0.00')
     |    return;
     |  }
     |  if (typeof x === 'number') {
