@@ -157,7 +157,8 @@ case object QueryGenerator {
   }
 
   def generateFieldExpr(s: GenState, model: Model,
-      forAggr: Boolean = false): (FieldExpr, FieldType) = {
+      forAggr: Boolean = false,
+      declaredOnly: Boolean = false): (FieldExpr, FieldType) = {
     val exprNode =
       if (!forAggr && (s.depth >= maxDepth || RUtils.bool()))
         // If we reached the maximum depth, generate a leaf node.
@@ -165,7 +166,7 @@ case object QueryGenerator {
       else RUtils.chooseFrom(s.exprCands)
     exprNode match {
       case FExpr => {
-        if (!s.dfields.isEmpty && RUtils.bool()) {
+        if (declaredOnly || (!s.dfields.isEmpty && RUtils.bool())) {
           val dField = RUtils.chooseFrom(s.dfields)
           (F(dField.as), dField.ftype)
         } else {
@@ -179,45 +180,45 @@ case object QueryGenerator {
       case CountExpr => {
         // It's not meaningful to count a compound expression. revisit
         val s2 = s exprCandidates (List(FExpr))
-        (Count(Some(generateFieldExpr(s2.++, model)._1)), IntF)
+        (Count(Some(generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)._1)), IntF)
       }
       case SumExpr => {
         // You cannot apply an aggregate function to an aggregate function.
         val s2 = s.disgardAggregates
-        (Sum(generateFieldExpr(s2.++, model)._1), DoubleF)
+        (Sum(generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)._1), DoubleF)
       }
       case AvgExpr => {
         val s2 = s.disgardAggregates
-        (Avg(generateFieldExpr(s2.++, model)._1), DoubleF)
+        (Avg(generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)._1), DoubleF)
       }
       case MinExpr => {
         val s2 = s.disgardAggregates
-        val (e, eType) = generateFieldExpr(s2.++, model)
+        val (e, eType) = generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)
         (Min(e), eType)
       }
       case MaxExpr => {
         val s2 = s.disgardAggregates
-        val (e, eType) = generateFieldExpr(s2.++, model)
+        val (e, eType) = generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)
         (Max(e), eType)
       }
       case AddExpr => {
-        val e1 = generateFieldExpr(s.++, model)._1
-        val e2 = generateFieldExpr(s.++, model)._1
+        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
         (Add(e1, e2), DoubleF)
       }
       case SubExpr => {
-        val e1 = generateFieldExpr(s.++, model)._1
-        val e2 = generateFieldExpr(s.++, model)._1
+        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
         (Sub(e1, e2), DoubleF)
       }
       case MulExpr => {
-        val e1 = generateFieldExpr(s.++, model)._1
-        val e2 = generateFieldExpr(s.++, model)._1
+        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
         (Mul(e1, e2), DoubleF)
       }
       case DivExpr => {
-        val e1 = generateFieldExpr(s.++, model)._1
-        val e2 = generateFieldExpr(s.++, model)._1
+        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
         (Div(e1, e2), DoubleF)
       }
     }
@@ -265,7 +266,8 @@ case object QueryGenerator {
   }
 
   def generateDeclFields(s: GenState, model: Model, nonHidden: Boolean = true,
-      number: Option[Int] = None, forAggr: Boolean = false) = {
+      number: Option[Int] = None, forAggr: Boolean = false,
+      declaredOnly: Boolean = false) = {
     def _generateFieldDecl(s: GenState, i: Int): GenState = {
       val stopCond =
         if(forAggr) !s.aggrF.isEmpty && RUtils.bool()
@@ -275,7 +277,8 @@ case object QueryGenerator {
         }
       if (stopCond) s
       else {
-        val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr)
+        val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr,
+                                           declaredOnly = declaredOnly)
         val f = FieldDecl(e, RUtils.word(), eType,
                           if (nonHidden) RUtils.bool() else false)
         _generateFieldDecl(if (forAggr) s afield f else s dfield f, i + 1)
@@ -383,8 +386,11 @@ case object QueryGenerator {
         } }
         val s1 = generateQuerySet(GenState(schema, exprCands = exprCands))
         val s2 = s1.disgardExprs
+        // reference only declared fields if the generated query set is
+        // combined.
         val f = generateDeclFields(s2.++, s2.model.get, nonHidden = false,
-                                   forAggr = true)
+                                   forAggr = true,
+                                   declaredOnly = s2.qs.get.combined)
         AggrRes(f.aggrF, s2.qs.get)
       }
       case "union" =>
