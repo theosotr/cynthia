@@ -21,9 +21,9 @@ object SchemaGenerator {
             if (schema.getModels.size > 0) types
             else types dropRight 1
           ) match {
-            case "int"     => Some(RUtils.word, Int32, foreignF)
-            case "numeric" => Some(RUtils.word, Numeric, foreignF)
-            case "string"  => Some(RUtils.word, VarChar(50), foreignF)
+            case "int"     => Some(RUtils.word.toLowerCase, Int32, foreignF)
+            case "numeric" => Some(RUtils.word.toLowerCase, Numeric, foreignF)
+            case "string"  => Some(RUtils.word.toLowerCase, VarChar(50), foreignF)
             case "foreign" => {
               val model = RUtils.chooseFrom(schema.getModels)
               if (foreignF.contains(model)) None
