@@ -30,7 +30,7 @@ object ProjectCreator {
     }
     case SQLAlchemy(_, pdir) => {
       // Use the first element of the db sequence.
-      val models = Utils.runCmd("sqlacodegen " + dbs(0).getURI, None)
+      val models = Utils.runCmd("sqlacodegen --noinflect " + dbs(0).getURI, None)
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case Peewee(_, pdir) => {
