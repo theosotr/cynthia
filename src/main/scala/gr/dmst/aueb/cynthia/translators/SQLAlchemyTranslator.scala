@@ -30,12 +30,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     |            if type(x) is bytes:
     |                print(str(x.decode('utf-8')))
     |            else:
-    |                print(x)
+    |                print(x if x is not None else 0.00)
     |""".stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
-      fields map { as => s"${ident}dump($v.$as)" } mkString "\n"
+      fields map { as => s"${ident}dump(getattr($v,'$as', None))" } mkString "\n"
     q match {
       case SetRes(_) | SubsetRes(_, _, _) =>
         s"for r in $ret:\n${_dumpField("r", dFields, ident = " " * 4)}"
@@ -107,20 +107,20 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
-  def constructPrimAggr(fexpr: FieldExpr) = {
+  def constructPrimAggr(fexpr: FieldExpr, fprefix: String) = {
     val (field, op) = fexpr match {
       case Count(None)        => ("", "func.count")
-      case Count(Some(field)) => (constructFieldExpr(field), "func.count")
-      case Sum(field)         => (constructFieldExpr(field), "func.sum")
-      case Avg(field)         => (constructFieldExpr(field), "func.avg")
-      case Min(field)         => (constructFieldExpr(field), "func.min")
-      case Max(field)         => (constructFieldExpr(field), "func.max")
+      case Count(Some(field)) => (constructFieldExpr(field, fprefix), "func.count")
+      case Sum(field)         => (constructFieldExpr(field, fprefix), "func.sum")
+      case Avg(field)         => (constructFieldExpr(field, fprefix), "func.avg")
+      case Min(field)         => (constructFieldExpr(field, fprefix), "func.min")
+      case Max(field)         => (constructFieldExpr(field, fprefix), "func.max")
       case _                  => ??? // Unreachable case
     }
     op + "(" + field + ")"
   }
 
-  def constructCompoundAggr(fexpr: FieldExpr) = {
+  def constructCompoundAggr(fexpr: FieldExpr, fprefix: String) = {
     val (a1, a2, op) = fexpr match {
       // For addition, we explicitly use the '+' operator because when the
       // operands are strings, sqlalchemy generates the '||' db operator.
@@ -130,20 +130,23 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       case Div(a1, a2) => (a1, a2, " / ")
       case _           => ??? // Unreachable case
     }
-    val str = Str("(") << constructFieldExpr(a1) << op << constructFieldExpr(a2) << ")"
+    val str = Str("(") << constructFieldExpr(a1, fprefix) << op <<
+      constructFieldExpr(a2, fprefix) << ")"
     fexpr match {
       case Add(_, _) => (str << ")").!
       case _         => str.!
     }
   }
 
-  def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {
-    case F(f)                  => getSQLAlchemyFieldName(f)
+  def constructFieldExpr(fexpr: FieldExpr, fprefix: String = ""): String = fexpr match {
+    case F(f)                  =>
+      if (fprefix.equals("")) getSQLAlchemyFieldName(f)
+      else fprefix + "." + getSQLAlchemyFieldName(f)
     case Constant(v, UnQuoted) => "literal(" + v + ")"
     case Constant(v, Quoted)   => "literal(" + Utils.quoteStr(v) + ")"
     case _    =>
-      if (!fexpr.compound) constructPrimAggr(fexpr)
-      else constructCompoundAggr(fexpr)
+      if (!fexpr.compound) constructPrimAggr(fexpr, fprefix)
+      else constructCompoundAggr(fexpr, fprefix)
   }
 
   def toField(x: String, y: String) = {
@@ -156,6 +159,19 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     joins map { case (x, y) =>
       "join(" + toField(x, y) + ")"
     } mkString (".")
+
+  def constructAggrPrefix(s: State, subquery: Boolean) = {
+    val prefix = if (subquery) s.source + ".c" else ""
+    val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
+      case FieldDecl(f, l, t, _) =>
+        s"type_coerce(${constructFieldExpr(f, prefix)}, ${getType(t)}).label('$l')"
+    })
+    val qstr = "session.query(" + (aggrs mkString ", ") + ").select_from(" + s.source + ")"
+    QueryStr(
+      Some("ret" + s.numGen.next().toString),
+      Some(qstr)
+    )
+  }
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>
@@ -174,17 +190,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
             Some(q)
           )
         }
-        case _ => {
-          val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
-            case FieldDecl(f, l, t, _) =>
-              s"type_coerce(${constructFieldExpr(f)}, ${getType(t)}).label('$l')"
-          })
-          val qstr = "session.query(" + (aggrs mkString ", ") + ").select_from(" + s.source + ")"
-          QueryStr(
-            Some("ret" + s.numGen.next().toString),
-            Some(qstr)
-          )
-        }
+        case _ => constructAggrPrefix(s, false)
       }
     case Some(q) => q
   }
@@ -233,20 +239,29 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
 
   override def constructCombinedQuery(s: State) = {
     val qstr = constructQueryPrefix(s)
-    qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
+    val qstr2 = qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qstr.ret.get,
         constructOrderBy(s.orders, true),
-        s.aggrs match {
-          case Seq() => ""
-          case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
-          case _ => "first()"
-        }
+        if (!s.aggrs.isEmpty) "subquery()" else ""
       ) filter {
         case "" => false
         case _  => true
       }  mkString("."))
     )
+    if (!s.aggrs.isEmpty) {
+      val str = qstr2 >> constructAggrPrefix(s source qstr2.ret.get, true)
+      str >> QueryStr(Some("ret" + s.numGen.next().toString),
+        Some(
+          str.ret.get +
+          (s.aggrs match {
+            case Seq() => ""
+            case Seq(FieldDecl(Count(None), _, _, _)) => ".count()"
+            case _ => ".first()"
+          })
+        )
+      )
+    } else qstr2
   }
 
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
