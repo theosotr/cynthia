@@ -84,7 +84,8 @@ object TestRunnerCreator {
           orms.foreach { orm => ProjectCreator.createProject(orm, dbs) })
         }
     } match {
-      case Success(_) => Success(new TestRunner(schema, genTargets(orms, dbs)))
+      case Success(_) => Success(new TestRunner(
+        schema, genTargets(orms, dbs), options.nuqueries))
       case Failure(e) => Failure(e)
     }
   }
@@ -99,7 +100,7 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
       else Stats(totalQ + 1, mismatches, invalid)
 }
 
-class TestRunner(schema: Schema, targets: Seq[Target]) {
+class TestRunner(schema: Schema, targets: Seq[Target], queries: Int) {
   val mismatchEnumerator = Stream.from(1).iterator
 
   def genQuery(schema: Schema, limit: Int = 10) = {
@@ -1153,7 +1154,7 @@ class TestRunner(schema: Schema, targets: Seq[Target]) {
     )
 
   def genQueries(): Seq[Query] =
-    genQuery(schema, limit = 200)
+    genQuery(schema, limit = queries)
 
   def getMismatchesDir(i: Int) =
     Utils.joinPaths(List(
