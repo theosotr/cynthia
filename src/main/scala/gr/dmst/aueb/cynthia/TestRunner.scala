@@ -61,28 +61,27 @@ object TestRunnerCreator {
   def genTargets(orms: Seq[ORM], backends: Seq[DB]) =
     orms.flatMap(x => backends.map(y => Target(x, y)))
 
-  def apply(options: Options, schema: String) = {
-    val dbname = schema.replace(".sql", "")
-    val schemaPath = Utils.joinPaths(List(options.schemas, schema))
-    val dbDir = Utils.joinPaths(List(Utils.getDBDir(), dbname))
+  def apply(options: Options, schema: Schema) = {
+    val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
+    val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
     val createdb = Try(genBackends(options.dbs, dbDir, None).foreach { db =>
-      DBSetup.createdb(db, dbname)
+      DBSetup.createdb(db, schema.name)
     })
-    val dbs = genBackends(options.dbs, dbDir, Some(dbname))
+    val dbs = genBackends(options.dbs, dbDir, Some(schema.name))
     val schemadb = createdb.flatMap { _ =>
       Try(dbs.foreach { db =>
         DBSetup.setupSchema(db, schemaPath)
       })
     }
-    val projectDir = Utils.joinPaths(List(Utils.getProjectDir(), dbname))
-    val orms = genORMs(options.orms, dbname, projectDir)
+    val projectDir = Utils.joinPaths(List(Utils.getProjectDir(), schema.name))
+    val orms = genORMs(options.orms, schema.name, projectDir)
     schemadb.flatMap { _ =>
       Try(Utils.createDir(projectDir))
         .flatMap { _ => Try (
           orms.foreach { orm => ProjectCreator.createProject(orm, dbs) })
         }
     } match {
-      case Success(_) => Success(new TestRunner(dbname, genTargets(orms, dbs)))
+      case Success(_) => Success(new TestRunner(schema, genTargets(orms, dbs)))
       case Failure(e) => Failure(e)
     }
   }
@@ -97,42 +96,8 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
       else Stats(totalQ + 1, mismatches, invalid)
 }
 
-class TestRunner(schema: String, targets: Seq[Target]) {
+class TestRunner(schema: Schema, targets: Seq[Target]) {
   val mismatchEnumerator = Stream.from(1).iterator
-
-  val listingModel = Model("Listing", Seq(
-    Field("id", Serial),
-    Field("yearly_rent", Numeric),
-    Field("sale_price", Numeric)
-  ))
-
-  var authorModel = Model("Author", Seq(
-    Field("id", Serial),
-    Field("first_name", VarChar(50)),
-    Field("surname", VarChar(50))
-  ))
-
-  val bookModel = Model("Book", Seq(
-    Field("id", Serial),
-    Field("title", VarChar(100)),
-    Field("isbn", VarChar(100)),
-    Field("author", Foreign("Author"))
-  ))
-
-  val reviewModel = Model("Review", Seq(
-    Field("id", Serial),
-    Field("reviewer_name", VarChar(255)),
-    Field("content", VarChar(255)),
-    Field("rating", Int16),
-    Field("book", Foreign("Book"))
-  ))
-
-  val listingSchema = Schema("listing", Map("Listing" -> listingModel))
-  val bookSchema = Schema("book", Map(
-    "Author" -> authorModel,
-    "Book" -> bookModel,
-    "Review" -> reviewModel
-  ))
 
   def genQuery(schema: Schema, limit: Int = 10) = {
     def _genQuery(i: Int): LazyList[Query] = {
@@ -1184,16 +1149,13 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       )
     )
 
-  def genQueries(): Seq[Query] = schema match {
-    case "listing" => genQuery(listingSchema, limit = 200)
-    case "books"   => genQuery(bookSchema, limit = 200)
-    case _         => genListingQueries()
-  }
+  def genQueries(): Seq[Query] =
+    genQuery(schema, limit = 200)
 
   def getMismatchesDir(i: Int) =
     Utils.joinPaths(List(
       Utils.getReportDir(),
-      schema,
+      schema.name,
       "mismatches",
       i.toString)
     )
@@ -1201,7 +1163,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
   def getInvalidQDir() =
     Utils.joinPaths(List(
       Utils.getReportDir(),
-      schema,
+      schema.name,
       "invalid")
     )
 
@@ -1227,7 +1189,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
   }
 
   def start() = {
-    println(s"Starting testing session for $schema...")
+    println(s"Starting testing session for ${schema.name}...")
     val stats = genQueries()
       .foldLeft(Stats()) { (acc, q) => {
         try {
@@ -1266,7 +1228,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
                 val qid = mismatchEnumerator.next()
                 val reportDir = getMismatchesDir(qid)
                 val msg =
-                  s"""${Console.GREEN}[INFO]: Mismatch found in schema '$schema':${Console.WHITE}
+                  s"""${Console.GREEN}[INFO]: Mismatch found in schema '${schema.name}':${Console.WHITE}
                   |  - Query ID: $qid
                   |  - Report Directory: $reportDir
                   |  - OK Target Groups:\n${oks.map { case (_, v) =>
@@ -1293,7 +1255,7 @@ class TestRunner(schema: String, targets: Seq[Target]) {
       }
     }
     val msg =
-      s"""Testing session for $schema ends...
+      s"""Testing session for ${schema.name} ends...
       |Statistics
       |----------
       |Total Queries: ${stats.totalQ}
