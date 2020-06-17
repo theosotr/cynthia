@@ -10,6 +10,7 @@ import scala.sys.process._
 
 import pprint.PPrinter.BlackWhite
 
+import gr.dmst.aueb.cynthia.gen.SchemaGenerator
 import gr.dmst.aueb.cynthia.translators.SchemaTranslator
 
 
@@ -1310,13 +1311,14 @@ object Controller {
 
   def apply(options: Options) = {
     Utils.setWorkDir()
-    val testSessions = genSchemas map { s => Future {
-      Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
-      TestRunnerCreator(options, s) match {
-        case Success(testRunner) => testRunner.start()
-        case Failure(e)          => println(e.getMessage)
-      }
-    }}
+    val testSessions =
+      List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
+        Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
+        TestRunnerCreator(options, s) match {
+          case Success(testRunner) => testRunner.start()
+          case Failure(e)          => println(e.getMessage)
+        }
+      }}
     Await.ready(
       Future.sequence(testSessions) map { _ =>
         println("All testing sessions finished.")

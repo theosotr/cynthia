@@ -5,7 +5,7 @@ import scopt.OParser
 
 
 case class Options (
-  schemas: String = "",
+  schemas: Int = 1,
   orms: Seq[String] = Seq(),
   dbs: Seq[String] = Seq("sqlite")
 )
@@ -20,10 +20,13 @@ object Cynthia {
       OParser.sequence(
         programName("cynthia"),
         head("cynthia", "0.1"),
-        opt[String]('s', "schemas")
-          .required()
+        opt[Int]('s', "schemas")
           .action((x, o) => o.copy(schemas = x))
-          .text("Path to database schemas"),
+          .text("Number of schemas to generate")
+          .validate(x => {
+            if (x < 1) failure("You must generate at least one schema")
+            else success
+          }),
         opt[Seq[String]]('o', "orms")
           .required()
           .action((x, o) => o.copy(orms = x))
