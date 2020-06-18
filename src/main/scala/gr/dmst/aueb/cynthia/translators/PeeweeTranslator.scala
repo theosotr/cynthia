@@ -69,8 +69,9 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       (Str(getPeeweeFieldName(k)) << " < " << constructFieldExpr(e)).!
     case Lte(k, e) =>
       (Str(getPeeweeFieldName(k)) << " <= " << constructFieldExpr(e)).!
-    case Contains(k, e) =>
-      (Str(getPeeweeFieldName(k)) << ".contains(" << constructFieldExpr(e) << ")").!
+    case Contains(k, Constant(v, _)) =>
+      (Str(getPeeweeFieldName(k)) << ".contains(" << v << ")").!
+    case Contains(_, _) => throw new UnsupportedException("contains expects only constants")
     case Not(pred)                  =>
       (Str("~(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>
