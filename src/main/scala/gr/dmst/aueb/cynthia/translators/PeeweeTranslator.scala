@@ -136,8 +136,8 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
   }
 
   def constructJoins(joins: Set[(String, String)]): String =
-    joins map { case (_, y) =>
-      "join(" + y + ")"
+    joins map { case (x, y) =>
+      s"switch($x).join($y)"
     } mkString (".")
 
   def constructQueryPrefix(s: State) =  s.query match {
