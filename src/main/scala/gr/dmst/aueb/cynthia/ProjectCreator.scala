@@ -39,9 +39,9 @@ object ProjectCreator {
       dbs.foreach { db => {
           val cmd = db match {
             case Postgres(user, password, dbname) =>
-              s" -e postgres -u $user -H localhost $dbname -P"
+              s" -e postgres -u $user -H localhost $dbname -P $password"
             case MySQL(user, password, dbname) =>
-              s" -e mysql -u $user -H localhost $dbname -P"
+              s" -e mysql -u $user -H localhost $dbname -P $password"
             case SQLite(dbname) =>
               s" -e sqlite $dbname"
           }
