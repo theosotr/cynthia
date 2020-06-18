@@ -1,6 +1,6 @@
 package gr.dmst.aueb.cynthia
 
-import java.io.{File, FileWriter}
+import java.io.{File, FileWriter, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
 import scala.reflect.io.Directory
 import scala.sys.process._
@@ -72,6 +72,14 @@ object Utils {
     val fw = new FileWriter(path, false)
     try { fw.write(str) }
     finally { fw.close() }
+  }
+
+  def copyFile(src: String, dest: String) = {
+    var inputChannel = new FileInputStream(src).getChannel();
+    var outputChannel = new FileOutputStream(dest).getChannel();
+    outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
+    inputChannel.close();
+    outputChannel.close();
   }
 
   def getWorkdir() =

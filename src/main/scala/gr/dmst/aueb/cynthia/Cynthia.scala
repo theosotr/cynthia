@@ -2,13 +2,15 @@ package gr.dmst.aueb.cynthia
 
 import scala.util.{Success, Failure}
 import scopt.OParser
+import java.nio.file.{Paths, Files}
 
 
 case class Options (
   schemas: Int = 1,
   nuqueries: Int = 200,
   orms: Seq[String] = Seq(),
-  dbs: Seq[String] = Seq("sqlite")
+  dbs: Seq[String] = Seq("sqlite"),
+  predefined: (String, String) = ("", "")
 )
 
 
@@ -23,14 +25,14 @@ object Cynthia {
         head("cynthia", "0.1"),
         opt[Int]('n', "queries")
           .action((x, o) => o.copy(nuqueries = x))
-          .text("Number of queries to generate for each schema")
+          .text("Number of queries to generate for each schema (Default value: 200)")
           .validate(x => {
             if (x < 1) failure("You must generate at least one query")
             else success
           }),
         opt[Int]('s', "schemas")
           .action((x, o) => o.copy(schemas = x))
-          .text("Number of schemas to generate")
+          .text("Number of schemas to generate (Default value: 1)")
           .validate(x => {
             if (x < 1) failure("You must generate at least one schema")
             else success
@@ -53,7 +55,18 @@ object Cynthia {
               case _                    => failure ("Database backend '" + x + "' is not supported")
             }
           })
-          .text("Database backends to store data"),
+          .text("Database backends to store data (Default Value: sqlite)"),
+        opt[(String, String)]('p', "predefined")
+          .action((x, o) => o.copy(predefined = x))
+          .validate(x => {
+            if (!Files.exists(Paths.get(x._1)))
+              failure("File " + x._1 + " does not exist")
+            else if (!Files.exists(Paths.get(x._2)))
+              failure("File " + x._2 + " does not exist")
+            else
+              success
+          })
+          .text("Set schema (key) and a file with a Seq of AQL queries (value)"),
         checkConfig(x =>
           if (x.dbs.length + x.orms.length < 2)
             failure(
