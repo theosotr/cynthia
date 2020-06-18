@@ -50,15 +50,15 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     |  else return getC(e.val);
     |}
     |
-    |function dump(x) {
+    |function dump(x, label) {
     |  if (x === null) {
-    |    console.log('0.00')
+    |    console.log(label, '0.00')
     |    return;
     |  }
     |  if (typeof x === 'number') {
-    |    console.log(x.toFixed(2))
+    |    console.log(label, x.toFixed(2))
     |  } else {
-    |    console.log(x)
+    |    console.log(label, x)
     |  }
     |}
     |
@@ -67,7 +67,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
       fields map { as =>
-        s"${ident}dump($v.dataValues.$as)"
+        s"${ident}dump($v.dataValues.$as, '$as')"
       } mkString "\n"
     val str = q match {
       case SetRes(_)  | SubsetRes(_, _, _) =>
