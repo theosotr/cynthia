@@ -7,6 +7,7 @@ import scopt.OParser
 case class Options (
   schemas: Int = 1,
   nuqueries: Int = 200,
+  records: Int = 20,
   orms: Seq[String] = Seq(),
   dbs: Seq[String] = Seq("sqlite")
 )
@@ -21,6 +22,13 @@ object Cynthia {
       OParser.sequence(
         programName("cynthia"),
         head("cynthia", "0.1"),
+        opt[Int]('r', "records")
+          .action((x, o) => o.copy(records = x))
+          .text("Number of records to generate for each table")
+          .validate(x => {
+            if (x < 1) failure("You must generate at least one record")
+            else success
+          }),
         opt[Int]('n', "queries")
           .action((x, o) => o.copy(nuqueries = x))
           .text("Number of queries to generate for each schema")

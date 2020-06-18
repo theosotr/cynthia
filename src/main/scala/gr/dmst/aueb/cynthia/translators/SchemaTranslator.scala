@@ -6,8 +6,6 @@ import gr.dmst.aueb.cynthia.gen.DataGenerator
 
 object SchemaTranslator {
 
-  val dataLimit = 10
-
   def convertDataType(t: DataType) = t match {
     case Serial | Int8 | Int16 | Int32 | Int64 | Foreign(_) => "integer"  
     case Bool => "boolean"
@@ -16,7 +14,7 @@ object SchemaTranslator {
   }
 
 
-  def translateModel(m: Model): QueryStr = {
+  def translateModel(m: Model, numRecords: Int): QueryStr = {
     def getColumns() =
       m.fields.foldLeft(Str("")) { (acc, f) => f.ftype match {
         case Foreign(_) =>
@@ -32,7 +30,7 @@ object SchemaTranslator {
       }
 
     def getInsertStms() =
-      DataGenerator(m, dataLimit, limit = dataLimit).foldLeft(Str("")) { (acc, row) =>
+      DataGenerator(m, numRecords, limit = numRecords).foldLeft(Str("")) { (acc, row) =>
         acc << "INSERT INTO " << m.name.toLowerCase << "(" <<
           (m.fields map Field.dbname mkString ",") << ") VALUES (" <<
           (row map {
@@ -48,7 +46,7 @@ object SchemaTranslator {
     )
   }
 
-  def apply(schema: Schema): String = {
+  def apply(schema: Schema, numRecords: Int): String = {
     // First we create a map that holds the dependencies among models
     val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) { case (acc, (k, v)) => {
       val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
@@ -67,7 +65,7 @@ object SchemaTranslator {
     // Traverse models in topological order and create the corresponding
     // CREATE TABLE statements.
     topSort.foldLeft(qstr) { case (acc, m) =>
-      acc >> translateModel(schema.models(m))
+      acc >> translateModel(schema.models(m), numRecords)
     }.toString
   }
 }

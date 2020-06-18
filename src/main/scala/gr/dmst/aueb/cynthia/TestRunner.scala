@@ -1314,7 +1314,7 @@ object Controller {
     Utils.setWorkDir()
     val testSessions =
       List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-        Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
+        Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s, options.records))
         TestRunnerCreator(options, s) match {
           case Success(testRunner) => testRunner.start()
           case Failure(e)          => println(e.getMessage)
