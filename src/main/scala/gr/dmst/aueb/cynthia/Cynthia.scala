@@ -11,6 +11,7 @@ case class Options (
   nuqueries: Int = 200,
   records: Int = 20,
   orms: Seq[String] = Seq(),
+  noCombined: Boolean = false,
   dbs: Seq[String] = Seq("sqlite"),
   sql: String = "",
   aql: String = "",
