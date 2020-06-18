@@ -199,13 +199,13 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         else str
       }
       case Add(f1, f2) =>
-        "sequelize.literal(`" + _f(f1) + " + " + _f(f2) + "`)"
+        "sequelize.literal(`(" + _f(f1) + " + " + _f(f2) + ")`)"
       case Sub(f1, f2) =>
-        "sequelize.literal(`" + _f(f1) + " - " + _f(f2) + "`)"
+        "sequelize.literal(`(" + _f(f1) + " - " + _f(f2) + ")`)"
       case Mul(f1, f2) =>
-        "sequelize.literal(`" + _f(f1) + " * " + _f(f2) + "`)"
+        "sequelize.literal(`(" + _f(f1) + " * " + _f(f2) + ")`)"
       case Div(f1, f2) =>
-        "sequelize.literal(`" + _f(f1) + " / " + _f(f2) + "`)"
+        "sequelize.literal(`(" + _f(f1) + " / " + _f(f2) + ")`)"
       case _ => throw new UnsupportedException(
         "Unsupported field expression: " + fexpr.toString)
     }
