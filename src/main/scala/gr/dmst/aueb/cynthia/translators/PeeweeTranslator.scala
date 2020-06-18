@@ -10,6 +10,11 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     |from peewee import *
     |from models_${target.db.getName} import *
     |
+    |# import logging
+    |# logger = logging.getLogger('peewee')
+    |# logger.addHandler(logging.StreamHandler())
+    |# logger.setLevel(logging.DEBUG)
+    |
     |def dump(x):
     |    if isinstance(x, numbers.Number):
     |        print(round(decimal.Decimal(x), 2))

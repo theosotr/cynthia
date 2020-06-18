@@ -9,6 +9,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
   override val preamble =
    s"""import os, django
    |from django.db.models import *
+   |# from django.db import connection
    |os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'djangoproject.settings')
    |django.setup()
    |
