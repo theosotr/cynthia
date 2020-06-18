@@ -135,6 +135,25 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       else constructCompoundAggr(fexpr)
   }
 
+  def constructAlias(joins: Set[(String, String)]) = {
+    // find all targets from joins
+    val targets = joins.toList map { _._2 }
+    // find models that are joined multiple times.
+    val dups = targets.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toSet
+    val aliases = dups.foldLeft(Map[String, List[String]]()) { (acc, x) =>
+      acc + (x -> List(x))
+    }
+    // construct alias statements in order to reuse a model multiple times
+    // on the same query, and create the map of aliased tables.
+    targets.foldLeft((QueryStr(), 1, aliases)) { case ((qstr, i, a), x) =>
+      if (dups.contains(x))
+        (qstr >> QueryStr(Some(x + i), Some(x + ".alias()")),
+         i + 1,
+         a + (x -> (a(x) :+ (x + i))))
+      else (qstr, i, a)
+    }
+  }
+
   def constructJoins(joins: Set[(String, String)],
       aliases: Map[String, List[String]]): String = {
     def _getTargetName(x: String, aliases: Map[String, List[String]]) =
@@ -221,6 +240,9 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
   }
 
   override def constructCombinedQuery(s: State) = {
+    if (!s.aggrs.isEmpty)
+      throw UnsupportedException(
+        "Aggregate functions are not supported in combined queries")
     val qstr = constructQueryPrefix(s)
     qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
@@ -237,25 +259,6 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         case _  => true
       }  mkString("."))
     )
-  }
-
-  def constructAlias(joins: Set[(String, String)]) = {
-    // find all targets from joins
-    val targets = joins.toList map { _._2 }
-    // find models that are joined multiple times.
-    val dups = targets.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toSet
-    val aliases = dups.foldLeft(Map[String, List[String]]()) { (acc, x) =>
-      acc + (x -> List(x))
-    }
-    // construct alias statements in order to reuse a model multiple times
-    // on the same query, and create the map of aliased tables.
-    targets.foldLeft((QueryStr(), 1, aliases)) { case ((qstr, i, a), x) =>
-      if (dups.contains(x))
-        (qstr >> QueryStr(Some(x + i), Some(x + ".alias()")),
-         i + 1,
-         a + (x -> (a(x) :+ (x + i))))
-      else (qstr, i, a)
-    }
   }
 
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
