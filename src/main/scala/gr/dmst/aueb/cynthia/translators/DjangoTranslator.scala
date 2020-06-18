@@ -16,17 +16,17 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
    |from ${target.orm.projectName}.models import *
    |import numbers, decimal
    |
-   |def dump(x):
+   |def dump(x, label):
    |    if isinstance(x, numbers.Number):
-   |        print(round(decimal.Decimal(x), 2))
+   |        print(label, round(decimal.Decimal(x), 2))
    |    else:
    |        try:
-   |            print(round(decimal.Decimal(float(x)), 2))
+   |            print(label, round(decimal.Decimal(float(x)), 2))
    |        except:
    |            if type(x) is bytes:
-   |                print(str(x.decode('utf-8')))
+   |                print(label, str(x.decode('utf-8')))
    |            else:
-    |                print(x if x is not None else 0.00)
+    |                print(label, x if x is not None else '0.00')
    |""".stripMargin
 
   def getDjangoFieldName(field: String) =
@@ -40,9 +40,9 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       fields map { as =>
         s"""
         |${ident}if(isinstance($v, dict)):
-        |${ident}    dump($v['$as'])
+        |${ident}    dump($v['$as'], '$as')
         |${ident}else:
-        |${ident}    dump($v.$as)""".stripMargin
+        |${ident}    dump($v.$as, '$as')""".stripMargin
       } mkString "\n"
     q match {
       case SetRes (_) | SubsetRes(_, _, _) =>

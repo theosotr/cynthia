@@ -382,10 +382,10 @@ object TUtils {
 object ORMTranslator {
 
   def apply(q: Query, target: Target): String = target.orm match {
-    case Django(name, _, setDir)      => DjangoTranslator(target)(q)
-    case SQLAlchemy (_, _)            => SQLAlchemyTranslator(target)(q)
-    case Sequelize(_, _)              => SequelizeTranslator(target)(q)
-    case Peewee(_, _)                 => PeeweeTranslator(target)(q)
-    case ActiveRecord(_, _)           => ActiveRecordTranslator(target)(q)
+    case Django(_, _, _)      => DjangoTranslator(target)(q)
+    case SQLAlchemy (_, _)    => SQLAlchemyTranslator(target)(q)
+    case Sequelize(_, _)      => SequelizeTranslator(target)(q)
+    case Peewee(_, _)         => PeeweeTranslator(target)(q)
+    case ActiveRecord(_, _)   => ActiveRecordTranslator(target)(q)
   }
 }

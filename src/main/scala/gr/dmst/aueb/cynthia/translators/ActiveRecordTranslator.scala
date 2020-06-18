@@ -35,24 +35,24 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
 
     |# ActiveRecord::Base.logger = Logger.new(STDOUT)
 
-    |def dump(var)
+    |def dump(var, label)
     |  if var.is_a? Integer
-    |    puts "%0.2f" % [var]
+    |    puts "#{label} %0.2f" % [var]
     |  elsif var.is_a? Numeric
-    |    puts "%0.2f" % [var.round(2)]
+    |    puts "#{label} %0.2f" % [var.round(2)]
     |  elsif var == nil
-    |    puts "0.00"
+    |    puts "#{label} 0.00"
     |  else
-    |    puts "%0.2f" % Float(var)
+    |    puts "#{label} %0.2f" % Float(var)
     |  end
     |rescue
-    |  puts var
+    |  puts "#{label} #{var}"
     |end
     |""".stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
-      fields map { as => s"${ident}dump($v.$as)" } mkString "\n"
+      fields map { as => s"${ident}dump($v.$as), '$as'" } mkString "\n"
     q match {
       case FirstRes(_) => _dumpField(ret, dFields)
       case SetRes(_) | SubsetRes(_, _, _) =>
@@ -60,8 +60,8 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       case AggrRes (aggrs, _) => {
         aggrs map { x => x match {
           case x => {
-            val (qfield, _, _) = x match { case FieldDecl(f, l, t, _) => (f, l, t) }
-            s"dump($ret." + constructAggrExpr(qfield, nonHiddenFieldsMap) + ")"
+            val (qfield, l) = x match { case FieldDecl(f, l, _, _) => (f, l) }
+            s"dump($ret.${constructAggrExpr(qfield, nonHiddenFieldsMap)}, '$l')"
           }
         } } mkString("\n")
       }

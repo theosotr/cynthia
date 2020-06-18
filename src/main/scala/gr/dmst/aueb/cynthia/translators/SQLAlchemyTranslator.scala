@@ -20,28 +20,28 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     |Session = sessionmaker(bind=engine)
     |session = Session()
 
-    |def dump(x):
+    |def dump(x, label):
     |    if isinstance(x, numbers.Number):
-    |        print(round(decimal.Decimal(x), 2))
+    |        print(label, round(decimal.Decimal(x), 2))
     |    else:
     |        try:
-    |            print(round(decimal.Decimal(float(x)), 2))
+    |            print(label, round(decimal.Decimal(float(x)), 2))
     |        except:
     |            if type(x) is bytes:
-    |                print(str(x.decode('utf-8')))
+    |                print(label, str(x.decode('utf-8')))
     |            else:
-    |                print(x if x is not None else 0.00)
+    |                print(label, x if x is not None else '0.00')
     |""".stripMargin
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
-      fields map { as => s"${ident}dump(getattr($v,'$as', None))" } mkString "\n"
+      fields map { as => s"${ident}dump(getattr($v,'$as', None), '$as')" } mkString "\n"
     q match {
       case SetRes(_) | SubsetRes(_, _, _) =>
         s"for r in $ret:\n${_dumpField("r", dFields, ident = " " * 4)}"
       case FirstRes(_) => _dumpField(ret, dFields)
       case AggrRes(aggrs, _) => aggrs match {
-        case Seq(FieldDecl(Count(None), _, _, _)) => s"dump($ret)"
+        case Seq(FieldDecl(Count(None), _, _, _)) => s"dump($ret, 'count')"
         case _ => {
           val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
           _dumpField(ret, aggrF)
