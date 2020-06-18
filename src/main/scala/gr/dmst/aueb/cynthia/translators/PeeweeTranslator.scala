@@ -135,10 +135,20 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       else constructCompoundAggr(fexpr)
   }
 
-  def constructJoins(joins: Set[(String, String)]): String =
-    joins map { case (x, y) =>
-      s"switch($x).join($y)"
-    } mkString (".")
+  def constructJoins(joins: Set[(String, String)],
+      aliases: Map[String, List[String]]): String = {
+    def _getTargetName(x: String, aliases: Map[String, List[String]]) =
+      aliases get x match {
+        case None         => (x, aliases)
+        case Some(Nil)    => (x, aliases)
+        case Some(h :: t) => (h, aliases + (x -> t))
+      }
+    joins.foldLeft((Seq[String](), aliases)) { case ((strs, aliases), (x, y)) => {
+      val (t, aliases2) = _getTargetName(y, aliases)
+      (strs :+ s"switch($x).join($t)", aliases2)
+
+    }}._1 mkString "."
+  }
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>
@@ -229,16 +239,36 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     )
   }
 
+  def constructAlias(joins: Set[(String, String)]) = {
+    // find all targets from joins
+    val targets = joins.toList map { _._2 }
+    // find models that are joined multiple times.
+    val dups = targets.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toSet
+    val aliases = dups.foldLeft(Map[String, List[String]]()) { (acc, x) =>
+      acc + (x -> List(x))
+    }
+    // construct alias statements in order to reuse a model multiple times
+    // on the same query, and create the map of aliased tables.
+    targets.foldLeft((QueryStr(), 1, aliases)) { case ((qstr, i, a), x) =>
+      if (dups.contains(x))
+        (qstr >> QueryStr(Some(x + i), Some(x + ".alias()")),
+         i + 1,
+         a + (x -> (a(x) :+ (x + i))))
+      else (qstr, i, a)
+    }
+  }
+
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = {
     val fieldVals = s.fields.values
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
-    val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
+    val (aliasStms, _, aliases) = constructAlias(s.joins)
+    val qStr = aliasStms >> constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,
-        constructJoins(s.joins),
+        constructJoins(s.joins, aliases),
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
