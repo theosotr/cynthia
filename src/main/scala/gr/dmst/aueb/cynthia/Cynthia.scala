@@ -9,6 +9,7 @@ case class Options (
   mode: Option[String] = None,
   schemas: Int = 1,
   nuqueries: Int = 200,
+  records: Int = 20,
   orms: Seq[String] = Seq(),
   dbs: Seq[String] = Seq("sqlite"),
   sql: String = "",
