@@ -155,7 +155,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       else constructCompoundAggr(fexpr, fprefix)
   }
 
-  def constructAliases(joins: Set[Seq[String]]) = {
+  def constructAliases(joins: Seq[Seq[String]]) = {
     joins.foldLeft(QueryStr()) { (acc, x) =>
       val (h :: t) = x.toList.reverse
       val alias = (t.reverse mkString "_") + "_" + h
@@ -163,12 +163,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     }
   }
 
-  def constructJoins(joins: Set[Seq[String]]) =
+  def constructJoins(joins: Seq[Seq[String]]) =
     joins.foldLeft(Seq[String]()) { (acc, x) => {
       val (prefix, Seq(s, t)) = x splitAt (x.size - 2)
       val aliasSuffix =
         if (prefix.isEmpty) ""
-        else (prefix.reverse mkString "_") + "_"
+        else (prefix mkString "_") + "_"
       acc :+ s"join(${aliasSuffix}${s}_${t}, ${aliasSuffix}${s}.${t.toLowerCase})"
     }} mkString "."
 
@@ -286,7 +286,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,
-        constructJoins(s.joins),
+        constructJoins(s.joins.toSet.toSeq.sortWith { (x, y) => x.size < y.size }),
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
