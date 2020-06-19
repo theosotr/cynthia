@@ -331,7 +331,7 @@ case object QueryGenerator {
                                       number = declF)
           val qs = New(model.name, s2.dfields)
           val s3 = s2 queryset qs
-          val s4 = s3 candidates List(ApplySort)
+          val s4 = s3 candidates List(ApplySort, ApplyFilter)
           generateQuerySet(s4 model model)
         }
         case UnionQS => {
@@ -370,21 +370,24 @@ case object QueryGenerator {
       }
     }
 
-  def apply(schema: Schema): Query = {
+  def apply(schema: Schema, noCombined: Boolean): Query = {
     val qType = RUtils.chooseFrom(List(
       "set",
       "aggr",
       "union"
     ))
+    val cands = if (noCombined) Seq(NewQS) else Seq(NewQS, UnionQS, IntersectQS)
     qType match {
       case "set" =>
-        SetRes(generateQuerySet(GenState(schema, exprCands = exprNodes)).qs.get)
+        SetRes(generateQuerySet(GenState(
+          schema, cands = cands, exprCands = exprNodes)).qs.get)
       case "aggr" => {
         val exprCands = exprNodes filter { x => x match {
           case CountExpr | SumExpr | AvgExpr | MaxExpr | MinExpr => false
           case _ => true
         } }
-        val s1 = generateQuerySet(GenState(schema, exprCands = exprCands))
+        val s1 = generateQuerySet(GenState(
+          schema, cands = cands, exprCands = exprCands))
         val s2 = s1.disgardExprs
         // reference only declared fields if the generated query set is
         // combined.
@@ -394,7 +397,8 @@ case object QueryGenerator {
         AggrRes(f.aggrF, s2.qs.get)
       }
       case "union" =>
-        SetRes(generateQuerySet(GenState(schema, exprCands = exprNodes)).qs.get)
+        SetRes(generateQuerySet(GenState(
+          schema, cands = cands, exprCands = exprNodes)).qs.get)
     }
   }
 }

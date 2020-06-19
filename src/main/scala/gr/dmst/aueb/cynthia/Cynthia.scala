@@ -9,6 +9,7 @@ case class Options (
   nuqueries: Int = 200,
   records: Int = 20,
   orms: Seq[String] = Seq(),
+  noCombined: Boolean = false,
   dbs: Seq[String] = Seq("sqlite")
 )
 
@@ -22,6 +23,9 @@ object Cynthia {
       OParser.sequence(
         programName("cynthia"),
         head("cynthia", "0.1"),
+        opt[Unit]("no-combined")
+          .action((_, c) => c.copy(noCombined = true))
+          .text("Don't generate combined queries"),
         opt[Int]('r', "records")
           .action((x, o) => o.copy(records = x))
           .text("Number of records to generate for each table")

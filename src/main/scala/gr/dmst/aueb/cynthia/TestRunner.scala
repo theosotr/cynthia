@@ -85,7 +85,7 @@ object TestRunnerCreator {
         }
     } match {
       case Success(_) => Success(new TestRunner(
-        schema, genTargets(orms, dbs), options.nuqueries))
+        schema, genTargets(orms, dbs), options))
       case Failure(e) => Failure(e)
     }
   }
@@ -100,12 +100,12 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
       else Stats(totalQ + 1, mismatches, invalid)
 }
 
-class TestRunner(schema: Schema, targets: Seq[Target], queries: Int) {
+class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   val mismatchEnumerator = Stream.from(1).iterator
 
   def genQuery(schema: Schema, limit: Int = 10) = {
     def _genQuery(i: Int): LazyList[Query] = {
-      val q = QueryGenerator(schema)
+      val q = QueryGenerator(schema, options.noCombined)
       if (i >= limit) q #:: LazyList.empty
       else q #:: _genQuery(i + 1)
     }
@@ -1154,7 +1154,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], queries: Int) {
     )
 
   def genQueries(): Seq[Query] =
-    genQuery(schema, limit = queries)
+    genQuery(schema, limit = options.nuqueries)
 
   def getMismatchesDir(i: Int) =
     Utils.joinPaths(List(
