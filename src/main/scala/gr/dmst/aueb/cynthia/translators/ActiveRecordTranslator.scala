@@ -292,7 +292,7 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
     QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         model,
-        constructJoins(s.joins, s.source),
+        constructJoins(s.getJoinPairs, s.source),
         constructOrderBy(s.orders, fieldsMap),
         constructFilter(nonAggrP, fieldsMap),
         constructFilter(aggrP, fieldsMap, having=true),
