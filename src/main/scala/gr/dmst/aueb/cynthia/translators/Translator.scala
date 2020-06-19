@@ -42,7 +42,7 @@ case class State(
   aggrF: Set[String] = Set(),                   // FieldDecl connected with aggregate functions
   constantF: Set[String] = Set(),
   aggrs: Seq[FieldDecl] = Seq(),                // Aggregate functions to apply
-  joins: Set[Seq[String]] = Set(),              // Models to join with source
+  joins: Seq[Seq[String]] = Seq(),              // Models to join with source
   query: Option[QueryStr] = None,               // Query string (target), e.g. Unions
   combined: Boolean = false,
   numGen: Iterator[Int] = Stream.from(1).iterator
@@ -88,13 +88,13 @@ case class State(
 
   def join(p: Seq[String]): State =
     State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins + p, query, combined, numGen)
+          joins :+ p, query, combined, numGen)
 
   def getJoinPairs(): Set[(String, String)] =
-    joins map { x => {
+    (joins map { x => {
       val Seq(a, b) = x takeRight 2
       (a, b)
-    } }
+    } }).toSet
 
   def getNonConstantGroupingFields(): Set[String] =
     if (nonAggrF.isEmpty) nonAggrF
