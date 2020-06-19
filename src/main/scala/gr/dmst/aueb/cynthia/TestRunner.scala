@@ -112,7 +112,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
 
   def genQuery(schema: Schema, limit: Int = 10) = {
     def _genQuery(i: Int): LazyList[Query] = {
-      val q = QueryGenerator(schema)
+      val q = QueryGenerator(schema, options.noCombined)
       if (i >= limit) q #:: LazyList.empty
       else q #:: _genQuery(i + 1)
     }
