@@ -46,15 +46,18 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
   }
 
   def getPeeweeFieldName(field: String, withAlias: Boolean = false) = {
-    def _getPeeweeFieldName(segs: List[String]): String = segs match {
-      case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString "."
-      case _ :: (h :: t) => _getPeeweeFieldName(h.capitalize :: t)
+    def _getPeeweeFieldName(acc: String, segs: List[String]): String = segs match {
+      case Nil      => acc
+      case h :: Nil => acc + "." + h
+      case h :: t   =>
+        if (acc.equals("")) _getPeeweeFieldName(h.capitalize, t)
+        else _getPeeweeFieldName(acc + "_" + h.capitalize, t)
     }
     val segs = field.split('.').toList
     segs match {
       // Revert alias for declared fields.
       case _ :: Nil => if (withAlias) field else field + ".alias()"
-      case _        => _getPeeweeFieldName(field.split('.').toList)
+      case _        => _getPeeweeFieldName("", segs.toList)
     }
   }
 
@@ -141,39 +144,22 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       else constructCompoundAggr(fexpr)
   }
 
-  def constructAlias(joins: Set[(String, String)]) = {
-    // find all targets from joins
-    val targets = joins.toList map { _._2 }
-    // find models that are joined multiple times.
-    val dups = targets.groupBy(identity).collect { case (x, List(_, _, _*)) => x }.toSet
-    val aliases = dups.foldLeft(Map[String, List[String]]()) { (acc, x) =>
-      acc + (x -> List(x))
-    }
-    // construct alias statements in order to reuse a model multiple times
-    // on the same query, and create the map of aliased tables.
-    targets.foldLeft((QueryStr(), 1, aliases)) { case ((qstr, i, a), x) =>
-      if (dups.contains(x))
-        (qstr >> QueryStr(Some(x + i), Some(x + ".alias()")),
-         i + 1,
-         a + (x -> (a(x) :+ (x + i))))
-      else (qstr, i, a)
+  def constructAliases(joins: Set[Seq[String]]) = {
+    joins.foldLeft(QueryStr()) { (acc, x) =>
+      val (h :: t) = x.toList.reverse
+      val alias = (t.reverse mkString "_") + "_" + h
+      acc >> QueryStr(Some(alias), Some(h + ".alias()"))
     }
   }
 
-  def constructJoins(joins: Set[(String, String)],
-      aliases: Map[String, List[String]]): String = {
-    def _getTargetName(x: String, aliases: Map[String, List[String]]) =
-      aliases get x match {
-        case None         => (x, aliases)
-        case Some(Nil)    => (x, aliases)
-        case Some(h :: t) => (h, aliases + (x -> t))
-      }
-    joins.foldLeft((Seq[String](), aliases)) { case ((strs, aliases), (x, y)) => {
-      val (t, aliases2) = _getTargetName(y, aliases)
-      (strs :+ s"switch($x).join($t)", aliases2)
-
-    }}._1 mkString "."
-  }
+  def constructJoins(joins: Set[Seq[String]]) =
+    joins.foldLeft(Seq[String]()) { (acc, x) => {
+      val (prefix, Seq(s, t)) = x splitAt (x.size - 2)
+      val aliasSuffix =
+        if (prefix.isEmpty) ""
+        else (prefix.reverse mkString "_") + "_"
+      acc :+ s"switch(${aliasSuffix}${s}).join(${aliasSuffix}${s}_${t})"
+    }} mkString "."
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>
@@ -271,13 +257,13 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       limit: Option[Int]) = {
     val fieldVals = s.fields.values
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
-    val (aliasStms, _, aliases) = constructAlias(s.joins)
+    val aliasStms = constructAliases(s.joins)
     val qStr = aliasStms >> constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,
-        constructJoins(s.joins, aliases),
+        constructJoins(s.joins),
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),

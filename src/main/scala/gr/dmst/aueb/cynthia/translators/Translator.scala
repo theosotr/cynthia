@@ -42,8 +42,8 @@ case class State(
   aggrF: Set[String] = Set(),                   // FieldDecl connected with aggregate functions
   constantF: Set[String] = Set(),
   aggrs: Seq[FieldDecl] = Seq(),                // Aggregate functions to apply
-  joins: Set[(String, String)] = Set(),         // Models to join with source
-  query: Option[QueryStr] = None,              // Query string (target), e.g. Unions
+  joins: Set[Seq[String]] = Set(),              // Models to join with source
+  query: Option[QueryStr] = None,               // Query string (target), e.g. Unions
   combined: Boolean = false,
   numGen: Iterator[Int] = Stream.from(1).iterator
   ) {
@@ -86,9 +86,15 @@ case class State(
     State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
           aggrs ++ a, joins, query, combined, numGen)
 
-  def join(j: (String, String)): State =
+  def join(p: Seq[String]): State =
     State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins + j, query, combined, numGen)
+          joins + p, query, combined, numGen)
+
+  def getJoinPairs(): Set[(String, String)] =
+    joins map { x => {
+      val Seq(a, b) = x takeRight 2
+      (a, b)
+    } }
 
   def getNonConstantGroupingFields(): Set[String] =
     if (nonAggrF.isEmpty) nonAggrF
@@ -118,14 +124,15 @@ abstract class Translator(val target: Target) {
   val preamble: String
 
   def updateJoins(field: String, s: State) = {
-    def _updateJoins(segs: List[String], s: State): State = segs match {
-      case Nil | _ :: Nil | _ :: (_ :: Nil) => s
-      case h1 :: (h2 :: t) => {
-        val cap = h2.capitalize
-        _updateJoins(cap :: t, s join (h1, cap))
+    field split '.' match {
+      case Array(_) | Array(_, _) => s
+      case arr => {
+        val path = (arr dropRight 1).toSeq map { _.capitalize }
+        val tail = path drop 1
+        (List.range(0, path.size - 1) map { x => path(0) +: tail dropRight x })
+          .foldLeft(s) { (acc, x) => acc join x }
       }
     }
-    _updateJoins(field.split('.').toList, s)
   }
 
   def getConstants(fields: Seq[FieldDecl], store: Map[String, FieldDecl]) = {

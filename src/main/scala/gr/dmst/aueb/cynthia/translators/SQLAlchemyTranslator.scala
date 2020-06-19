@@ -8,7 +8,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   override val preamble =
     s"""from sqlalchemy import (create_engine, or_, and_, not_, func,
     |     type_coerce, types, literal, asc, desc)
-    |from sqlalchemy.orm import sessionmaker
+    |from sqlalchemy.orm import sessionmaker, aliased
     |from sqlalchemy.exc import SAWarning
     |from models import *
     |import numbers, decimal, warnings
@@ -51,13 +51,18 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   }
 
   def getSQLAlchemyFieldName(field: String, withAlias: Boolean = false) = {
-    def _getSQLAlchemyFieldName(segs: List[String]): String = segs match {
-      case Nil | _ :: Nil | _ :: (_ :: Nil) => segs mkString "."
-      case _ :: (h :: t) => _getSQLAlchemyFieldName(h.capitalize :: t)
+    def _getSQLAlchemyFieldName(acc: String, segs: List[String]): String = segs match {
+      case Nil      => acc
+      case h :: Nil => acc + "." + h
+      case h :: t   =>
+        if (acc.equals("")) _getSQLAlchemyFieldName(h.capitalize, t)
+        else _getSQLAlchemyFieldName(acc + "_" + h.capitalize, t)
     }
     val segs = (field split '.').toList
-    val f = _getSQLAlchemyFieldName(segs)
-    if (withAlias && segs.size == 1) Utils.quoteStr(f) else f
+    segs match {
+      case f :: Nil => if (withAlias) Utils.quoteStr(f) else f
+      case _        => _getSQLAlchemyFieldName("", segs)
+    }
   }
 
   def translatePred(pred: Predicate): String = pred match {
@@ -150,16 +155,22 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       else constructCompoundAggr(fexpr, fprefix)
   }
 
-  def toField(x: String, y: String) = {
-    val char = Character.toLowerCase(y.charAt(0))
-    val str = s"${char}${y.substring(1)}"
-    x + "." + str
+  def constructAliases(joins: Set[Seq[String]]) = {
+    joins.foldLeft(QueryStr()) { (acc, x) =>
+      val (h :: t) = x.toList.reverse
+      val alias = (t.reverse mkString "_") + "_" + h
+      acc >> QueryStr(Some(alias), Some("aliased(" + h + ")"))
+    }
   }
 
-  def constructJoins(joins: Set[(String, String)]): String =
-    joins map { case (x, y) =>
-      "join(" + toField(x, y) + ")"
-    } mkString (".")
+  def constructJoins(joins: Set[Seq[String]]) =
+    joins.foldLeft(Seq[String]()) { (acc, x) => {
+      val (prefix, Seq(s, t)) = x splitAt (x.size - 2)
+      val aliasSuffix =
+        if (prefix.isEmpty) ""
+        else (prefix.reverse mkString "_") + "_"
+      acc :+ s"join(${aliasSuffix}${s}_${t}, ${aliasSuffix}${s}.${t.toLowerCase})"
+    }} mkString "."
 
   def constructAggrPrefix(s: State, subquery: Boolean) = {
     val prefix = if (subquery) s.source + ".c" else ""
@@ -268,8 +279,9 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = {
     val fieldVals = s.fields.values
+    val aliasStms = constructAliases(s.joins)
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
-    val qStr = constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
+    val qStr = aliasStms >> constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
