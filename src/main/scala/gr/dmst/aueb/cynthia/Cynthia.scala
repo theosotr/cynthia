@@ -7,9 +7,6 @@ import java.nio.file.{Paths, Files}
 
 case class Options (
   mode: Option[String] = None,
-  optTest: Boolean = false,
-  optReplay: Boolean = false,
-  optSelect: Boolean = false,
   schemas: Int = 1,
   nuqueries: Int = 200,
   orms: Seq[String] = Seq(),
@@ -55,8 +52,7 @@ object Cynthia {
       help("help") text("prints this usage text")
 
       // Sub-commands
-      cmd("auto") action { (_, c) => c.copy(mode = Some("subA")) } children(
-        opt[Unit]("with-optTest") action {(_ , config) => config.copy(optTest = true)},
+      cmd("auto") action { (_, c) => c.copy(mode = Some("auto")) } children(
         opt[Int]('n', "queries")
           .action((x, o) => o.copy(nuqueries = x))
           .text("Number of queries to generate for each schema (Default value: 200)")
@@ -72,8 +68,7 @@ object Cynthia {
             else success
           }),
       )
-      cmd("replay") action { (_, c) => c.copy(mode = Some("subB")) } children(
-        opt[Unit]("with-optReplay") action {(_ , config) => config.copy(optReplay = true)},
+      cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
           .required()
           .action((x, o) => o.copy(dotCynthia = x))
@@ -91,8 +86,7 @@ object Cynthia {
             }
           })
       )
-      cmd("select") action { (_, c) => c.copy(mode = Some("subB")) } children(
-        opt[Unit]("with-optSelect") action {(_ , config) => config.copy(optSelect = true)},
+      cmd("select") action { (_, c) => c.copy(mode = Some("select")) } children(
         opt[String]('s', "sql")
           .required()
           .action((x, o) => o.copy(sql = x))
@@ -113,12 +107,18 @@ object Cynthia {
           }),
       )
       checkConfig(x =>
-        if (x.mode.isEmpty)
-          failure("A sub-command is required.")
-        else if (x.dbs.length + x.orms.length < 3)
-          failure(
-            "Number of database backends + number of ORMs must be greather than 2.")
-        else success
+        x.mode match {
+          case Some(mode) if mode == "replay" || mode == "select" =>
+            failure("Sub-command " + mode + " is not implemented")
+          case Some(mode) =>
+            if (x.dbs.length + x.orms.length < 3)
+              failure(
+                "Number of database backends + number of ORMs must be greather than 2.")
+            else
+              success
+          case _ =>
+            failure("A sub-command is required.")
+        }
       )
     }
 
