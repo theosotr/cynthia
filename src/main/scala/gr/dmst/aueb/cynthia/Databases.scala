@@ -11,7 +11,7 @@ sealed trait DB {
 
 case class Postgres (user: String, password: String, dbname: String) extends DB {
   override def getURI() =
-    "postgres://" + user + ":" + password + "@localhost/" + dbname
+    "postgresql://" + user + ":" + password + "@localhost/" + dbname
 
   override def getName() =
     "postgres"
