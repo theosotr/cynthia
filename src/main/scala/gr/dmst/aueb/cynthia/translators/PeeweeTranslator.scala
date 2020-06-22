@@ -137,8 +137,8 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
 
   def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {
     case F(f)                  => getPeeweeFieldName(f)
-    case Constant(v, UnQuoted) => s"Value($v)"
-    case Constant(v, Quoted)   => s"Value(${Utils.quoteStr(v)})"
+    case Constant(v, UnQuoted) => s"Value($v, converter=False)"
+    case Constant(v, Quoted)   => s"Value(${Utils.quoteStr(v)}, converter=False)"
     case _    =>
       if (!fexpr.compound) constructPrimAggr(fexpr)
       else constructCompoundAggr(fexpr)
