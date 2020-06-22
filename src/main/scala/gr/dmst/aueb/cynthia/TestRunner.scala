@@ -274,71 +274,20 @@ object Controller {
     def isEmpty(x: String) = x == null || x.isEmpty
     def basenameWithoutExtension(x: String) = x.split("\\.(?=[^\\.]+$)").head.split("/").last
     Utils.setWorkDir()
-    options.predefined match {
-      case (x,y) if !isEmpty(x) => {
-        val dst = basenameWithoutExtension(x)
-        Utils.copyFile(x, Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
-        val s = Schema(dst, Map())
-        // TODO Load queries from y
-        val queries = Seq(
-          // Query 1
-          SetRes(New("Book", Seq())),
-
-          // Query 2
-          SetRes(
-            Apply(
-              Sort(Seq(("Review.rating", Desc))),
-              New("Review", Seq())
-            )
-          ),
-
-          // Query 3
-          SetRes(
-            Apply(
-              Filter(Eq("Review.book.title", Constant("Random book", Quoted))),
-              New("Review", Seq())
-            )
-          ),
-
-          // Query 3
-          SetRes(
-            Apply(
-              Filter(Eq("Review.book.author.surname", Constant("Coecker", Quoted))),
-              New("Review", Seq())
-            )
-          ),
-
-          // Query 4
-          SetRes(
-            Apply(
-              Sort(Seq(
-                ("Review.book.title", Desc))
-              ),
-              New("Review", Seq())
-            )
-          )
-        )
+    // TODO Handle modes
+    val testSessions =
+      List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
+        Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
         TestRunnerCreator(options, s) match {
-          case Success(testRunner) => testRunner.start(queries)
+          case Success(testRunner) => testRunner.start()
           case Failure(e)          => println(e.getMessage)
         }
-      }
-      case _                    => {
-        val testSessions =
-          List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
-            TestRunnerCreator(options, s) match {
-              case Success(testRunner) => testRunner.start()
-              case Failure(e)          => println(e.getMessage)
-            }
-          }}
-        Await.ready(
-          Future.sequence(testSessions) map { _ =>
-            println("All testing sessions finished.")
-          },
-          Duration.Inf
-        )
-      }
-    }
+      }}
+    Await.ready(
+      Future.sequence(testSessions) map { _ =>
+        println("All testing sessions finished.")
+      },
+      Duration.Inf
+    )
   }
 }
