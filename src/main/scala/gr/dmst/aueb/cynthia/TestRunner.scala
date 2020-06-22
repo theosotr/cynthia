@@ -85,7 +85,7 @@ object TestRunnerCreator {
         }
     } match {
       case Success(_) => Success(new TestRunner(
-        schema, genTargets(orms, dbs), options.nuqueries))
+        schema, genTargets(orms, dbs), options))
       case Failure(e) => Failure(e)
     }
   }
@@ -100,7 +100,7 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
       else Stats(totalQ + 1, mismatches, invalid)
 }
 
-class TestRunner(schema: Schema, targets: Seq[Target], queries: Int) {
+class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   val mismatchEnumerator = Stream.from(1).iterator
 
   def genQuery(schema: Schema, limit: Int = 10) = {
@@ -112,8 +112,16 @@ class TestRunner(schema: Schema, targets: Seq[Target], queries: Int) {
     _genQuery(1)
   }
 
-  def genQueries(): Seq[Query] =
-    genQuery(schema, limit = queries)
+  def getQueries(): Seq[Query] =
+    options.mode match {
+      case Some("auto")  =>
+        genQuery(schema, limit = options.nuqueries)
+      // TODO get queries from options.dotCynthia and use options.mismatches
+      case Some("replay") => ???
+      // TODO get query/queries from options.aql
+      case Some("select") => ???
+      case _ => ??? // unreachable
+    }
 
   def getMismatchesDir(i: Int) =
     Utils.joinPaths(List(
@@ -151,10 +159,9 @@ class TestRunner(schema: Schema, targets: Seq[Target], queries: Int) {
     }
   }
 
-  def start(predefinedQueries: Seq[Query] = Seq[Query]()) = {
+  def start() = {
     println(s"Starting testing session for ${schema.name}...")
-    val queries = if (predefinedQueries.isEmpty) genQueries() else predefinedQueries
-    val stats = queries
+    val stats = getQueries()
       .foldLeft(Stats()) { (acc, q) => {
         try {
           val futures = targets map { t =>
@@ -233,6 +240,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], queries: Int) {
 
 object Controller {
 
+  // TODO Remove dead code
   val listingModel = Model("Listing", Seq(
     Field("id", Serial),
     Field("yearly_rent", Numeric),
@@ -274,15 +282,23 @@ object Controller {
     def isEmpty(x: String) = x == null || x.isEmpty
     def basenameWithoutExtension(x: String) = x.split("\\.(?=[^\\.]+$)").head.split("/").last
     Utils.setWorkDir()
-    // TODO Handle modes
-    val testSessions =
-      List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-        Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
-        TestRunnerCreator(options, s) match {
-          case Success(testRunner) => testRunner.start()
-          case Failure(e)          => println(e.getMessage)
-        }
-      }}
+    var testSessions = List[Future[Unit]]()
+    options.mode match {
+      case Some("auto") =>
+        testSessions =
+          List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
+            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
+            TestRunnerCreator(options, s) match {
+              case Success(testRunner) => testRunner.start()
+              case Failure(e)          => println(e.getMessage)
+            }
+          }}
+      // TODO set testSessions based on options.sql
+      case Some("select") => ???
+      // TODO set testSessions based on options.dotCynthia
+      case Some("replay") => ???
+      case _ => ???
+    }
     Await.ready(
       Future.sequence(testSessions) map { _ =>
         println("All testing sessions finished.")
