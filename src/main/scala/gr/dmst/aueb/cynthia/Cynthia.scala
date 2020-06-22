@@ -108,14 +108,16 @@ object Cynthia {
       )
       checkConfig(x =>
         x.mode match {
-          case Some(mode) if mode == "replay" || mode == "select" =>
-            failure("Sub-command " + mode + " is not implemented")
-          case Some(mode) =>
+          case Some("auto") =>
             if (x.dbs.length + x.orms.length < 3)
               failure(
                 "Number of database backends + number of ORMs must be greather than 2.")
             else
               success
+          case Some("select") =>
+            success
+          case Some("replay") =>
+            failure("Sub-command replay is not implemented")
           case _ =>
             failure("A sub-command is required.")
         }

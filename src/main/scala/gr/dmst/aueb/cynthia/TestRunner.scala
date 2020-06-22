@@ -116,10 +116,10 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     options.mode match {
       case Some("auto")  =>
         genQuery(schema, limit = options.nuqueries)
-      // TODO get queries from options.dotCynthia and use options.mismatches
-      case Some("replay") => ???
       // TODO get query/queries from options.aql
       case Some("select") => ???
+      // TODO get queries from options.dotCynthia and use options.mismatches
+      case Some("replay") => ???
       case _ => ??? // unreachable
     }
 
@@ -282,10 +282,9 @@ object Controller {
     def isEmpty(x: String) = x == null || x.isEmpty
     def basenameWithoutExtension(x: String) = x.split("\\.(?=[^\\.]+$)").head.split("/").last
     Utils.setWorkDir()
-    var testSessions = List[Future[Unit]]()
-    options.mode match {
-      case Some("auto") =>
-        testSessions =
+    val testSessions: List[Future[Unit]] =
+      options.mode match {
+        case Some("auto") =>
           List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
             Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
             TestRunnerCreator(options, s) match {
@@ -293,12 +292,20 @@ object Controller {
               case Failure(e)          => println(e.getMessage)
             }
           }}
-      // TODO set testSessions based on options.sql
-      case Some("select") => ???
-      // TODO set testSessions based on options.dotCynthia
-      case Some("replay") => ???
-      case _ => ???
-    }
+        case Some("select") =>
+          List { Future {
+            val dst = basenameWithoutExtension(options.sql)
+            Utils.copyFile(options.sql, Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
+            val s = Schema(dst, Map())
+            TestRunnerCreator(options, s) match {
+                case Success(testRunner) => testRunner.start()
+                case Failure(e)          => println(e.getMessage)
+              }
+          }}
+        // TODO set testSessions based on options.dotCynthia
+        case Some("replay") => ???
+        case _ => ???
+      }
     Await.ready(
       Future.sequence(testSessions) map { _ =>
         println("All testing sessions finished.")
