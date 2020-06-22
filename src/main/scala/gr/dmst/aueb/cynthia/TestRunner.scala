@@ -41,7 +41,8 @@ object TestRunnerCreator {
       case Some(dbname) => (dbname, dbname, workdir)
     }
     backends.map { x => x match {
-        case "postgres" => Postgres(dbUser, dbPass, pdb)
+        // In postgress, the database should be in lowercase.
+        case "postgres" => Postgres(dbUser, dbPass, pdb.toLowerCase)
         case "mysql"    => MySQL(dbUser, dbPass, mdb)
         case "sqlite"   => SQLite(sdb)
         case _          => ???
