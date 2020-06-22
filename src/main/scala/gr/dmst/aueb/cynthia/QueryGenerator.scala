@@ -228,40 +228,41 @@ case object QueryGenerator {
     assert(s.model.isDefined)
     val fields = s.getFields(false)
     val predNode = RUtils.chooseFrom(predNodes)
+    val s2 = s.disgardAggregates
     predNode match {
       case EqPred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s.++, model)._1
+        val e = generateFieldExpr(s2.++, model)._1
         Eq(field, e)
       }
       case GtPred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s.++, model)._1
+        val e = generateFieldExpr(s2.++, model)._1
         Gt(field, e)
       }
       case GtePred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s.++, model)._1
+        val e = generateFieldExpr(s2.++, model)._1
         Gte(field, e)
       }
       case LtPred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s.++, model)._1
+        val e = generateFieldExpr(s2.++, model)._1
         Lt(field, e)
       }
       case LtePred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s.++, model)._1
+        val e = generateFieldExpr(s2.++, model)._1
         Lte(field, e)
       }
       case ContainsPred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s.++, model)._1
+        val e = generateFieldExpr(s2.++, model)._1
         Contains(field, e)
       }
-      case AndPred => And(generatePredicate(s.++, model), generatePredicate(s.++, model))
-      case OrPred  => Or(generatePredicate(s.++, model), generatePredicate(s.++, model))
-      case NotPred => Not(generatePredicate(s.++, model))
+      case AndPred => And(generatePredicate(s2.++, model), generatePredicate(s2.++, model))
+      case OrPred  => Or(generatePredicate(s2.++, model), generatePredicate(s2.++, model))
+      case NotPred => Not(generatePredicate(s2.++, model))
     }
   }
 
