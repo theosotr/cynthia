@@ -56,6 +56,18 @@ object Cynthia {
         .action((x, o) => o.copy(storeMatches = true))
         .text("Save matches")
 
+      opt[Unit]("no-combined")
+        .action((_, c) => c.copy(noCombined = true))
+        .text("Don't generate combined queries")
+
+      opt[Int]('r', "records")
+        .action((x, o) => o.copy(records = x))
+        .text("Number of records to generate for each table")
+        .validate(x => {
+          if (x < 1) failure("You must generate at least one record")
+          else success
+        })
+
       note("\n")
       help("help") text("prints this usage text")
 
