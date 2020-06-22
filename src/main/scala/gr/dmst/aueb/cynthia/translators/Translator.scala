@@ -228,22 +228,33 @@ abstract class Translator(val target: Target) {
     else (groupedF, aggrF)
   }
 
-  def traverseFieldExpr(s: State, e: FieldExpr): State = e match {
+  def setJoinAndGroup(f: String, s: State) =
+    s.fields get f match {
+      case None =>
+        if (!s.aggrF.isEmpty) updateJoins(f, s) addGroupF f
+        else updateJoins(f, s)
+      case _ => s
+    }
+
+  def traverseFieldExpr(s: State, e: FieldExpr,
+      updateGroup: Boolean = true): State = e match {
     case Constant(_, _) => s
     case F(f) => s.fields get f match {
-      case None => updateJoins(f, s) // the field is native
-      case Some(FieldDecl(e2, _, _, _)) => traverseFieldExpr(s, e2)
+      case None =>
+        if (updateGroup) setJoinAndGroup(f, s)
+        else updateJoins(f, s)
+      case Some(FieldDecl(e2, _, _, _)) => traverseFieldExpr(s, e2, false)
     }
     case Count(None) => s
-    case Count(Some(e2)) => traverseFieldExpr(s, e2)
-    case Sum(e2) => traverseFieldExpr(s, e2)
-    case Avg(e2) => traverseFieldExpr(s, e2)
-    case Max(e2) => traverseFieldExpr(s, e2)
-    case Min(e2) => traverseFieldExpr(s, e2)
-    case Add(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1), e2)
-    case Sub(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1), e2)
-    case Mul(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1), e2)
-    case Div(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1), e2)
+    case Count(Some(e2)) => traverseFieldExpr(s, e2, false)
+    case Sum(e2) => traverseFieldExpr(s, e2, false)
+    case Avg(e2) => traverseFieldExpr(s, e2, false)
+    case Max(e2) => traverseFieldExpr(s, e2, false)
+    case Min(e2) => traverseFieldExpr(s, e2, false)
+    case Add(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
+    case Sub(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
+    case Mul(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
+    case Div(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
   }
 
   def traverseDeclaredFields(s: State, fields: Seq[FieldDecl]): State =
@@ -252,19 +263,19 @@ abstract class Translator(val target: Target) {
     }
 
   def traversePredicate(s: State, pred: Predicate): State = pred match {
-    case Eq(k, e)       => traverseFieldExpr(updateJoins(k, s), e)
-    case Gt(k, e)       => traverseFieldExpr(updateJoins(k, s), e)
-    case Gte(k, e)      => traverseFieldExpr(updateJoins(k, s), e)
-    case Lt(k, e)       => traverseFieldExpr(updateJoins(k, s), e)
-    case Lte(k, e)      => traverseFieldExpr(updateJoins(k, s), e)
-    case Contains(k, e) => traverseFieldExpr(updateJoins(k, s), e)
+    case Eq(k, e)       => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Gt(k, e)       => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Gte(k, e)      => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Lt(k, e)       => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Lte(k, e)      => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Contains(k, e) => traverseFieldExpr(setJoinAndGroup(k, s), e)
     case Not(pred)      => traversePredicate(s, pred)
     case Or(p1, p2)     => traversePredicate(traversePredicate(s, p1), p2)
     case And(p1, p2)    => traversePredicate(traversePredicate(s, p1), p2)
   }
 
   def traverseSortedFields(s: State, fields: Seq[String]): State =
-    fields.foldLeft (s) { (acc, x) => updateJoins(x, acc) }
+    fields.foldLeft (s) { (acc, x) => setJoinAndGroup(x, acc) }
 
   def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
     case New(m, f) => { // Add source and fields to state
