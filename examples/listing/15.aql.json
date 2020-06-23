@@ -1,0 +1,101 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Filter": {
+                  "p": {
+                    "Predicate": {
+                      "Gte": {
+                        "f": {
+                          "FieldExpr": {
+                            "Constant": {
+                              "v": "1",
+                              "vt": "UnQuoted"
+                            }
+                          }
+                        },
+                        "k": "sales"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "sales",
+                      "f": {
+                        "FieldExpr": {
+                          "Mul": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "10",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Div": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "5",
+                                        "vt": "UnQuoted"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Listing.sale_price"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "sum",
+                      "f": {
+                        "FieldExpr": {
+                          "Sum": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.yearly_rent"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

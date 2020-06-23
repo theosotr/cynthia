@@ -1,0 +1,28 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "count",
+          "f": {
+            "FieldExpr": {
+              "Count": {
+
+              }
+            }
+          },
+          "ftype": "IntF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

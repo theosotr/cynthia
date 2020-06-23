@@ -1,0 +1,73 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Book.isbn", "Desc"], ["Izi", "Desc"], ["Book.author.id", "Asc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "RvimPPZOm",
+                      "f": {
+                        "FieldExpr": {
+                          "Sub": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Book.author.first_name"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Book.title"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "Izi",
+                      "f": {
+                        "FieldExpr": {
+                          "Max": {
+                            "f": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "Xl950",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "StringF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Book"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

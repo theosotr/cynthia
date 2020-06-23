@@ -1,0 +1,233 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "nbos",
+                "f": {
+                  "FieldExpr": {
+                    "Div": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Sub": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "M0rf",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Mul": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Listing.sale_price"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Max": {
+                                        "f": {
+                                          "FieldExpr": {
+                                            "F": {
+                                              "f": "Listing.yearly_rent"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.sale_price"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "lxg",
+                "f": {
+                  "FieldExpr": {
+                    "Mul": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Div": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Count": {
+                                  "f": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Listing.id"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Div": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "nbos"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "7G",
+                                        "vt": "Quoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "nbos"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "ilkQN",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "xoOkrOnc",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "L",
+                      "vt": "Quoted"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "vHtTZ",
+                "f": {
+                  "FieldExpr": {
+                    "Div": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "5",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "UBXB",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "xoOkrOnc"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "SNzkSd",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "NZ2",
+                      "vt": "Quoted"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "MdHFe",
+                "f": {
+                  "FieldExpr": {
+                    "Avg": {
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.yearly_rent"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Filter": {
+                  "p": {
+                    "Predicate": {
+                      "And": {
+                        "p1": {
+                          "Predicate": {
+                            "Not": {
+                              "p": {
+                                "Predicate": {
+                                  "Eq": {
+                                    "f": {
+                                      "FieldExpr": {
+                                        "Constant": {
+                                          "v": "bar",
+                                          "vt": "Quoted"
+                                        }
+                                      }
+                                    },
+                                    "k": "Listing.foo"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "p2": {
+                          "Predicate": {
+                            "Gte": {
+                              "f": {
+                                "FieldExpr": {
+                                  "Constant": {
+                                    "v": "100",
+                                    "vt": "UnQuoted"
+                                  }
+                                }
+                              },
+                              "k": "Listing.sale_price"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

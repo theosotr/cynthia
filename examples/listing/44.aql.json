@@ -1,0 +1,169 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "R",
+          "f": {
+            "FieldExpr": {
+              "Count": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "R"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "IntF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "R",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "vlrkx",
+                "f": {
+                  "FieldExpr": {
+                    "Div": {
+                      "f1": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.sale_price"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "R"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "mUoSMAxdl",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "vlrkx"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "uBnSWipsi",
+                "f": {
+                  "FieldExpr": {
+                    "Div": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Mul": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "8",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.id"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "PHoJX5b",
+                            "vt": "Quoted"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "OAYwxOOET",
+                "f": {
+                  "FieldExpr": {
+                    "Div": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "9",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "1",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "sum_sale",
+          "f": {
+            "FieldExpr": {
+              "Sum": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "DoubleF",
+          "hidden": false
+        }
+      }, {
+        "FieldDecl": {
+          "as": "max_sale",
+          "f": {
+            "FieldExpr": {
+              "Max": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "DoubleF",
+          "hidden": false
+        }
+      }, {
+        "FieldDecl": {
+          "as": "min_sale",
+          "f": {
+            "FieldExpr": {
+              "Min": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "DoubleF",
+          "hidden": false
+        }
+      }, {
+        "FieldDecl": {
+          "as": "avg_sale",
+          "f": {
+            "FieldExpr": {
+              "Avg": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "DoubleF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

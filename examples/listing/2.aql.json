@@ -1,0 +1,47 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Filter": {
+                  "p": {
+                    "Predicate": {
+                      "Not": {
+                        "p": {
+                          "Predicate": {
+                            "Eq": {
+                              "f": {
+                                "FieldExpr": {
+                                  "Constant": {
+                                    "v": "bar",
+                                    "vt": "Quoted"
+                                  }
+                                }
+                              },
+                              "k": "Listing.foo"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

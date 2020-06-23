@@ -1,0 +1,47 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "irOHtSumD",
+                "f": {
+                  "FieldExpr": {
+                    "Avg": {
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "1",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "jiAtXcec",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "irOHtSumD"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

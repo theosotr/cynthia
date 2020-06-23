@@ -1,0 +1,164 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "heTkuJqO",
+                "f": {
+                  "FieldExpr": {
+                    "Add": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Sub": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Add": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Listing.id"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Min": {
+                                        "f": {
+                                          "FieldExpr": {
+                                            "Mul": {
+                                              "f1": {
+                                                "FieldExpr": {
+                                                  "F": {
+                                                    "f": "Listing.sale_price"
+                                                  }
+                                                }
+                                              },
+                                              "f2": {
+                                                "FieldExpr": {
+                                                  "F": {
+                                                    "f": "Listing.sale_price"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "7",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Div": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "Add": {
+                                        "f1": {
+                                          "FieldExpr": {
+                                            "Add": {
+                                              "f1": {
+                                                "FieldExpr": {
+                                                  "Min": {
+                                                    "f": {
+                                                      "FieldExpr": {
+                                                        "Constant": {
+                                                          "v": "e5LIn",
+                                                          "vt": "Quoted"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "f2": {
+                                                "FieldExpr": {
+                                                  "F": {
+                                                    "f": "Listing.sale_price"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "f2": {
+                                          "FieldExpr": {
+                                            "Count": {
+                                              "f": {
+                                                "FieldExpr": {
+                                                  "F": {
+                                                    "f": "Listing.id"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Listing.sale_price"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "BIKnH",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "heTkuJqO"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

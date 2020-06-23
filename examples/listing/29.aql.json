@@ -1,0 +1,61 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "y",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "6quxR",
+                      "vt": "Quoted"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "WIhPq",
+                "f": {
+                  "FieldExpr": {
+                    "Sum": {
+                      "f": {
+                        "FieldExpr": {
+                          "Div": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "y"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "2",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

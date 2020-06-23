@@ -1,0 +1,41 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "dqBZvjQX",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "3",
+                      "vt": "UnQuoted"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "TbPEVGKp",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Review.book.author.first_name"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }],
+            "m": "Review"
+          }
+        }
+      }
+    }
+  }
+}

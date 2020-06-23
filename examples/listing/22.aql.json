@@ -1,0 +1,52 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "mul",
+                "f": {
+                  "FieldExpr": {
+                    "Mul": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Avg": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.yearly_rent"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Avg": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "count",
+          "f": {
+            "FieldExpr": {
+              "Count": {
+
+              }
+            }
+          },
+          "ftype": "IntF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "Union": {
+            "q1": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Listing"
+                }
+              }
+            },
+            "q2": {
+              "QuerySet": {
+                "Union": {
+                  "q1": {
+                    "QuerySet": {
+                      "New": {
+                        "f": [],
+                        "m": "Listing"
+                      }
+                    }
+                  },
+                  "q2": {
+                    "QuerySet": {
+                      "New": {
+                        "f": [],
+                        "m": "Listing"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

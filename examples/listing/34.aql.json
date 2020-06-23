@@ -1,0 +1,61 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "QpUmZQeX",
+                "f": {
+                  "FieldExpr": {
+                    "Count": {
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "dvdddN",
+                "f": {
+                  "FieldExpr": {
+                    "Mul": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "p4d",
+                            "vt": "Quoted"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "qYCGT",
+                            "vt": "Quoted"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

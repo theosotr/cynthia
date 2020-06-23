@@ -1,0 +1,167 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "complex_add",
+          "f": {
+            "FieldExpr": {
+              "Add": {
+                "f1": {
+                  "FieldExpr": {
+                    "Mul": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Sum": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Avg": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.yearly_rent"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "f2": {
+                  "FieldExpr": {
+                    "Div": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Max": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Min": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "DoubleF",
+          "hidden": false
+        }
+      }, {
+        "FieldDecl": {
+          "as": "yearly",
+          "f": {
+            "FieldExpr": {
+              "Sum": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.yearly_rent"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "DoubleF",
+          "hidden": false
+        }
+      }, {
+        "FieldDecl": {
+          "as": "complex_sub",
+          "f": {
+            "FieldExpr": {
+              "Sub": {
+                "f1": {
+                  "FieldExpr": {
+                    "Min": {
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.yearly_rent"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "f2": {
+                  "FieldExpr": {
+                    "Add": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Avg": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Max": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "DoubleF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

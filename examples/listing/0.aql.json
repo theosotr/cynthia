@@ -1,0 +1,28 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Union": {
+            "q1": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Listing"
+                }
+              }
+            },
+            "q2": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

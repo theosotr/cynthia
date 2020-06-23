@@ -1,0 +1,134 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Filter": {
+                  "p": {
+                    "Predicate": {
+                      "And": {
+                        "p1": {
+                          "Predicate": {
+                            "Eq": {
+                              "f": {
+                                "FieldExpr": {
+                                  "Constant": {
+                                    "v": "baz",
+                                    "vt": "Quoted"
+                                  }
+                                }
+                              },
+                              "k": "fooF"
+                            }
+                          }
+                        },
+                        "p2": {
+                          "Predicate": {
+                            "Gte": {
+                              "f": {
+                                "FieldExpr": {
+                                  "Add": {
+                                    "f1": {
+                                      "FieldExpr": {
+                                        "Constant": {
+                                          "v": "10",
+                                          "vt": "UnQuoted"
+                                        }
+                                      }
+                                    },
+                                    "f2": {
+                                      "FieldExpr": {
+                                        "F": {
+                                          "f": "sales"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              "k": "max"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "fooF",
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.foo"
+                          }
+                        }
+                      },
+                      "ftype": "StringF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "sales",
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.sale_price"
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "max",
+                      "f": {
+                        "FieldExpr": {
+                          "Max": {
+                            "f": {
+                              "FieldExpr": {
+                                "Add": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Listing.yearly_rent"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "10",
+                                        "vt": "UnQuoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "Jble",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "JB",
+                      "vt": "Quoted"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "cn",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "1",
+                      "vt": "UnQuoted"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "FJOKGoi",
+                "f": {
+                  "FieldExpr": {
+                    "Min": {
+                      "f": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "qdbiycgpD",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "3WnBi",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

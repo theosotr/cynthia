@@ -1,0 +1,41 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Filter": {
+                  "p": {
+                    "Predicate": {
+                      "Eq": {
+                        "f": {
+                          "FieldExpr": {
+                            "Constant": {
+                              "v": "Coecker",
+                              "vt": "Quoted"
+                            }
+                          }
+                        },
+                        "k": "Review.book.author.surname"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Review"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

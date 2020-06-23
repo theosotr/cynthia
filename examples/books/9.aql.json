@@ -1,0 +1,102 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Filter": {
+                  "p": {
+                    "Predicate": {
+                      "And": {
+                        "p1": {
+                          "Predicate": {
+                            "Gte": {
+                              "f": {
+                                "FieldExpr": {
+                                  "Constant": {
+                                    "v": "2",
+                                    "vt": "UnQuoted"
+                                  }
+                                }
+                              },
+                              "k": "Review.rating"
+                            }
+                          }
+                        },
+                        "p2": {
+                          "Predicate": {
+                            "Lte": {
+                              "f": {
+                                "FieldExpr": {
+                                  "Constant": {
+                                    "v": "Z",
+                                    "vt": "Quoted"
+                                  }
+                                }
+                              },
+                              "k": "Review.book.author.first_name"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "mul",
+                      "f": {
+                        "FieldExpr": {
+                          "Mul": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Review.rating"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "-1",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "name",
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Review.book.author.first_name"
+                          }
+                        }
+                      },
+                      "ftype": "StringF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Review"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
