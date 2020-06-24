@@ -107,6 +107,7 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
 
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   val mismatchEnumerator = Stream.from(1).iterator
+  val matchesEnumerator = Stream.from(1).iterator
 
   def genQuery(schema: Schema, limit: Int = 10) = {
     def _genQuery(i: Int): LazyList[Query] = {
@@ -153,21 +154,31 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       "invalid")
     )
 
+  def getMatchesDir(i: Int) =
+    Utils.joinPaths(List(
+      Utils.getReportDir(),
+      schema.name,
+      "matches",
+      i.toString)
+    )
+
   def storeInvalid(q: Query, i: Int) = {
     val invDir = getInvalidQDir()
     new File(invDir).mkdirs
     val queryFile = Utils.joinPaths(List(invDir, s"query_$i.aql"))
+    val queryJsonFile = Utils.joinPaths(List(invDir, s"query_$i.aql.json"))
     Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
+    Utils.writeToFile(queryJsonFile, q.toJson.prettyPrint)
   }
 
-  def storeMismatch(q: Query, mismatches: Map[(String, String), Seq[Target]],
-                    reportDir: String) = {
+  def storeResults(q: Query, results: Map[(String, String), Seq[Target]],
+                   reportDir: String) = {
     new File(reportDir).mkdirs
     val queryFile = Utils.joinPaths(List(reportDir, "query.aql"))
     val queryJsonFile = Utils.joinPaths(List(reportDir, "query.aql.json"))
     Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
     Utils.writeToFile(queryJsonFile, q.toJson.prettyPrint)
-    mismatches.foreach { case ((_, k), v) => v.foreach { x =>
+    results.foreach { case ((_, k), v) => v.foreach { x =>
         // FIXME: For debugging purposes only.
         s"cp -r ${x.orm.projectDir} $reportDir".!!
         val filename = s"${x.orm.ormName}_${x.db.getName}.out"
@@ -224,14 +235,21 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
                     } mkString "\n"}
                   |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
                   """.stripMargin
-                storeMismatch(q, oks ++ failed, reportDir)
+                storeResults(q, oks ++ failed, reportDir)
                 println(msg)
                 acc ++ (mism = true)
               } else if (failed.size == 0 && oks.size == 0) {
                 val qid = mismatchEnumerator.next()
                 storeInvalid(q, qid)
                 acc ++ (invd = true)
-              } else acc.++()
+              } else {
+                if (options.storeMatches) {
+                  val qid = matchesEnumerator.next()
+                  val reportDir = getMatchesDir(qid)
+                  storeResults(q, oks ++ failed, reportDir)
+                }
+                acc.++()
+              }
           }
           Await.result(f, 10 seconds)
         } catch {

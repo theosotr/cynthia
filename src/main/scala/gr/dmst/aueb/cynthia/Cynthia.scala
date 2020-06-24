@@ -14,6 +14,7 @@ case class Options (
   sql: String = "",
   aql: String = "",
   dotCynthia: String = "",
+  storeMatches: Boolean = false,
   mismatches: Seq[Int] = Seq()
 )
 
@@ -46,6 +47,10 @@ object Cynthia {
             case _                    => failure ("Database backend '" + x + "' is not supported")
           }
         })
+
+      opt[Unit]('S', "store-matches")
+        .action((x, o) => o.copy(storeMatches = true))
+        .text("Save matches")
 
       note("\n")
       help("help") text("prints this usage text")
