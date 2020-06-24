@@ -68,6 +68,10 @@ object Cynthia {
           else success
         })
 
+      opt[Unit]('S', "store-matches")
+        .action((x, o) => o.copy(storeMatches = true))
+        .text("Save matches")
+
       note("\n")
       help("help") text("prints this usage text")
 
