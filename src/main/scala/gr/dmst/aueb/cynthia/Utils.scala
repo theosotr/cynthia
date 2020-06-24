@@ -2,10 +2,14 @@ package gr.dmst.aueb.cynthia
 
 import java.io.{File, FileWriter, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
+import java.io.{BufferedWriter, FileWriter}
 import scala.reflect.io.Directory
 import scala.io.Source
 import scala.sys.process._
 
+import spray.json._
+
+import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
 
 case class Str(str: String) {
   val buff: StringBuilder = new StringBuilder(str)
@@ -77,6 +81,13 @@ object Utils {
 
   def readFromFile(path: String) = {
     new String(Files.readAllBytes(Paths.get(path)))
+  }
+
+  def writeJson(path: String, q: Query) = {
+    val json = q.toJson
+    val w = new BufferedWriter(new FileWriter(path))
+    w.write(json.prettyPrint)
+    w.close
   }
 
   def getListOfFiles(dir: String): List[String] = {

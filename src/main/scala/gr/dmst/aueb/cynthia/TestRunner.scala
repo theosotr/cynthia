@@ -164,7 +164,9 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
                     reportDir: String) = {
     new File(reportDir).mkdirs
     val queryFile = Utils.joinPaths(List(reportDir, "query.aql"))
+    val queryJsonFile = Utils.joinPaths(List(reportDir, "query.aql.json"))
     Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
+    Utils.writeToFile(queryJsonFile, q.toJson.prettyPrint)
     mismatches.foreach { case ((_, k), v) => v.foreach { x =>
         // FIXME: For debugging purposes only.
         s"cp -r ${x.orm.projectDir} $reportDir".!!
@@ -295,7 +297,8 @@ object Controller {
 
   def apply(options: Options) = {
     def isEmpty(x: String) = x == null || x.isEmpty
-    def basenameWithoutExtension(x: String) = x.split("\\.(?=[^\\.]+$)").head.split("/").last
+    def basenameWithoutExtension(x: String) =
+        x.split("/").last.split("\\.(?=[^\\.]+$)").head
     Utils.setWorkDir()
     val testSessions: List[Future[Unit]] =
       options.mode match {
@@ -310,7 +313,10 @@ object Controller {
         case Some("select") =>
           List { Future {
             val dst = basenameWithoutExtension(options.sql)
-            Utils.copyFile(options.sql, Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
+            // If options.sql and dst are the same file then the direct copy
+            // will fail
+            Utils.copyFile(options.sql, "/tmp/cynthia_db")
+            Utils.copyFile("/tmp/cynthia_db", Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
             val s = Schema(dst, Map())
             TestRunnerCreator(options, s) match {
                 case Success(testRunner) => testRunner.start()
