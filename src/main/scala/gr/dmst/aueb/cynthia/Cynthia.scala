@@ -67,6 +67,22 @@ object Cynthia {
             else success
           }),
       )
+      cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
+        opt[Int]('n', "queries")
+          .action((x, o) => o.copy(nuqueries = x))
+          .text("Number of queries to generate for each schema (Default value: 200)")
+          .validate(x => {
+            if (x < 1) failure("You must generate at least one query")
+            else success
+          }),
+        opt[Int]('s', "schemas")
+          .action((x, o) => o.copy(schemas = x))
+          .text("Number of schemas to generate (Default value: 1)")
+          .validate(x => {
+            if (x < 1) failure("You must generate at least one schema")
+            else success
+          }),
+      )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
           .required()
@@ -116,6 +132,8 @@ object Cynthia {
                 "Number of database backends + number of ORMs must be greather than 2.")
             else
               success
+          case Some("generate") =>
+            failure("Sub-command generate is not implemented")
           case Some("select") =>
             if (x.orms.isEmpty)
               failure("You must give at least one orm with --orms option")
