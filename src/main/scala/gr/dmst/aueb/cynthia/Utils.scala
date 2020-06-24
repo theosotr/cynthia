@@ -139,6 +139,15 @@ object Utils {
        }
   }
 
+  def deleteRecursively(file: File): Unit = {
+    if (file.isDirectory) {
+      file.listFiles.foreach(deleteRecursively)
+    }
+    if (file.exists && !file.delete) {
+      throw new Exception(s"Unable to delete ${file.getAbsolutePath}")
+    }
+  }
+
   def runCmd(cmd: String, dir: Option[String]): String = dir match {
     case None      => cmd.!!
     case Some(dir) => Process(cmd, new File(dir)).!!

@@ -13,7 +13,7 @@ import pprint.PPrinter.BlackWhite
 import spray.json._
 import DefaultJsonProtocol._
 
-import gr.dmst.aueb.cynthia.Utils.{readFromFile, getListOfFiles}
+import gr.dmst.aueb.cynthia.Utils.{readFromFile, getListOfFiles, deleteRecursively}
 import gr.dmst.aueb.cynthia.gen.SchemaGenerator
 import gr.dmst.aueb.cynthia.translators.SchemaTranslator
 import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
@@ -325,6 +325,10 @@ object Controller {
           }}
         // TODO set testSessions based on options.dotCynthia
         case Some("replay") => ???
+        case Some("clean") => {
+          deleteRecursively(new File(".cynthia"))
+          sys.exit(0)
+        }
         case _ => ???
       }
     Await.ready(

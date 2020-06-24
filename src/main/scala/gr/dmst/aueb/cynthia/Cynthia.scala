@@ -28,7 +28,6 @@ object Cynthia {
 
       // General options
       opt[Seq[String]]('o', "orms")
-        .required()
         .action((x, o) => o.copy(orms = x))
         .text("ORMs to differentially test")
         .validate(_.foldLeft (success) { (acc, x) => x match {
@@ -106,18 +105,27 @@ object Cynthia {
             else success
           }),
       )
+      cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) }
       checkConfig(x =>
         x.mode match {
           case Some("auto") =>
+            if (x.orms.isEmpty)
+              failure("You must give at least one orm with --orms option")
             if (x.dbs.length + x.orms.length < 3)
               failure(
                 "Number of database backends + number of ORMs must be greather than 2.")
             else
               success
           case Some("select") =>
+            if (x.orms.isEmpty)
+              failure("You must give at least one orm with --orms option")
             success
           case Some("replay") =>
+            if (x.orms.isEmpty)
+              failure("You must give at least one orm with --orms option")
             failure("Sub-command replay is not implemented")
+          case Some("clean") =>
+            success
           case _ =>
             failure("A sub-command is required.")
         }

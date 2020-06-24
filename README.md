@@ -120,7 +120,11 @@ java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar select -s exampl
 java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar select -s .cynthia/schemas/listing -a .cynthia/report/listing/mismatches/1/query.aql.json -o sqlalchemy,activerecord -d mysql
 ```
 
-### Replay
+### replay
+
+### clean
+
+Remove `.cynthia` directory
 
 ## Reproduce Django Bug
 
