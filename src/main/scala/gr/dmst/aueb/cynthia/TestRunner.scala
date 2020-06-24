@@ -135,7 +135,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         genQuery(schema, limit = options.nuqueries)
       case Some("generate")  =>
         genQuery(schema, limit = options.nuqueries)
-      case Some("select") =>
+      case Some("run") =>
         getQueriesFromDisk(options.aql)
       // TODO get queries from options.dotCynthia and use options.mismatches
       case Some("replay") => ???
@@ -360,7 +360,7 @@ object Controller {
               case Failure(e)          => println(e.getMessage)
             }
           }}
-        case Some("select") =>
+        case Some("run") =>
           List { Future {
             val dst = basenameWithoutExtension(options.sql)
             // If options.sql and dst are the same file then the direct copy

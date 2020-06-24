@@ -106,7 +106,7 @@ object Cynthia {
             }
           })
       )
-      cmd("select") action { (_, c) => c.copy(mode = Some("select")) } children(
+      cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")
           .required()
           .action((x, o) => o.copy(sql = x))
@@ -139,7 +139,7 @@ object Cynthia {
               success
           case Some("generate") =>
             success
-          case Some("select") =>
+          case Some("run") =>
             if (x.orms.isEmpty)
               failure("You must give at least one orm with --orms option")
             success

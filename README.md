@@ -67,12 +67,12 @@ This gonna take a while. Upon completion, an executable `jar` of
 
 ## Run Cynthia
 
-Cynthia CLI provides three sub-commands; auto, replay, and select.
+Cynthia CLI provides three sub-commands; auto, replay, and run.
 
 ```
 $ java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar --help
 cynthia 0.1
-Usage: cynthia [auto|replay|select] [options]
+Usage: cynthia [auto|replay|run] [options]
 
   -o, --orms <value>       ORMs to differentially test
   -d, --backends <value>   Database backends to store data (Default Value: sqlite)
@@ -88,7 +88,7 @@ Command: replay [options]
   -c, --cynthia <value>    .cynthia directory for replaying missmatches
   -m, --mismatches <value>
                            Mismatches to replay
-Command: select [options]
+Command: run [options]
 
   -s, --sql <value>        File with the sql script to generate and feed the Database
   -a, --aql <value>        A file with an AQL query or a directory with many AQL queries
@@ -105,7 +105,7 @@ using sqlite and mysql as backends.
 java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar auto -n 100 -s 2 -o activerecord,sqlalchemy -d mysql
 ```
 
-### select
+### run
 
 It runs cynthia using the queries provided by `-a` option on the schema provided
 by `-s` option. If `-a` is a directory then it must contains only `.aql.json`files
@@ -113,11 +113,11 @@ that cynthia will use to test the orms. `-s` option must provide a file
 with an sql script to generate and fill a database.
 
 ```
-java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar select -s examples/listing.sql -a examples/listing/ -o sqlalchemy,activerecord -d mysql
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar run -s examples/listing.sql -a examples/listing/ -o sqlalchemy,activerecord -d mysql
 ```
 
 ```
-java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar select -s .cynthia/schemas/listing -a .cynthia/report/listing/mismatches/1/query.aql.json -o sqlalchemy,activerecord -d mysql
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar run -s .cynthia/schemas/listing -a .cynthia/report/listing/mismatches/1/query.aql.json -o sqlalchemy,activerecord -d mysql
 ```
 
 ### replay
