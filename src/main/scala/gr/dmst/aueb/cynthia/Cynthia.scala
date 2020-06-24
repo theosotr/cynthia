@@ -138,7 +138,7 @@ object Cynthia {
             else
               success
           case Some("generate") =>
-            failure("Sub-command generate is not implemented")
+            success
           case Some("select") =>
             if (x.orms.isEmpty)
               failure("You must give at least one orm with --orms option")

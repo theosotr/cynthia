@@ -108,6 +108,7 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   val mismatchEnumerator = Stream.from(1).iterator
   val matchesEnumerator = Stream.from(1).iterator
+  val genEnumerator = Stream.from(1).iterator
 
   def genQuery(schema: Schema, limit: Int = 10) = {
     def _genQuery(i: Int): LazyList[Query] = {
@@ -131,6 +132,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   def getQueries(): Seq[Query] =
     options.mode match {
       case Some("auto")  =>
+        genQuery(schema, limit = options.nuqueries)
+      case Some("generate")  =>
         genQuery(schema, limit = options.nuqueries)
       case Some("select") =>
         getQueriesFromDisk(options.aql)
@@ -162,6 +165,14 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       i.toString)
     )
 
+  def getQueriesDir(i: Int) =
+    Utils.joinPaths(List(
+      Utils.getReportDir(),
+      schema.name,
+      "queries",
+      i.toString)
+    )
+
   def storeInvalid(q: Query, i: Int) = {
     val invDir = getInvalidQDir()
     new File(invDir).mkdirs
@@ -173,17 +184,30 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
 
   def storeResults(q: Query, results: Map[(String, String), Seq[Target]],
                    reportDir: String) = {
-    new File(reportDir).mkdirs
-    val queryFile = Utils.joinPaths(List(reportDir, "query.aql"))
-    val queryJsonFile = Utils.joinPaths(List(reportDir, "query.aql.json"))
-    Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
-    Utils.writeToFile(queryJsonFile, q.toJson.prettyPrint)
+    storeQueries(q, reportDir)
     results.foreach { case ((_, k), v) => v.foreach { x =>
         // FIXME: For debugging purposes only.
         s"cp -r ${x.orm.projectDir} $reportDir".!!
         val filename = s"${x.orm.ormName}_${x.db.getName}.out"
         Utils.writeToFile(Utils.joinPaths(List(reportDir, filename)), k)
       }
+    }
+  }
+
+  def storeQueries(q: Query, queriesDir: String) = {
+    new File(queriesDir).mkdirs
+    val queryFile = Utils.joinPaths(List(queriesDir, "query.aql"))
+    val queryJsonFile = Utils.joinPaths(List(queriesDir, "query.aql.json"))
+    Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
+    Utils.writeToFile(queryJsonFile, q.toJson.prettyPrint)
+  }
+
+  def generate() = {
+    println(s"Generating queries for ${schema.name}...")
+    getQueries().foreach { q =>
+      val qid = genEnumerator.next()
+      val queriesDir = getQueriesDir(qid)
+      storeQueries(q, queriesDir)
     }
   }
 
@@ -325,6 +349,14 @@ object Controller {
             Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
             TestRunnerCreator(options, s) match {
               case Success(testRunner) => testRunner.start()
+              case Failure(e)          => println(e.getMessage)
+            }
+          }}
+        case Some("generate") =>
+          List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
+            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
+            TestRunnerCreator(options, s) match {
+              case Success(testRunner) => testRunner.generate()
               case Failure(e)          => println(e.getMessage)
             }
           }}
