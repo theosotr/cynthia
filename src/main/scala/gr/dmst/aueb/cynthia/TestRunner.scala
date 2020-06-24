@@ -1,6 +1,7 @@
 package gr.dmst.aueb.cynthia
 
 import java.io.File
+import java.nio.file.{Paths, Files}
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -9,9 +10,13 @@ import scala.language.postfixOps
 import scala.sys.process._
 
 import pprint.PPrinter.BlackWhite
+import spray.json._
+import DefaultJsonProtocol._
 
+import gr.dmst.aueb.cynthia.Utils.{readFromFile, getListOfFiles}
 import gr.dmst.aueb.cynthia.gen.SchemaGenerator
 import gr.dmst.aueb.cynthia.translators.SchemaTranslator
+import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
 
 
 case class Target(orm: ORM, db: DB) {
@@ -112,12 +117,22 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     _genQuery(1)
   }
 
+  def getQueriesFromDisk(path: String) = {
+    def _getQuery(path: String): Query =
+      readFromFile(path).parseJson.convertTo[Query]
+    if (Files.isDirectory(Paths.get(path)))
+      // Revisit We want to return a LazyList
+      getListOfFiles(path).map(_getQuery(_))
+    else
+      LazyList(_getQuery(path))
+}
+
   def getQueries(): Seq[Query] =
     options.mode match {
       case Some("auto")  =>
         genQuery(schema, limit = options.nuqueries)
-      // TODO get query/queries from options.aql
-      case Some("select") => ???
+      case Some("select") =>
+        getQueriesFromDisk(options.aql)
       // TODO get queries from options.dotCynthia and use options.mismatches
       case Some("replay") => ???
       case _ => ??? // unreachable

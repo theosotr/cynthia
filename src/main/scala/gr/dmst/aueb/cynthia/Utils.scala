@@ -3,6 +3,7 @@ package gr.dmst.aueb.cynthia
 import java.io.{File, FileWriter, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
 import scala.reflect.io.Directory
+import scala.io.Source
 import scala.sys.process._
 
 
@@ -72,6 +73,16 @@ object Utils {
     val fw = new FileWriter(path, false)
     try { fw.write(str) }
     finally { fw.close() }
+  }
+
+  def readFromFile(path: String) = {
+    new String(Files.readAllBytes(Paths.get(path)))
+  }
+
+  def getListOfFiles(dir: String): List[String] = {
+    val file = new File(dir)
+    file.listFiles.filter(_.isFile)
+      .map(_.getPath).toList
   }
 
   def copyFile(src: String, dest: String) = {
