@@ -75,6 +75,8 @@ Usage: cynthia [auto|generate|replay|run|clean] [options]
   -o, --orms <value>       ORMs to differentially test
   -d, --backends <value>   Database backends to store data (Default Value: sqlite)
   -S, --store-matches      Save matches
+  --no-combined            Don't generate combined queries
+  -r, --records <value>    Number of records to generate for each table
 
 
   --help                   prints this usage text
@@ -82,10 +84,14 @@ Command: auto [options]
 
   -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
   -s, --schemas <value>    Number of schemas to generate (Default value: 1)
+  --no-combined            Don't generate combined queries
+  -r, --records <value>    Number of records to generate for each table
 Command: generate [options]
 
   -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
   -s, --schemas <value>    Number of schemas to generate (Default value: 1)
+  --no-combined            Don't generate combined queries
+  -r, --records <value>    Number of records to generate for each table
 Command: replay [options]
 
   -c, --cynthia <value>    cynthia directory for replaying missmatches (Default .cynthia)
