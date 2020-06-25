@@ -96,6 +96,12 @@ object Utils {
       .map(_.getPath).toList
   }
 
+  def getListOfDirs(dir: String): List[String] = {
+    val file = new File(dir)
+    file.listFiles.filter(_.isDirectory)
+      .map(_.getPath).toList
+  }
+
   def copyFile(src: String, dest: String) = {
     var inputChannel = new FileInputStream(src).getChannel();
     var outputChannel = new FileOutputStream(dest).getChannel();
