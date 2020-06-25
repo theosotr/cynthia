@@ -127,9 +127,28 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       getListOfFiles(path).map(_getQuery(_))
     else
       LazyList(_getQuery(path))
-}
+  }
 
-  def getQueries(): Seq[Query] =
+  def getQueriesFromCynthia() = {
+    def _getQuery(path: String): Query =
+      readFromFile(path).parseJson.convertTo[Query]
+    // Revisit We want to return a LazyList
+    var queries = Utils.getListOfDirs(getMismatchDir())
+    if (options.all) {
+      queries = queries ++ Utils.getListOfDirs(getMatchDir())
+    }
+    queries map (x => {
+      val queryJsonFile = Utils.joinPaths(List(x, "query.aql.json"))
+      val query = _getQuery(queryJsonFile)
+      // Remove old report
+      deleteRecursively(new File(x))
+      query
+    })
+  }
+
+  def getQueries(): Seq[Query] = {
+    def _getQuery(path: String): Query =
+      readFromFile(path).parseJson.convertTo[Query]
     options.mode match {
       case Some("auto")  =>
         genQuery(schema, limit = options.nuqueries)
@@ -137,10 +156,12 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         genQuery(schema, limit = options.nuqueries)
       case Some("run") =>
         getQueriesFromDisk(options.aql)
-      // TODO get queries from options.dotCynthia and use options.mismatches
-      case Some("replay") => ???
+      case Some("replay") => {
+        getQueriesFromCynthia()
+      }
       case _ => ??? // unreachable
     }
+  }
 
   def getMismatchesDir(i: Int) =
     Utils.joinPaths(List(
@@ -148,6 +169,13 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       schema.name,
       "mismatches",
       i.toString)
+    )
+
+  def getMismatchDir() =
+    Utils.joinPaths(List(
+      Utils.getReportDir(),
+      schema.name,
+      "mismatches")
     )
 
   def getInvalidQDir() =
@@ -163,6 +191,13 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       schema.name,
       "matches",
       i.toString)
+    )
+
+  def getMatchDir() =
+    Utils.joinPaths(List(
+      Utils.getReportDir(),
+      schema.name,
+      "matches")
     )
 
   def getQueriesDir(i: Int) =
@@ -373,8 +408,23 @@ object Controller {
                 case Failure(e)          => println(e.getMessage)
               }
           }}
-        // TODO set testSessions based on options.dotCynthia
-        case Some("replay") => ???
+        case Some("replay") =>
+          if (!options.schema.isEmpty)
+            List { Future {
+              val s = Schema(options.schema, Map())
+              TestRunnerCreator(options, s) match {
+                  case Success(testRunner) => testRunner.start()
+                  case Failure(e)          => println(e.getMessage)
+                }
+            }}
+          else
+            Utils.getListOfFiles(options.dotCynthia + "/schemas") map (_.split('/').last) map { s => Future {
+              val schema = Schema(s, Map())
+              TestRunnerCreator(options, schema) match {
+                  case Success(testRunner) => testRunner.start()
+                  case Failure(e)          => println(e.getMessage)
+                }
+            }}
         case Some("clean") => {
           deleteRecursively(new File(".cynthia"))
           sys.exit(0)

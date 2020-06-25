@@ -13,8 +13,10 @@ case class Options (
   dbs: Seq[String] = Seq("sqlite"),
   sql: String = "",
   aql: String = "",
-  dotCynthia: String = "",
+  dotCynthia: String = ".cynthia",
+  schema: String = "",
   storeMatches: Boolean = false,
+  all: Boolean = false,
   mismatches: Seq[Int] = Seq()
 )
 
@@ -90,14 +92,14 @@ object Cynthia {
       )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
-          .required()
           .action((x, o) => o.copy(dotCynthia = x))
-          .text(".cynthia directory for replaying missmatches")
-          .validate(x => {
-            if (!Files.exists(Paths.get(x)))
-              failure("Directory " + x + " does not exist")
-            else success
-          }),
+          .text("cynthia directory for replaying missmatches (Default .cynthia)"),
+        opt[String]('s', "schema")
+          .action((x, o) => o.copy(schema = x))
+          .text("Schema to replay"),
+        opt[Unit]('a', "all")
+          .action((x, o) => o.copy(all = true))
+          .text("Replay all queries. Always use it with --store-matches to not remove matches queries"),
         opt[Seq[Int]]('m', "mismatches")
           .action((x, o) => o.copy(mismatches = x))
           .text("Mismatches to replay")
@@ -132,7 +134,7 @@ object Cynthia {
           case Some("auto") =>
             if (x.orms.isEmpty)
               failure("You must give at least one orm with --orms option")
-            if (x.dbs.length + x.orms.length < 3)
+            else if (x.dbs.length + x.orms.length < 3)
               failure(
                 "Number of database backends + number of ORMs must be greather than 2.")
             else
@@ -142,11 +144,22 @@ object Cynthia {
           case Some("run") =>
             if (x.orms.isEmpty)
               failure("You must give at least one orm with --orms option")
-            success
+            else
+              success
           case Some("replay") =>
-            if (x.orms.isEmpty)
+            if (!Files.exists(Paths.get(x.dotCynthia)))
+              failure("Directory " + x.dotCynthia + " does not exist")
+            else if (!x.schema.isEmpty && !Files.exists(Paths.get(x.dotCynthia + "/schemas/" + x.schema)))
+              failure("Schema " + x.schema + " does not exist")
+            else if (x.schema.isEmpty && !x.mismatches.isEmpty)
+              failure("You cannot use --mismathces option without --schema option")
+            else if (x.orms.isEmpty)
               failure("You must give at least one orm with --orms option")
-            failure("Sub-command replay is not implemented")
+            else if (x.dbs.length + x.orms.length < 3)
+              failure(
+                "Number of database backends + number of ORMs must be greather than 2.")
+            else
+              success
           case Some("clean") =>
             success
           case _ =>
