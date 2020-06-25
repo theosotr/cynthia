@@ -134,6 +134,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       readFromFile(path).parseJson.convertTo[Query]
     // Revisit We want to return a LazyList
     var queries = Utils.getListOfDirs(getMismatchDir())
+    if (!options.mismatches.isEmpty)
+      queries = queries.filter(x => options.mismatches.contains(x.split('/').last.toInt))
     if (options.all) {
       queries = queries ++ Utils.getListOfDirs(getMatchDir())
     }

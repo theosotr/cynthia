@@ -152,7 +152,7 @@ object Cynthia {
             else if (!x.schema.isEmpty && !Files.exists(Paths.get(x.dotCynthia + "/schemas/" + x.schema)))
               failure("Schema " + x.schema + " does not exist")
             else if (x.schema.isEmpty && !x.mismatches.isEmpty)
-              failure("You cannot use --mismathces option without --schema option")
+              failure("You cannot use --mismatches option without --schema option")
             else if (x.orms.isEmpty)
               failure("You must give at least one orm with --orms option")
             else if (x.dbs.length + x.orms.length < 3)
