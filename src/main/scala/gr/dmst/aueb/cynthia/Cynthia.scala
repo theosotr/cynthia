@@ -68,10 +68,6 @@ object Cynthia {
           else success
         })
 
-      opt[Unit]('S', "store-matches")
-        .action((x, o) => o.copy(storeMatches = true))
-        .text("Save matches")
-
       note("\n")
       help("help") text("prints this usage text")
 
@@ -91,6 +87,16 @@ object Cynthia {
             if (x < 1) failure("You must generate at least one schema")
             else success
           }),
+        opt[Unit]("no-combined")
+          .action((_, c) => c.copy(noCombined = true))
+          .text("Don't generate combined queries"),
+        opt[Int]('r', "records")
+          .action((x, o) => o.copy(records = x))
+          .text("Number of records to generate for each table")
+          .validate(x => {
+            if (x < 1) failure("You must generate at least one record")
+            else success
+          })
       )
       cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
         opt[Int]('n', "queries")
@@ -107,6 +113,16 @@ object Cynthia {
             if (x < 1) failure("You must generate at least one schema")
             else success
           }),
+        opt[Unit]("no-combined")
+          .action((_, c) => c.copy(noCombined = true))
+          .text("Don't generate combined queries"),
+        opt[Int]('r', "records")
+          .action((x, o) => o.copy(records = x))
+          .text("Number of records to generate for each table")
+          .validate(x => {
+            if (x < 1) failure("You must generate at least one record")
+            else success
+          })
       )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
