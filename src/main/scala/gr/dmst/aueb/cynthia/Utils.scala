@@ -37,12 +37,12 @@ object Utils {
   def exists(file: String) =
     new File(file).exists
 
-  def listFiles(dir: String): Option[Array[String]] = {
+  def listFiles(dir: String, ext: String = ".sql"): Option[Array[String]] = {
     val file = new File(dir)
     if (file.isDirectory)
       Some (
         file.listFiles
-          .filter(x => x.getName().endsWith(".sql"))
+          .filter(x => x.getName().endsWith(ext))
           .map (x => x.getName())
       )
     else None

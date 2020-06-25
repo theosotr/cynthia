@@ -134,19 +134,31 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     def _getQuery(path: String): Query =
       readFromFile(path).parseJson.convertTo[Query]
     // Revisit We want to return a LazyList
-    var queries = Utils.getListOfDirs(getMismatchDir())
+    var dirs = Utils.getListOfDirs(getMismatchDir())
     if (!options.mismatches.isEmpty)
-      queries = queries.filter(x => options.mismatches.contains(x.split('/').last.toInt))
+      dirs = dirs.filter(x => options.mismatches.contains(x.split('/').last.toInt))
+    var invalidQueries = Seq[Query]()
     if (options.all) {
-      queries = queries ++ Utils.getListOfDirs(getMatchDir())
+      dirs = dirs ++ Utils.getListOfDirs(getMatchDir())
+      val invalidQDir = getInvalidQDir
+      invalidQueries = Utils.listFiles(invalidQDir, ".aql") match {
+        case Some(x) => x.map(q => {
+          val queryJsonFile = Utils.joinPaths(List(invalidQDir, q + ".json"))
+          val queryFile = Utils.joinPaths(List(invalidQDir, q))
+          val query = _getQuery(queryJsonFile)
+          query
+        })
+        case _ => Seq[Query]()
+      }
     }
-    queries map (x => {
+    var queries = dirs map (x => {
       val queryJsonFile = Utils.joinPaths(List(x, "query.aql.json"))
       val query = _getQuery(queryJsonFile)
       // Remove old report
       deleteRecursively(new File(x))
       query
     })
+    queries ++ invalidQueries
   }
 
   def getQueries(): Seq[Query] = {
