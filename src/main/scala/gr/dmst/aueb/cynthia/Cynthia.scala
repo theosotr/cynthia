@@ -1,8 +1,8 @@
 package gr.dmst.aueb.cynthia
 
+import java.nio.file.{Paths, Files}
 import scala.util.{Success, Failure}
 import scopt.OParser
-import java.nio.file.{Paths, Files}
 
 
 case class Options (
