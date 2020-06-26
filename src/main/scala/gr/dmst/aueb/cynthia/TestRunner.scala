@@ -111,6 +111,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   val matchesEnumerator = Stream.from(1).iterator
   val genEnumerator = Stream.from(1).iterator
 
+  // test and generate modes
   def genQuery(schema: Schema, limit: Int = 10) = {
     def _genQuery(i: Int): LazyList[Query] = {
       val q = QueryGenerator(schema, options.noCombined)
@@ -120,6 +121,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     _genQuery(1)
   }
 
+  // run mode
   def getQueriesFromDisk(path: String) = {
     if (Files.isDirectory(Paths.get(path)))
       // Revisit We want to return a LazyList
@@ -128,26 +130,38 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       LazyList(Utils.loadQuery(path))
   }
 
+  // replay mode
   def getQueriesFromCynthia() = {
     // Revisit We want to return a LazyList
-    var dirs = Utils.getListOfDirs(getMismatchDir())
-    if (!options.mismatches.isEmpty)
-      dirs = dirs.filter(x => options.mismatches.contains(x.split('/').last.toInt))
-    var invalidQueries = Seq[Query]()
-    if (options.all) {
-      dirs = dirs ++ Utils.getListOfDirs(getMatchDir())
-      val invalidQDir = getInvalidQDir
-      invalidQueries = Utils.listFiles(invalidQDir, ".aql") match {
-        case Some(x) => x.map(q => {
-          val queryJsonFile = Utils.joinPaths(List(invalidQDir, q + ".json"))
-          val queryFile = Utils.joinPaths(List(invalidQDir, q))
-          val query = Utils.loadQuery(queryJsonFile)
-          query
-        })
-        case _ => Seq[Query]()
+    val dirs =
+      if (options.all)
+        Utils.getListOfDirs(getMismatchDir) ++ Utils.getListOfDirs(getMatchDir())
+      // We cannot have options.all and options.mismatches
+      else
+        Utils.getListOfDirs(getMismatchDir) filter { x =>
+          if (options.mismatches.isEmpty) true
+          else options.mismatches.contains(x.split('/').last.toInt)
+        }
+    // Get invalid queries
+    val invalidQueries: Seq[Query] =
+      if (options.all) {
+        val invalidQDir = getInvalidQDir
+        Utils.listFiles(invalidQDir, ".aql") match {
+          case Some(x) => x.map(q => {
+            val queryJsonFile = Utils.joinPaths(List(invalidQDir, q + ".json"))
+            val queryFile = Utils.joinPaths(List(invalidQDir, q))
+            val query = Utils.loadQuery(queryJsonFile)
+            deleteRecursively(new File(queryFile))
+            deleteRecursively(new File(queryJsonFile))
+            query
+          })
+          case _ => Seq[Query]()
+        }
+      } else {
+        Seq[Query]()
       }
-    }
-    var queries = dirs map (x => {
+    // Get queries from mismatches and probably matches
+    val queries = dirs map (x => {
       val queryJsonFile = Utils.joinPaths(List(x, "query.aql.json"))
       val query = Utils.loadQuery(queryJsonFile)
       // Remove old report
