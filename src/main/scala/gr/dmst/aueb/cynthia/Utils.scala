@@ -104,11 +104,11 @@ object Utils {
   }
 
   def copyFile(src: String, dest: String) = {
-    val inputChannel = new FileInputStream(src).getChannel();
-    val outputChannel = new FileOutputStream(dest).getChannel();
-    outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
-    inputChannel.close();
-    outputChannel.close();
+    val inputChannel = new FileInputStream(src).getChannel()
+    val outputChannel = new FileOutputStream(dest).getChannel()
+    outputChannel.transferFrom(inputChannel, 0, inputChannel.size())
+    inputChannel.close()
+    outputChannel.close()
   }
 
   def getWorkdir() =
