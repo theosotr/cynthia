@@ -72,7 +72,7 @@ object Cynthia {
       help("help") text("prints this usage text")
 
       // Sub-commands
-      cmd("auto") action { (_, c) => c.copy(mode = Some("auto")) } children(
+      cmd("test") action { (_, c) => c.copy(mode = Some("test")) } children(
         opt[Int]('n', "queries")
           .action((x, o) => o.copy(nuqueries = x))
           .text("Number of queries to generate for each schema (Default value: 200)")
@@ -165,7 +165,7 @@ object Cynthia {
       cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) }
       checkConfig(x =>
         x.mode match {
-          case Some("auto") =>
+          case Some("test") =>
             if (x.orms.isEmpty)
               failure("You must give at least one orm with --orms option")
             else if (x.dbs.length + x.orms.length < 3)

@@ -165,7 +165,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     def _getQuery(path: String): Query =
       readFromFile(path).parseJson.convertTo[Query]
     options.mode match {
-      case Some("auto")  =>
+      case Some("test")  =>
         genQuery(schema, limit = options.nuqueries)
       case Some("generate")  =>
         genQuery(schema, limit = options.nuqueries)
@@ -394,7 +394,7 @@ object Controller {
     Utils.setWorkDir()
     val testSessions: List[Future[Unit]] =
       options.mode match {
-        case Some("auto") =>
+        case Some("test") =>
           List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
             Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s, options.records))
             TestRunnerCreator(options, s) match {

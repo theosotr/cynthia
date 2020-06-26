@@ -67,10 +67,10 @@ This gonna take a while. Upon completion, an executable `jar` of
 
 ## Run Cynthia
 
-Cynthia CLI provides three sub-commands; auto, replay, and run.
+Cynthia CLI provides three sub-commands; test, replay, and run.
 
 ```
-Usage: cynthia [auto|generate|replay|run|clean] [options]
+Usage: cynthia [test|generate|replay|run|clean] [options]
 
   -o, --orms <value>       ORMs to differentially test
   -d, --backends <value>   Database backends to store data (Default Value: sqlite)
@@ -80,7 +80,7 @@ Usage: cynthia [auto|generate|replay|run|clean] [options]
 
 
   --help                   prints this usage text
-Command: auto [options]
+Command: test [options]
 
   -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
   -s, --schemas <value>    Number of schemas to generate (Default value: 1)
@@ -106,14 +106,14 @@ Command: run [options]
 Command: clean
 ```
 
-### auto
+### test
 
 Generate AQL queries and test orms.
 
 * Example
 
 ```
-java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar auto -n 100 -s 2 -o activerecord,sqlalchemy -d mysql
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar test -n 100 -s 2 -o activerecord,sqlalchemy -d mysql
 ```
 
 ### run
