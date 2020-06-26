@@ -135,7 +135,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     // Revisit We want to return a LazyList
     val dirs =
       if (options.all)
-        Utils.getListOfDirs(getMismatchDir) ++ Utils.getListOfDirs(getMatchDir())
+        Utils.getListOfDirs(getMismatchDir) ++ Utils.getListOfDirs(getMatchDir()) ++ Utils.getListOfDirs(getQDir())
       // We cannot have options.all and options.mismatches
       else
         Utils.getListOfDirs(getMismatchDir) filter { x =>
@@ -224,6 +224,13 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       Utils.getReportDir(),
       schema.name,
       "matches")
+    )
+
+  def getQDir() =
+    Utils.joinPaths(List(
+      Utils.getReportDir(),
+      schema.name,
+      "queries")
     )
 
   def getQueriesDir(i: Int) =
