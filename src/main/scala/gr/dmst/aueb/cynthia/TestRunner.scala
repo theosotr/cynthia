@@ -359,6 +359,12 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
 
 
 object Controller {
+  def _run(options: Options, s: Schema, x: TestRunner => Unit) =
+    TestRunnerCreator(options, s) match {
+      case Success(testRunner) => x(testRunner) // testRunner.start
+      case Failure(e)          => println(e.getMessage)
+    }
+
 
   def apply(options: Options) = {
     def isEmpty(x: String) = x == null || x.isEmpty
@@ -370,18 +376,12 @@ object Controller {
         case Some("test") =>
           List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
             Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s, options.records))
-            TestRunnerCreator(options, s) match {
-              case Success(testRunner) => testRunner.start()
-              case Failure(e)          => println(e.getMessage)
-            }
+            _run(options, s, {_.start})
           }}
         case Some("generate") =>
           List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
             Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s, options.records))
-            TestRunnerCreator(options, s) match {
-              case Success(testRunner) => testRunner.generate()
-              case Failure(e)          => println(e.getMessage)
-            }
+            _run(options, s, {_.generate})
           }}
         case Some("run") =>
           List { Future {
@@ -399,20 +399,14 @@ object Controller {
             Utils.copyFile(sql, "/tmp/cynthia_db")
             Utils.copyFile("/tmp/cynthia_db", Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
             val s = Schema(dst, Map())
-            TestRunnerCreator(options, s) match {
-                case Success(testRunner) => testRunner.start()
-                case Failure(e)          => println(e.getMessage)
-              }
+            _run(options, s, {_.start})
           }}
         case Some("replay") =>
           options.schema match {
             case Some(x) => {
               List { Future {
                 val s = Schema(x, Map())
-                TestRunnerCreator(options, s) match {
-                    case Success(testRunner) => testRunner.start()
-                    case Failure(e)          => println(e.getMessage)
-                  }
+                _run(options, s, {_.start})
               }}
             }
             case None => {
@@ -420,10 +414,7 @@ object Controller {
             }
             Utils.getListOfFiles(options.dotCynthia + "/schemas") map (_.split('/').last) map { s => Future {
               val schema = Schema(s, Map())
-              TestRunnerCreator(options, schema) match {
-                  case Success(testRunner) => testRunner.start()
-                  case Failure(e)          => println(e.getMessage)
-                }
+              _run(options, schema, {_.start})
             }}
           }
         case Some("clean") => {
