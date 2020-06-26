@@ -75,20 +75,20 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
         case JsObject(fields) =>
           fields("FieldExpr") match {
             case JsObject(fields) =>
-              fields.keys.toList match {
-                case "F" :: Nil =>
+              fields.keys.toList.head match {
+                case "F" =>
                   fields("F") match {
                     case JsObject(f) =>
                       F(f("f").convertTo[String])
                     case _ => deserializationError("F expected")
                   }
-                case "Constant" :: Nil =>
+                case "Constant" =>
                   fields("Constant") match {
                     case JsObject(constant) =>
                       Constant(constant("v").convertTo[String], constant("vt").convertTo[ConstantType])
                     case _ => deserializationError("Constant expected")
                   }
-                case "Count" :: Nil =>
+                case "Count" =>
                   fields("Count") match {
                     case JsObject(count) =>
                       if (count.contains("f"))
@@ -97,49 +97,49 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
                         Count(None)
                     case _ => deserializationError("Count expected")
                   }
-                case "Sum" :: Nil =>
+                case "Sum" =>
                   fields("Sum") match {
                     case JsObject(sum) =>
                         Sum(sum("f").convertTo[FieldExpr])
                     case _ => deserializationError("Sum expected")
                   }
-                case "Avg" :: Nil =>
+                case "Avg" =>
                   fields("Avg") match {
                     case JsObject(avg) =>
                         Avg(avg("f").convertTo[FieldExpr])
                     case _ => deserializationError("Avg expected")
                   }
-                case "Min" :: Nil =>
+                case "Min" =>
                   fields("Min") match {
                     case JsObject(min) =>
                         Min(min("f").convertTo[FieldExpr])
                     case _ => deserializationError("Min expected")
                   }
-                case "Max" :: Nil =>
+                case "Max" =>
                   fields("Max") match {
                     case JsObject(max) =>
                         Max(max("f").convertTo[FieldExpr])
                     case _ => deserializationError("Max expected")
                   }
-                case "Add" :: Nil =>
+                case "Add" =>
                   fields("Add") match {
                     case JsObject(add) =>
                         Add(add("f1").convertTo[FieldExpr], add("f2").convertTo[FieldExpr])
                     case _ => deserializationError("Add expected")
                   }
-                case "Sub" :: Nil =>
+                case "Sub" =>
                   fields("Sub") match {
                     case JsObject(sub) =>
                         Sub(sub("f1").convertTo[FieldExpr], sub("f2").convertTo[FieldExpr])
                     case _ => deserializationError("Sub expected")
                   }
-                case "Mul" :: Nil =>
+                case "Mul" =>
                   fields("Mul") match {
                     case JsObject(mul) =>
                         Mul(mul("f1").convertTo[FieldExpr], mul("f2").convertTo[FieldExpr])
                     case _ => deserializationError("Mul expected")
                   }
-                case "Div" :: Nil =>
+                case "Div" =>
                   fields("Div") match {
                     case JsObject(div) =>
                         Div(div("f1").convertTo[FieldExpr], div("f2").convertTo[FieldExpr])
@@ -174,56 +174,56 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
         case JsObject(fields) =>
           fields("Predicate") match {
             case JsObject(fields) =>
-              fields.keys.toList match {
-                case "Eq" :: Nil =>
+              fields.keys.toList.head match {
+                case "Eq" =>
                   fields("Eq") match {
                     case JsObject(values) =>
                       Eq(values("k").convertTo[String], values("f").convertTo[FieldExpr])
                     case _ => deserializationError("Eq expected")
                   }
-                case "Gt" :: Nil =>
+                case "Gt" =>
                   fields("Gt") match {
                     case JsObject(values) =>
                       Gt(values("k").convertTo[String], values("f").convertTo[FieldExpr])
                     case _ => deserializationError("Gt expected")
                   }
-                case "Lt" :: Nil =>
+                case "Lt" =>
                   fields("Lt") match {
                     case JsObject(values) =>
                       Lt(values("k").convertTo[String], values("f").convertTo[FieldExpr])
                     case _ => deserializationError("Lt expected")
                   }
-                case "Gte" :: Nil =>
+                case "Gte" =>
                   fields("Gte") match {
                     case JsObject(values) =>
                       Gte(values("k").convertTo[String], values("f").convertTo[FieldExpr])
                     case _ => deserializationError("Gte expected")
                   }
-                case "Lte" :: Nil =>
+                case "Lte" =>
                   fields("Lte") match {
                     case JsObject(values) =>
                       Lte(values("k").convertTo[String], values("f").convertTo[FieldExpr])
                     case _ => deserializationError("Lte expected")
                   }
-                case "Contains" :: Nil =>
+                case "Contains" =>
                   fields("Contains") match {
                     case JsObject(values) =>
                       Contains(values("k").convertTo[String], values("f").convertTo[FieldExpr])
                     case _ => deserializationError("Contains expected")
                   }
-                case "And" :: Nil =>
+                case "And" =>
                   fields("And") match {
                     case JsObject(values) =>
                       And(values("p1").convertTo[Predicate], values("p2").convertTo[Predicate])
                     case _ => deserializationError("And expected")
                   }
-                case "Or" :: Nil =>
+                case "Or" =>
                   fields("Or") match {
                     case JsObject(values) =>
                       Or(values("p1").convertTo[Predicate], values("p2").convertTo[Predicate])
                     case _ => deserializationError("Or expected")
                   }
-                case "Not" :: Nil =>
+                case "Not" =>
                   fields("Not") match {
                     case JsObject(values) =>
                       Not(values("p").convertTo[Predicate])
@@ -251,14 +251,14 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
         case JsObject(fields) =>
           fields("Operation") match {
             case JsObject(fields) =>
-              fields.keys.toList match {
-                case "Filter" :: Nil =>
+              fields.keys.toList.head match {
+                case "Filter" =>
                   fields("Filter") match {
                     case JsObject(values) =>
                       Filter(values("p").convertTo[Predicate])
                     case _ => deserializationError("Filter expected")
                   }
-                case "Sort" :: Nil =>
+                case "Sort" =>
                   fields("Sort") match {
                     case JsObject(values) =>
                       Sort(values("s").convertTo[Seq[(String, Order)]])
@@ -312,26 +312,26 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
         case JsObject(fields) =>
           fields("QuerySet") match {
             case JsObject(fields) =>
-              fields.keys.toList match {
-                case "New" :: Nil =>
+              fields.keys.toList.head match {
+                case "New" =>
                   fields("New") match {
                     case JsObject(values) =>
                       New(values("m").convertTo[String], values("f").convertTo[Seq[FieldDecl]])
                     case _ => deserializationError("New expected")
                   }
-                case "Apply" :: Nil =>
+                case "Apply" =>
                   fields("Apply") match {
                     case JsObject(values) =>
                       Apply(values("op").convertTo[Operation], values("q").convertTo[QuerySet])
                     case _ => deserializationError("Apply expected")
                   }
-                case "Union" :: Nil =>
+                case "Union" =>
                   fields("Union") match {
                     case JsObject(values) =>
                       Union(values("q1").convertTo[QuerySet], values("q2").convertTo[QuerySet])
                     case _ => deserializationError("Union expected")
                   }
-                case "Intersect" :: Nil =>
+                case "Intersect" =>
                   fields("Intersect") match {
                     case JsObject(values) =>
                       Intersect(values("q1").convertTo[QuerySet], values("q2").convertTo[QuerySet])
@@ -361,14 +361,14 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
         case JsObject(fields) =>
           fields("Query") match {
             case JsObject(fields) =>
-              fields.keys.toList match {
-                case "FirstRes" :: Nil =>
+              fields.keys.toList.head match {
+                case "FirstRes" =>
                   fields("FirstRes") match {
                     case JsObject(values) =>
                       FirstRes(values("qs").convertTo[QuerySet])
                     case _ => deserializationError("FirstRes expected")
                   }
-                case "SubsetRes" :: Nil =>
+                case "SubsetRes" =>
                   fields("SubsetRes") match {
                     case JsObject(values) =>
                       if (values.contains("limit"))
@@ -377,13 +377,13 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
                         SubsetRes(values("offset").convertTo[Int], None, values("qs").convertTo[QuerySet])
                     case _ => deserializationError("SubsetRes expected")
                   }
-                case "SetRes" :: Nil =>
+                case "SetRes" =>
                   fields("SetRes") match {
                     case JsObject(values) =>
                       SetRes(values("qs").convertTo[QuerySet])
                     case _ => deserializationError("SetRes expected")
                   }
-                case "AggrRes" :: Nil =>
+                case "AggrRes" =>
                   fields("AggrRes") match {
                     case JsObject(values) =>
                       AggrRes(values("aggrs").convertTo[Seq[FieldDecl]], values("qs").convertTo[QuerySet])
