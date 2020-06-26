@@ -183,7 +183,7 @@ object Cynthia {
           case Some("replay") =>
             if (!Files.exists(Paths.get(x.dotCynthia)))
               failure("Directory " + x.dotCynthia + " does not exist")
-            else if (!x.schema.isEmpty && !Files.exists(Paths.get(x.dotCynthia + "/schemas/" + x.schema)))
+            else if (!x.schema.isEmpty && !Files.exists(Paths.get(Utils.joinPaths(List(x.dotCynthia, "schema", x.schema.get)))))
               failure("Schema " + x.schema + " does not exist")
             else if (x.schema.isEmpty && !x.mismatches.isEmpty)
               failure("You cannot use --mismatches option without --schema option")
