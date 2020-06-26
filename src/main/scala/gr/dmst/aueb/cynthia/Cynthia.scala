@@ -32,44 +32,49 @@ object Cynthia {
       head("cynthia", "0.1")
 
       // General options
-      opt[Seq[String]]('o', "orms")
-        .action((x, o) => o.copy(orms = x))
-        .text("ORMs to differentially test")
-        .validate(_.foldLeft (success) { (acc, x) => x match {
-            case "django"  | "sqlalchemy" | "sequelize"
-            | "peewee" | "activerecord" => acc
-            case _  => failure("ORM '" + x + "' is not supported")
-          }
-        })
+      def ormsOption() =
+        opt[Seq[String]]('o', "orms")
+          .required
+          .action((x, o) => o.copy(orms = x))
+          .text("ORMs to differentially test")
+          .validate(_.foldLeft (success) { (acc, x) => x match {
+              case "django"  | "sqlalchemy" | "sequelize"
+              | "peewee" | "activerecord" => acc
+              case _  => failure("ORM '" + x + "' is not supported")
+            }
+          })
 
-      opt[Seq[String]]('d', "backends")
-        .action((x, o) => o.copy(dbs = o.dbs ++ x))
-        .text("Database backends to store data (Default Value: sqlite)")
-        .validate(_.foldLeft (success) { (acc, x) => x match {
-            case "mysql" | "postgres" => acc
-            case "sqlite"             => failure ("SQLite is used by default")
-            case _                    => failure ("Database backend '" + x + "' is not supported")
-          }
-        })
+      def backendsOption() =
+        opt[Seq[String]]('d', "backends")
+          .action((x, o) => o.copy(dbs = o.dbs ++ x))
+          .text("Database backends to store data (Default Value: sqlite)")
+          .validate(_.foldLeft (success) { (acc, x) => x match {
+              case "mysql" | "postgres" => acc
+              case "sqlite"             => failure ("SQLite is used by default")
+              case _                    => failure ("Database backend '" + x + "' is not supported")
+            }
+          })
 
-      opt[Unit]('S', "store-matches")
-        .action((x, o) => o.copy(storeMatches = true))
-        .text("Save matches")
+      def storeMatchesOption() =
+        opt[Unit]('S', "store-matches")
+          .action((x, o) => o.copy(storeMatches = true))
+          .text("Save matches")
 
-      opt[Unit]("no-combined")
-        .action((_, c) => c.copy(noCombined = true))
-        .text("Don't generate combined queries")
+      def noCombineOption() =
+        opt[Unit]("no-combined")
+          .action((_, c) => c.copy(noCombined = true))
+          .text("Don't generate combined queries")
 
-      opt[Int]('r', "records")
-        .action((x, o) => o.copy(records = x))
-        .text("Number of records to generate for each table")
-        .validate(x => {
-          if (x < 1) failure("You must generate at least one record")
-          else success
-        })
+      def recordsOption() =
+        opt[Int]('r', "records")
+          .action((x, o) => o.copy(records = x))
+          .text("Number of records to generate for each table")
+          .validate(x => {
+            if (x < 1) failure("You must generate at least one record")
+            else success
+          })
 
       note("\n")
-      help("help") text("prints this usage text")
 
       // Sub-commands
       cmd("test") action { (_, c) => c.copy(mode = Some("test")) } children(
@@ -87,16 +92,11 @@ object Cynthia {
             if (x < 1) failure("You must generate at least one schema")
             else success
           }),
-        opt[Unit]("no-combined")
-          .action((_, c) => c.copy(noCombined = true))
-          .text("Don't generate combined queries"),
-        opt[Int]('r', "records")
-          .action((x, o) => o.copy(records = x))
-          .text("Number of records to generate for each table")
-          .validate(x => {
-            if (x < 1) failure("You must generate at least one record")
-            else success
-          })
+        ormsOption(),
+        backendsOption(),
+        storeMatchesOption(),
+        noCombineOption(),
+        recordsOption()
       )
       cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
         opt[Int]('n', "queries")
@@ -113,16 +113,8 @@ object Cynthia {
             if (x < 1) failure("You must generate at least one schema")
             else success
           }),
-        opt[Unit]("no-combined")
-          .action((_, c) => c.copy(noCombined = true))
-          .text("Don't generate combined queries"),
-        opt[Int]('r', "records")
-          .action((x, o) => o.copy(records = x))
-          .text("Number of records to generate for each table")
-          .validate(x => {
-            if (x < 1) failure("You must generate at least one record")
-            else success
-          })
+        noCombineOption(),
+        recordsOption()
       )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
@@ -140,7 +132,10 @@ object Cynthia {
           .validate(_.foldLeft (success) { (acc, x) => x match {
               case _ => acc
             }
-          })
+          }),
+        ormsOption(),
+        backendsOption(),
+        storeMatchesOption()
       )
       cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")
@@ -161,14 +156,15 @@ object Cynthia {
               failure("File or directory " + x + " does not exist")
             else success
           }),
+          ormsOption(),
+          backendsOption(),
+          storeMatchesOption()
       )
       cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) }
       checkConfig(x =>
         x.mode match {
           case Some("test") =>
-            if (x.orms.isEmpty)
-              failure("You must give at least one orm with --orms option")
-            else if (x.dbs.length + x.orms.length < 3)
+            if (x.dbs.length + x.orms.length < 3)
               failure(
                 "Number of database backends + number of ORMs must be greather than 2.")
             else
@@ -176,9 +172,6 @@ object Cynthia {
           case Some("generate") =>
             success
           case Some("run") =>
-            if (x.orms.isEmpty)
-              failure("You must give at least one orm with --orms option")
-            else
               success
           case Some("replay") =>
             if (!Files.exists(Paths.get(x.dotCynthia)))
@@ -187,8 +180,6 @@ object Cynthia {
               failure("Schema " + x.schema + " does not exist")
             else if (x.schema.isEmpty && !x.mismatches.isEmpty)
               failure("You cannot use --mismatches option without --schema option")
-            else if (x.orms.isEmpty)
-              failure("You must give at least one orm with --orms option")
             else if (x.dbs.length + x.orms.length < 3)
               failure(
                 "Number of database backends + number of ORMs must be greather than 2.")
@@ -205,7 +196,7 @@ object Cynthia {
     cliParser.parse(args, Options()) map { options =>
       Controller(options)
     } getOrElse {
-      println("Wrong arguments")
+      // Wrong arguments
     }
 
   }
