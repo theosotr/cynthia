@@ -121,18 +121,14 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   }
 
   def getQueriesFromDisk(path: String) = {
-    def _getQuery(path: String): Query =
-      readFromFile(path).parseJson.convertTo[Query]
     if (Files.isDirectory(Paths.get(path)))
       // Revisit We want to return a LazyList
-      getListOfFiles(path).map(_getQuery(_))
+      getListOfFiles(path).map(Utils.loadQuery(_))
     else
-      LazyList(_getQuery(path))
+      LazyList(Utils.loadQuery(path))
   }
 
   def getQueriesFromCynthia() = {
-    def _getQuery(path: String): Query =
-      readFromFile(path).parseJson.convertTo[Query]
     // Revisit We want to return a LazyList
     var dirs = Utils.getListOfDirs(getMismatchDir())
     if (!options.mismatches.isEmpty)
@@ -145,7 +141,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         case Some(x) => x.map(q => {
           val queryJsonFile = Utils.joinPaths(List(invalidQDir, q + ".json"))
           val queryFile = Utils.joinPaths(List(invalidQDir, q))
-          val query = _getQuery(queryJsonFile)
+          val query = Utils.loadQuery(queryJsonFile)
           query
         })
         case _ => Seq[Query]()
@@ -153,7 +149,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     }
     var queries = dirs map (x => {
       val queryJsonFile = Utils.joinPaths(List(x, "query.aql.json"))
-      val query = _getQuery(queryJsonFile)
+      val query = Utils.loadQuery(queryJsonFile)
       // Remove old report
       deleteRecursively(new File(x))
       query
@@ -162,8 +158,6 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   }
 
   def getQueries(): Seq[Query] = {
-    def _getQuery(path: String): Query =
-      readFromFile(path).parseJson.convertTo[Query]
     options.mode match {
       case Some("test")  =>
         genQuery(schema, limit = options.nuqueries)

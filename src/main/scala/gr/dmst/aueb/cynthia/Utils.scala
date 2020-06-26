@@ -190,4 +190,7 @@ object Utils {
       else dfs(acc, n)
     }._2
   }
+
+  def loadQuery(path: String): Query =
+    readFromFile(path).parseJson.convertTo[Query]
 }
