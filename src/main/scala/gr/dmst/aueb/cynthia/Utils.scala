@@ -79,9 +79,8 @@ object Utils {
     finally { fw.close() }
   }
 
-  def readFromFile(path: String) = {
+  def readFromFile(path: String) =
     new String(Files.readAllBytes(Paths.get(path)))
-  }
 
   def writeJson(path: String, q: Query) = {
     val json = q.toJson
@@ -91,15 +90,13 @@ object Utils {
   }
 
   def getListOfFiles(dir: String): List[String] = {
-    val file = new File(dir)
-    file.listFiles.filter(_.isFile)
+    new File(dir).listFiles.filter(_.isFile)
       .map(_.getPath).toList
   }
 
   def getListOfDirs(dir: String): List[String] = {
     if (Files.exists(Paths.get(dir))) {
-      val file = new File(dir)
-      file.listFiles.filter(_.isDirectory)
+      new File(dir).listFiles.filter(_.isDirectory)
         .map(_.getPath).toList
     } else {
       List[String]()
@@ -107,8 +104,8 @@ object Utils {
   }
 
   def copyFile(src: String, dest: String) = {
-    var inputChannel = new FileInputStream(src).getChannel();
-    var outputChannel = new FileOutputStream(dest).getChannel();
+    val inputChannel = new FileInputStream(src).getChannel();
+    val outputChannel = new FileOutputStream(dest).getChannel();
     outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
     inputChannel.close();
     outputChannel.close();
