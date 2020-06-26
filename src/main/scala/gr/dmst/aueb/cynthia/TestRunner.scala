@@ -170,7 +170,10 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       case Some("generate")  =>
         genQuery(schema, limit = options.nuqueries)
       case Some("run") =>
-        getQueriesFromDisk(options.aql)
+        options.aql match {
+          case Some(x) => getQueriesFromDisk(x)
+          case None    => ??? // unreachable
+        }
       case Some("replay") => {
         getQueriesFromCynthia()
       }
@@ -412,10 +415,18 @@ object Controller {
           }}
         case Some("run") =>
           List { Future {
-            val dst = basenameWithoutExtension(options.sql)
+            val sql = options.sql match {
+              case Some(x) => x
+              case None    => ""
+            }
+            val schema = options.schema match {
+              case Some(x) => x
+              case None    => ""
+            }
+            val dst = basenameWithoutExtension(sql)
             // If options.sql and dst are the same file then the direct copy
             // will fail
-            Utils.copyFile(options.sql, "/tmp/cynthia_db")
+            Utils.copyFile(sql, "/tmp/cynthia_db")
             Utils.copyFile("/tmp/cynthia_db", Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
             val s = Schema(dst, Map())
             TestRunnerCreator(options, s) match {
@@ -424,15 +435,19 @@ object Controller {
               }
           }}
         case Some("replay") =>
-          if (!options.schema.isEmpty)
-            List { Future {
-              val s = Schema(options.schema, Map())
-              TestRunnerCreator(options, s) match {
-                  case Success(testRunner) => testRunner.start()
-                  case Failure(e)          => println(e.getMessage)
-                }
-            }}
-          else
+          options.schema match {
+            case Some(x) => {
+              List { Future {
+                val s = Schema(x, Map())
+                TestRunnerCreator(options, s) match {
+                    case Success(testRunner) => testRunner.start()
+                    case Failure(e)          => println(e.getMessage)
+                  }
+              }}
+            }
+            case None => {
+
+            }
             Utils.getListOfFiles(options.dotCynthia + "/schemas") map (_.split('/').last) map { s => Future {
               val schema = Schema(s, Map())
               TestRunnerCreator(options, schema) match {
@@ -440,6 +455,7 @@ object Controller {
                   case Failure(e)          => println(e.getMessage)
                 }
             }}
+          }
         case Some("clean") => {
           deleteRecursively(new File(".cynthia"))
           sys.exit(0)

@@ -13,10 +13,10 @@ case class Options (
   orms: Seq[String] = Seq(),
   noCombined: Boolean = false,
   dbs: Seq[String] = Seq("sqlite"),
-  sql: String = "",
-  aql: String = "",
+  sql: Option[String] = None,
+  aql: Option[String] = None,
   dotCynthia: String = ".cynthia",
-  schema: String = "",
+  schema: Option[String] = None,
   storeMatches: Boolean = false,
   all: Boolean = false,
   mismatches: Seq[Int] = Seq()
@@ -129,7 +129,7 @@ object Cynthia {
           .action((x, o) => o.copy(dotCynthia = x))
           .text("cynthia directory for replaying missmatches (Default .cynthia)"),
         opt[String]('s', "schema")
-          .action((x, o) => o.copy(schema = x))
+          .action((x, o) => o.copy(schema = Some(x)))
           .text("Schema to replay"),
         opt[Unit]('a', "all")
           .action((x, o) => o.copy(all = true))
@@ -145,7 +145,7 @@ object Cynthia {
       cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")
           .required()
-          .action((x, o) => o.copy(sql = x))
+          .action((x, o) => o.copy(sql = Some(x)))
           .text("File with the sql script to generate and feed the Database")
           .validate(x => {
             if (!Files.exists(Paths.get(x)))
@@ -154,7 +154,7 @@ object Cynthia {
           }),
         opt[String]('a', "aql")
           .required()
-          .action((x, o) => o.copy(aql = x))
+          .action((x, o) => o.copy(aql = Some(x)))
           .text("A file with an AQL query or a directory with many AQL queries")
           .validate(x => {
             if (!Files.exists(Paths.get(x)))
