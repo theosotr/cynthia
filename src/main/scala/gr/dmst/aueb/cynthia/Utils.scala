@@ -97,9 +97,13 @@ object Utils {
   }
 
   def getListOfDirs(dir: String): List[String] = {
-    val file = new File(dir)
-    file.listFiles.filter(_.isDirectory)
-      .map(_.getPath).toList
+    if (Files.exists(Paths.get(dir))) {
+      val file = new File(dir)
+      file.listFiles.filter(_.isDirectory)
+        .map(_.getPath).toList
+    } else {
+      List[String]()
+    }
   }
 
   def copyFile(src: String, dest: String) = {
