@@ -352,44 +352,6 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
 
 object Controller {
 
-  // TODO Remove dead code
-  val listingModel = Model("Listing", Seq(
-    Field("id", Serial),
-    Field("yearly_rent", Numeric),
-    Field("sale_price", Numeric)
-  ))
-
-  var authorModel = Model("Author", Seq(
-    Field("id", Serial),
-    Field("first_name", VarChar(50)),
-    Field("surname", VarChar(50))
-  ))
-
-  val bookModel = Model("Book", Seq(
-    Field("id", Serial),
-    Field("title", VarChar(100)),
-    Field("isbn", VarChar(100)),
-    Field("author", Foreign("Author"))
-  ))
-
-  val reviewModel = Model("Review", Seq(
-    Field("id", Serial),
-    Field("reviewer_name", VarChar(255)),
-    Field("content", VarChar(255)),
-    Field("rating", Int16),
-    Field("book", Foreign("Book"))
-  ))
-
-  val listingSchema = Schema("listing", Map("Listing" -> listingModel))
-  val bookSchema = Schema("book", Map(
-    "Author" -> authorModel,
-    "Book" -> bookModel,
-    "Review" -> reviewModel
-  ))
-
-  def genSchemas() =
-    List(bookSchema, listingSchema)
-
   def apply(options: Options) = {
     def isEmpty(x: String) = x == null || x.isEmpty
     def basenameWithoutExtension(x: String) =
