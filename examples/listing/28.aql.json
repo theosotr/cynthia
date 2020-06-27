@@ -1,0 +1,206 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "QutFiZgOg",
+                "f": {
+                  "FieldExpr": {
+                    "Add": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Mul": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "3",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Sub": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "Add": {
+                                        "f1": {
+                                          "FieldExpr": {
+                                            "F": {
+                                              "f": "Listing.yearly_rent"
+                                            }
+                                          }
+                                        },
+                                        "f2": {
+                                          "FieldExpr": {
+                                            "F": {
+                                              "f": "Listing.id"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Sum": {
+                                        "f": {
+                                          "FieldExpr": {
+                                            "Constant": {
+                                              "v": "obAoS5v",
+                                              "vt": "Quoted"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "bfJWBP7p",
+                            "vt": "Quoted"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "SsJNcy",
+                "f": {
+                  "FieldExpr": {
+                    "Avg": {
+                      "f": {
+                        "FieldExpr": {
+                          "Sub": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "4",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "wdVXax",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "wmWMTQf",
+                "f": {
+                  "FieldExpr": {
+                    "Sub": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.id"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Min": {
+                                  "f": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Listing.sale_price"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Div": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "SsJNcy"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Sub": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "SsJNcy"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "HYQvPq",
+                                        "vt": "Quoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

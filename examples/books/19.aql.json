@@ -1,0 +1,72 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "TkhJ",
+                "f": {
+                  "FieldExpr": {
+                    "Sum": {
+                      "f": {
+                        "FieldExpr": {
+                          "Div": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Review.rating"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Review.book.title"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "II",
+                "f": {
+                  "FieldExpr": {
+                    "Sub": {
+                      "f1": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Review.rating"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "TkhJ"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }],
+            "m": "Review"
+          }
+        }
+      }
+    }
+  }
+}

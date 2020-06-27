@@ -1,0 +1,171 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "KiqJoUU",
+          "f": {
+            "FieldExpr": {
+              "Count": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "EfLr"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "IntF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "EfLr",
+                "f": {
+                  "FieldExpr": {
+                    "Sub": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.id"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Div": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "Add": {
+                                        "f1": {
+                                          "FieldExpr": {
+                                            "Div": {
+                                              "f1": {
+                                                "FieldExpr": {
+                                                  "Constant": {
+                                                    "v": "9",
+                                                    "vt": "UnQuoted"
+                                                  }
+                                                }
+                                              },
+                                              "f2": {
+                                                "FieldExpr": {
+                                                  "Constant": {
+                                                    "v": "n3zKcdj2",
+                                                    "vt": "Quoted"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "f2": {
+                                          "FieldExpr": {
+                                            "Add": {
+                                              "f1": {
+                                                "FieldExpr": {
+                                                  "Div": {
+                                                    "f1": {
+                                                      "FieldExpr": {
+                                                        "Div": {
+                                                          "f1": {
+                                                            "FieldExpr": {
+                                                              "Constant": {
+                                                                "v": "8",
+                                                                "vt": "UnQuoted"
+                                                              }
+                                                            }
+                                                          },
+                                                          "f2": {
+                                                            "FieldExpr": {
+                                                              "Constant": {
+                                                                "v": "1",
+                                                                "vt": "UnQuoted"
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    "f2": {
+                                                      "FieldExpr": {
+                                                        "F": {
+                                                          "f": "Listing.id"
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "f2": {
+                                                "FieldExpr": {
+                                                  "F": {
+                                                    "f": "Listing.yearly_rent"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "px5me",
+                                        "vt": "Quoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Sub": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "y1e8rj",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "f1cay92kV",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

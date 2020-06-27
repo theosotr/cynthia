@@ -1,0 +1,74 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Review.content", "Asc"], ["Review.book.id", "Asc"], ["Review.id", "Asc"], ["Review.reviewer_name", "Asc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "DniIHgWk",
+                      "f": {
+                        "FieldExpr": {
+                          "Sub": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "8",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Sum": {
+                                  "f": {
+                                    "FieldExpr": {
+                                      "Add": {
+                                        "f1": {
+                                          "FieldExpr": {
+                                            "Constant": {
+                                              "v": "t7nVx",
+                                              "vt": "Quoted"
+                                            }
+                                          }
+                                        },
+                                        "f2": {
+                                          "FieldExpr": {
+                                            "F": {
+                                              "f": "Review.content"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Review"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

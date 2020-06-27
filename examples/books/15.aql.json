@@ -1,0 +1,94 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Book.author.id", "Asc"], ["Book.isbn", "Asc"], ["Book.id", "Desc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "e",
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Book.title"
+                          }
+                        }
+                      },
+                      "ftype": "StringF",
+                      "hidden": true
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "YejRlb",
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "",
+                            "vt": "Quoted"
+                          }
+                        }
+                      },
+                      "ftype": "StringF",
+                      "hidden": true
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "aqVzP",
+                      "f": {
+                        "FieldExpr": {
+                          "Sub": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "YejRlb"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Book.isbn"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "PYBKyS",
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "0",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "ftype": "IntF",
+                      "hidden": true
+                    }
+                  }],
+                  "m": "Book"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

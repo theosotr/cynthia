@@ -1,0 +1,46 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "ppVMYfS",
+                "f": {
+                  "FieldExpr": {
+                    "Sub": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Min": {
+                            "f": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.sale_price"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

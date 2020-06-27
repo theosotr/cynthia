@@ -1,10 +1,15 @@
 package gr.dmst.aueb.cynthia
 
-import java.io.{File, FileWriter}
+import java.io.{File, FileWriter, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
+import java.io.{BufferedWriter, FileWriter}
 import scala.reflect.io.Directory
+import scala.io.Source
 import scala.sys.process._
 
+import spray.json._
+
+import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
 
 case class Str(str: String) {
   val buff: StringBuilder = new StringBuilder(str)
@@ -32,12 +37,12 @@ object Utils {
   def exists(file: String) =
     new File(file).exists
 
-  def listFiles(dir: String): Option[Array[String]] = {
+  def listFiles(dir: String, ext: String = ".sql"): Option[Array[String]] = {
     val file = new File(dir)
     if (file.isDirectory)
       Some (
         file.listFiles
-          .filter(x => x.getName().endsWith(".sql"))
+          .filter(x => x.getName().endsWith(ext))
           .map (x => x.getName())
       )
     else None
@@ -74,6 +79,38 @@ object Utils {
     finally { fw.close() }
   }
 
+  def readFromFile(path: String) =
+    new String(Files.readAllBytes(Paths.get(path)))
+
+  def writeJson(path: String, q: Query) = {
+    val json = q.toJson
+    val w = new BufferedWriter(new FileWriter(path))
+    w.write(json.prettyPrint)
+    w.close
+  }
+
+  def getListOfFiles(dir: String): List[String] = {
+    new File(dir).listFiles.filter(_.isFile)
+      .map(_.getPath).toList
+  }
+
+  def getListOfDirs(dir: String): List[String] = {
+    if (Files.exists(Paths.get(dir))) {
+      new File(dir).listFiles.filter(_.isDirectory)
+        .map(_.getPath).toList
+    } else {
+      List[String]()
+    }
+  }
+
+  def copyFile(src: String, dest: String) = {
+    val inputChannel = new FileInputStream(src).getChannel()
+    val outputChannel = new FileOutputStream(dest).getChannel()
+    outputChannel.transferFrom(inputChannel, 0, inputChannel.size())
+    inputChannel.close()
+    outputChannel.close()
+  }
+
   def getWorkdir() =
     joinPaths(List(".", cwdDir))
 
@@ -101,12 +138,18 @@ object Utils {
      List(dbDir, projectDir, reportDir, schemaDir)
        .foreach { dir => {
            val fdir = Utils.joinPaths(List(workdir, dir))
-           if (dir.equals(reportDir)) {
-             Utils.emptyFile(fdir)
-           }
            createDir(fdir)
          }
        }
+  }
+
+  def deleteRecursively(file: File): Unit = {
+    if (file.isDirectory) {
+      file.listFiles.foreach(deleteRecursively)
+    }
+    if (file.exists && !file.delete) {
+      throw new Exception(s"Unable to delete ${file.getAbsolutePath}")
+    }
   }
 
   def runCmd(cmd: String, dir: Option[String]): String = dir match {
@@ -147,4 +190,7 @@ object Utils {
       else dfs(acc, n)
     }._2
   }
+
+  def loadQuery(path: String): Query =
+    readFromFile(path).parseJson.convertTo[Query]
 }

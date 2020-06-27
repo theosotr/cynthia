@@ -1,0 +1,74 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "WXDdG",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "3",
+                      "vt": "UnQuoted"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "CBG",
+                "f": {
+                  "FieldExpr": {
+                    "Mul": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Sum": {
+                            "f": {
+                              "FieldExpr": {
+                                "Add": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Listing.id"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "2",
+                                        "vt": "UnQuoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

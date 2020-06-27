@@ -1,0 +1,112 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "V",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "jjG",
+                "f": {
+                  "FieldExpr": {
+                    "Mul": {
+                      "f1": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.id"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "V"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "qmIqh",
+                "f": {
+                  "FieldExpr": {
+                    "Mul": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Div": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.id"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "jjG"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Min": {
+                            "f": {
+                              "FieldExpr": {
+                                "Sub": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "V"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "7",
+                                        "vt": "UnQuoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

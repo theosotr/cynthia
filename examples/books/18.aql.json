@@ -1,0 +1,140 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "g",
+          "f": {
+            "FieldExpr": {
+              "Count": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Review.content"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "IntF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "vICp",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "SBkK",
+                      "vt": "Quoted"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "OIeH",
+                "f": {
+                  "FieldExpr": {
+                    "Add": {
+                      "f1": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Review.content"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Div": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "vICp"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "vICp"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "sEwe",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "vICp"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "KB",
+                "f": {
+                  "FieldExpr": {
+                    "Mul": {
+                      "f1": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Review.id"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Review.id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "JFSL",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "4",
+                      "vt": "UnQuoted"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": false
+              }
+            }],
+            "m": "Review"
+          }
+        }
+      }
+    }
+  }
+}

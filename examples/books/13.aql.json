@@ -1,0 +1,156 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "YUA",
+                "f": {
+                  "FieldExpr": {
+                    "Add": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Mul": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Sub": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "Add": {
+                                        "f1": {
+                                          "FieldExpr": {
+                                            "Min": {
+                                              "f": {
+                                                "FieldExpr": {
+                                                  "Constant": {
+                                                    "v": "T26",
+                                                    "vt": "Quoted"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "f2": {
+                                          "FieldExpr": {
+                                            "F": {
+                                              "f": "Author.first_name"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "5",
+                                        "vt": "UnQuoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "8",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Author.first_name"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Avg": {
+                                  "f": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "4",
+                                        "vt": "UnQuoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "oD",
+                "f": {
+                  "FieldExpr": {
+                    "Avg": {
+                      "f": {
+                        "FieldExpr": {
+                          "Div": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "2BRyR3",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "3",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "C",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "7",
+                      "vt": "UnQuoted"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": true
+              }
+            }],
+            "m": "Author"
+          }
+        }
+      }
+    }
+  }
+}

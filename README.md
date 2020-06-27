@@ -67,13 +67,103 @@ This gonna take a while. Upon completion, an executable `jar` of
 
 ## Run Cynthia
 
+Cynthia CLI provides three sub-commands; test, replay, and run.
+
 ```
-java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar -s examples -o django,sqlalchemy
+Usage: cynthia [test|generate|replay|run|clean] [options]
+
+  -o, --orms <value>       ORMs to differentially test
+  -d, --backends <value>   Database backends to store data (Default Value: sqlite)
+  -S, --store-matches      Save matches
+  --no-combined            Don't generate combined queries
+  -r, --records <value>    Number of records to generate for each table
+
+
+  --help                   prints this usage text
+Command: test [options]
+
+  -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
+  -s, --schemas <value>    Number of schemas to generate (Default value: 1)
+  --no-combined            Don't generate combined queries
+  -r, --records <value>    Number of records to generate for each table
+Command: generate [options]
+
+  -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
+  -s, --schemas <value>    Number of schemas to generate (Default value: 1)
+  --no-combined            Don't generate combined queries
+  -r, --records <value>    Number of records to generate for each table
+Command: replay [options]
+
+  -c, --cynthia <value>    cynthia directory for replaying missmatches (Default .cynthia)
+  -s, --schema <value>     Schema to replay
+  -a, --all                Replay all queries. Always use it with --store-matches to not remove matches queries
+  -m, --mismatches <value>
+                           Mismatches to replay
+Command: run [options]
+
+  -s, --sql <value>        File with the sql script to generate and feed the Database
+  -a, --aql <value>        A file with an AQL query or a directory with many AQL queries
+Command: clean
 ```
 
-* The option `-s` is the directory of the database schemas.
-* The option `-o` is a set of ORMs (comma separated) under test.
+### test
 
+Generate AQL queries and test orms.
+
+* Example
+
+```
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar test -n 100 -s 2 -o activerecord,sqlalchemy -d mysql
+```
+
+### run
+
+It runs cynthia using the queries provided by `-a` option on the schema provided
+by `-s` option. If `-a` is a directory then it must contains only `.aql.json`files
+that cynthia will use to test the orms. `-s` option must provide a file
+with an sql script to generate and fill a database.
+
+* Examples
+
+```
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar run -s examples/listing.sql -a examples/listing/ -o sqlalchemy,activerecord -d mysql
+```
+
+```
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar run -s .cynthia/schemas/listing -a .cynthia/report/listing/mismatches/1/query.aql.json -o sqlalchemy,activerecord -d mysql
+```
+
+### replay
+
+Run the given AQL queries on the given schemas. If no options are specified, this command inspects the .cynthia directory.
+
+* Examples
+
+```
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar replay --orms activerecord,sqlalchemy -d mysql
+```
+
+```
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar replay -s Hubbubs --all --orms activerecord,sqlalchemy -d mysql --store-matches
+```
+
+```
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar replay -s Hubbubs --mismatches 1 --all --orms activerecord,sqlalchemy -d mysql --store-matches
+```
+
+### generate
+
+Generate random AQL queries and schemas. It does not translate queries into ORM queries.
+
+* Example
+
+```
+java -jar target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar generate -s 2 -n 100
+```
+
+### clean
+
+Remove `.cynthia` directory
 
 ## Reproduce Django Bug
 

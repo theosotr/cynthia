@@ -1,0 +1,27 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Review.rating", "Desc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Review"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "jJqOpWLil",
+                "f": {
+                  "FieldExpr": {
+                    "Count": {
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "ij",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "FPCwjJlb",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "jJqOpWLil"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

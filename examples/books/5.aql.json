@@ -1,0 +1,27 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Review.book.title", "Desc"], ["Review.reviewer_name", "Asc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Review"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

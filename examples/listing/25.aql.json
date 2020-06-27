@@ -1,0 +1,81 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "wduesdvc",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "EcwE",
+                      "vt": "Quoted"
+                    }
+                  }
+                },
+                "ftype": "StringF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "rrW",
+                "f": {
+                  "FieldExpr": {
+                    "Sub": {
+                      "f1": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "wduesdvc"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "wduesdvc"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "bCGVwr",
+                "f": {
+                  "FieldExpr": {
+                    "Add": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "2",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.sale_price"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

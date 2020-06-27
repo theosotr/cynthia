@@ -1,0 +1,47 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "sum",
+          "f": {
+            "FieldExpr": {
+              "Sum": {
+                "f": {
+                  "FieldExpr": {
+                    "Sub": {
+                      "f1": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.yearly_rent"
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.sale_price"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "DoubleF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

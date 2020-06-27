@@ -1,0 +1,67 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Filter": {
+                  "p": {
+                    "Predicate": {
+                      "Gte": {
+                        "f": {
+                          "FieldExpr": {
+                            "Constant": {
+                              "v": "50",
+                              "vt": "UnQuoted"
+                            }
+                          }
+                        },
+                        "k": "custom"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "custom",
+                      "f": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.yearly_rent"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

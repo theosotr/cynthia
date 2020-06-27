@@ -1,0 +1,126 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Book.isbn", "Desc"], ["Book.title", "Desc"], ["ODQw", "Desc"], ["Book.id", "Desc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "gLMHoT",
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "0",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "ftype": "IntF",
+                      "hidden": true
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "caxccB",
+                      "f": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Sum": {
+                                  "f": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Book.title"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Max": {
+                                  "f": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "Book.isbn"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "VUV",
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "8",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "ftype": "IntF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "ODQw",
+                      "f": {
+                        "FieldExpr": {
+                          "Sum": {
+                            "f": {
+                              "FieldExpr": {
+                                "Div": {
+                                  "f1": {
+                                    "FieldExpr": {
+                                      "F": {
+                                        "f": "gLMHoT"
+                                      }
+                                    }
+                                  },
+                                  "f2": {
+                                    "FieldExpr": {
+                                      "Constant": {
+                                        "v": "VY",
+                                        "vt": "Quoted"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Book"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

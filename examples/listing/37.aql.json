@@ -1,0 +1,121 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "ORsHBgQ",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "6",
+                      "vt": "UnQuoted"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "othaPT",
+                "f": {
+                  "FieldExpr": {
+                    "Div": {
+                      "f1": {
+                        "FieldExpr": {
+                          "Sum": {
+                            "f": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "pD1B",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "f2": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.sale_price"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "gOtzP",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "othaPT"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "S",
+                "f": {
+                  "FieldExpr": {
+                    "Avg": {
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "AOjkd",
+                            "vt": "Quoted"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "x",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "4",
+                      "vt": "UnQuoted"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "G",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "gOtzP"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

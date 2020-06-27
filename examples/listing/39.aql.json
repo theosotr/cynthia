@@ -1,0 +1,105 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [{
+              "FieldDecl": {
+                "as": "eqQy",
+                "f": {
+                  "FieldExpr": {
+                    "Sum": {
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.yearly_rent"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "rQe",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "eqQy"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "dvcVCurv",
+                "f": {
+                  "FieldExpr": {
+                    "Count": {
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "Listing.id"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "I",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "eqQy"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": false
+              }
+            }, {
+              "FieldDecl": {
+                "as": "TPH",
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.sale_price"
+                    }
+                  }
+                },
+                "ftype": "DoubleF",
+                "hidden": true
+              }
+            }, {
+              "FieldDecl": {
+                "as": "bqZCpnWO",
+                "f": {
+                  "FieldExpr": {
+                    "Constant": {
+                      "v": "5",
+                      "vt": "UnQuoted"
+                    }
+                  }
+                },
+                "ftype": "IntF",
+                "hidden": true
+              }
+            }],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

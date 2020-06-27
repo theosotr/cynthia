@@ -1,0 +1,104 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Filter": {
+                  "p": {
+                    "Predicate": {
+                      "And": {
+                        "p1": {
+                          "Predicate": {
+                            "Eq": {
+                              "f": {
+                                "FieldExpr": {
+                                  "Constant": {
+                                    "v": "20",
+                                    "vt": "UnQuoted"
+                                  }
+                                }
+                              },
+                              "k": "custom"
+                            }
+                          }
+                        },
+                        "p2": {
+                          "Predicate": {
+                            "Eq": {
+                              "f": {
+                                "FieldExpr": {
+                                  "Constant": {
+                                    "v": "foobar",
+                                    "vt": "Quoted"
+                                  }
+                                }
+                              },
+                              "k": "text"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "custom",
+                      "f": {
+                        "FieldExpr": {
+                          "Add": {
+                            "f1": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "5",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "15",
+                                  "vt": "UnQuoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "IntF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "text",
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "foobar",
+                            "vt": "Quoted"
+                          }
+                        }
+                      },
+                      "ftype": "StringF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -91,10 +91,10 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
              }
            }
       }
-      val mpamies = g(source) map {
+      val sjoin = g(source) map {
         x => dfs(g, x)
       }
-      "joins(" + (mpamies mkString(",")) + ")"
+      "joins(" + (sjoin mkString(",")) + ")"
     }
   }
 

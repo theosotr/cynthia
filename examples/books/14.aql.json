@@ -1,0 +1,41 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Review.id", "Asc"], ["V", "Desc"], ["Review.reviewer_name", "Desc"], ["Review.content", "Desc"], ["Review.book.id", "Desc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "V",
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "0",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "ftype": "IntF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Review"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

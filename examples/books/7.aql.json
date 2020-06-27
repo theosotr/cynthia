@@ -1,0 +1,75 @@
+{
+  "Query": {
+    "FirstRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Review.book.title", "Desc"], ["Review.reviewer_name", "Asc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "Apply": {
+                  "op": {
+                    "Operation": {
+                      "Filter": {
+                        "p": {
+                          "Predicate": {
+                            "And": {
+                              "p1": {
+                                "Predicate": {
+                                  "Gte": {
+                                    "f": {
+                                      "FieldExpr": {
+                                        "Constant": {
+                                          "v": "2",
+                                          "vt": "UnQuoted"
+                                        }
+                                      }
+                                    },
+                                    "k": "Review.rating"
+                                  }
+                                }
+                              },
+                              "p2": {
+                                "Predicate": {
+                                  "Contains": {
+                                    "f": {
+                                      "FieldExpr": {
+                                        "Constant": {
+                                          "v": "o",
+                                          "vt": "Quoted"
+                                        }
+                                      }
+                                    },
+                                    "k": "Review.book.author.surname"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "q": {
+                    "QuerySet": {
+                      "New": {
+                        "f": [],
+                        "m": "Review"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

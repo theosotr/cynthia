@@ -1,0 +1,27 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Listing.foo", "Desc"], ["Listing.sale_price", "Asc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "Query": {
+    "AggrRes": {
+      "aggrs": [{
+        "FieldDecl": {
+          "as": "max",
+          "f": {
+            "FieldExpr": {
+              "Max": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.foo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "StringF",
+          "hidden": false
+        }
+      }, {
+        "FieldDecl": {
+          "as": "min",
+          "f": {
+            "FieldExpr": {
+              "Min": {
+                "f": {
+                  "FieldExpr": {
+                    "F": {
+                      "f": "Listing.foo"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "ftype": "StringF",
+          "hidden": false
+        }
+      }],
+      "qs": {
+        "QuerySet": {
+          "New": {
+            "f": [],
+            "m": "Listing"
+          }
+        }
+      }
+    }
+  }
+}

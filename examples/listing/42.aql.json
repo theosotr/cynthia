@@ -1,0 +1,114 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["cCqQb", "Asc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "New": {
+                  "f": [{
+                    "FieldDecl": {
+                      "as": "WrTj",
+                      "f": {
+                        "FieldExpr": {
+                          "Div": {
+                            "f1": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.yearly_rent"
+                                }
+                              }
+                            },
+                            "f2": {
+                              "FieldExpr": {
+                                "F": {
+                                  "f": "Listing.sale_price"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "MPi",
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "5",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "ftype": "IntF",
+                      "hidden": true
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "jcVbPimsG",
+                      "f": {
+                        "FieldExpr": {
+                          "Count": {
+                            "f": {
+                              "FieldExpr": {
+                                "Constant": {
+                                  "v": "wAi8pi4f",
+                                  "vt": "Quoted"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ftype": "IntF",
+                      "hidden": false
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "hj",
+                      "f": {
+                        "FieldExpr": {
+                          "F": {
+                            "f": "WrTj"
+                          }
+                        }
+                      },
+                      "ftype": "DoubleF",
+                      "hidden": true
+                    }
+                  }, {
+                    "FieldDecl": {
+                      "as": "cCqQb",
+                      "f": {
+                        "FieldExpr": {
+                          "Constant": {
+                            "v": "0",
+                            "vt": "UnQuoted"
+                          }
+                        }
+                      },
+                      "ftype": "IntF",
+                      "hidden": false
+                    }
+                  }],
+                  "m": "Listing"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

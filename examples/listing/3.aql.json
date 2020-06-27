@@ -1,0 +1,41 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Apply": {
+            "op": {
+              "Operation": {
+                "Sort": {
+                  "s": [["Listing.yearly_rent", "Asc"]]
+                }
+              }
+            },
+            "q": {
+              "QuerySet": {
+                "Union": {
+                  "q1": {
+                    "QuerySet": {
+                      "New": {
+                        "f": [],
+                        "m": "Listing"
+                      }
+                    }
+                  },
+                  "q2": {
+                    "QuerySet": {
+                      "New": {
+                        "f": [],
+                        "m": "Listing"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
