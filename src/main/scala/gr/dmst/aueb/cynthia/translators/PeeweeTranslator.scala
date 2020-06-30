@@ -265,7 +265,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qStr.ret.get,
-        constructJoins(s.joins.reverse.toSet.toSeq),
+        constructJoins(s.joins.toSet.toSeq.sortWith { (x, y) => x.size < y.size }),
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
