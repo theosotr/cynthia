@@ -174,14 +174,24 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       ).!
   }
 
+  def quoteDBName(name: String) = target.db match {
+    case MySQL(_, _, _) => Utils.quoteStr(name, quotes ="`")
+    case _              => Utils.quoteStr(name, quotes = "\\\"")
+  }
+
   def constructNestedFieldExpr(s: State, fexpr: FieldExpr, subCol: Boolean): String = {
     def _f(expr: FieldExpr) = expr match {
       case Constant(v, UnQuoted) => v
       case Constant(v, Quoted)   => s"\\'${v}\\'"
       case F(f)                  => s.fields get f match {
         case None => {
-          val segs = f split '.'
-          ((segs drop (segs.size - 2)) mkString ".").toLowerCase
+          val segs = (f split '.').toList
+          if (segs.size > 2) {
+            val prefix = quoteDBName(
+              segs.tail dropRight 1 mkString "->").toLowerCase
+            prefix + "." + segs(segs.size - 1)
+          } else
+            (segs mkString ".").toLowerCase
         }
         case _    => "${getC(" + f + ")}"
       }
