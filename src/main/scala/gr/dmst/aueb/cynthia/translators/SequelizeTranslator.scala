@@ -277,10 +277,11 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   def createAssociations(joinedModels: Map[String, Set[String]]) =
     joinedModels.foldLeft(QueryStr()) { case (acc, (k, v)) =>
       v.foldLeft(acc) { (acc, x) => {
-        val fk = s"{foreignKey: '${x.toLowerCase}_id'}"
+        val fk = s"foreignKey: '${x.toLowerCase}_id'"
         acc >>
-          QueryStr(None, Some(s"$x.hasMany($k, ${fk})")) >>
-          QueryStr(None, Some(s"$k.belongsTo($x, ${fk})"))
+          QueryStr(None, Some(s"$x.hasMany($k, {${fk}})")) >>
+          QueryStr(None, Some(
+            s"$k.belongsTo($x, {as: $x.tableName, ${fk}})"))
         }
       }
     }
