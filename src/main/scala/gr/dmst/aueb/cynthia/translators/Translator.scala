@@ -369,6 +369,9 @@ abstract class Translator(val target: Target) {
 
 
 object TUtils {
+  def toFieldVar(f: String) =
+    f + "_cynthia"
+
   def filterMapAs(f: FieldDecl => Boolean)(fields: Iterable[FieldDecl]) =
     fields filter f map FieldDecl.as
 

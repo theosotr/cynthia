@@ -60,7 +60,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     }
     val segs = (field split '.').toList
     segs match {
-      case f :: Nil => if (withAlias) Utils.quoteStr(f) else f
+      case f :: Nil => if (withAlias) Utils.quoteStr(f) else TUtils.toFieldVar(f)
       case _        => _getSQLAlchemyFieldName("", segs)
     }
   }
@@ -190,7 +190,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       s.aggrs match {
         case Seq() | Seq(FieldDecl(Count(None), _, _, _)) => {
           val dFields = TUtils.mapNonHiddenFields(
-            s.fields.values, FieldDecl.as)
+            s.fields.values, { x => TUtils.toFieldVar(FieldDecl.as(x)) })
           val fieldStr = dFields mkString ","
           val q =
             if (fieldStr.equals(""))
@@ -238,7 +238,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
         val str = Str("type_coerce(") << constructFieldExpr(f) << ", " << getType(StringF) <<
           ").label(" << Utils.quoteStr(as) << ")"
-        acc >> QueryStr(Some(as), Some(str.!))
+        acc >> QueryStr(Some(TUtils.toFieldVar(as)), Some(str.!))
       }
     }
 

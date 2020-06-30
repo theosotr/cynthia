@@ -176,7 +176,9 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       (
         Str("order: [\n") << (
           spec map { x => {
-            val name = if (fields.contains(x._1)) x._1 else getSeqOrderSpec(x._1)
+            val name =
+              if (fields.contains(x._1)) TUtils.toFieldVar(x._1)
+              else getSeqOrderSpec(x._1)
             x._2 match {
               case Asc  => "  [" + name + ", 'ASC']"
               case Desc => "  [" + name + ", 'DESC']"
@@ -205,7 +207,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
           } else
             (segs mkString ".").toLowerCase
         }
-        case _    => "${getC(" + f + ")}"
+        case _    => "${getC(" + TUtils.toFieldVar(f) + ")}"
       }
       case _ => throw new UnsupportedException(
         "Unsupported field expression: " + fexpr.toString)
@@ -217,7 +219,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         "sequelize.literal(" + Utils.quoteStr(s"\\'${v}\\'") + ")"
       case F(f) => {
         val str = "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
-        if (subCol && this.fieldDecls.contains(f)) f
+        if (subCol && this.fieldDecls.contains(f)) TUtils.toFieldVar(f)
         else str
       }
       case Add(f1, f2) =>
@@ -267,7 +269,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       val qstr = castField(f, getType(t))
       this.fieldDecls += as
       acc >> QueryStr(
-        Some(as),
+        Some(TUtils.toFieldVar(as)),
         Some(qstr)
       )
     }}
@@ -277,7 +279,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     val attrStr = TUtils.mapNonHiddenFields(
       state.fields.values ++ state.aggrs,
       { case FieldDecl(_, as, _, _) =>
-        (Str("[") << as << ", " << Utils.quoteStr(as) << "]").!
+        (Str("[") << TUtils.toFieldVar(as) << ", " << Utils.quoteStr(as) << "]").!
       }
     ) mkString(",\n    ")
     attrStr match {

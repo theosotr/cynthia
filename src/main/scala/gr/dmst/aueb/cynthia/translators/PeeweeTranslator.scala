@@ -56,7 +56,9 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     val segs = field.split('.').toList
     segs match {
       // Revert alias for declared fields.
-      case _ :: Nil => if (withAlias) field else field + ".alias()"
+      case _ :: Nil =>
+        if (withAlias) TUtils.toFieldVar(field)
+        else TUtils.toFieldVar(field) + ".alias()"
       case _        => _getPeeweeFieldName("", segs.toList)
     }
   }
@@ -166,7 +168,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       s.aggrs match {
         case Seq() | Seq(FieldDecl(Count(None), _, _, _)) => {
           val dFields = TUtils.mapNonHiddenFields(
-            s.fields.values, FieldDecl.as)
+            s.fields.values, { x => TUtils.toFieldVar(FieldDecl.as(x)) })
           val fieldStr = dFields mkString ","
           val q =
             if (fieldStr.equals(""))
@@ -220,7 +222,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
         val str = Str("(") << constructFieldExpr(f) << ").coerce(False)" <<
           ".alias(" << Utils.quoteStr(as) << ")"
-        acc >> QueryStr(Some(as), Some(str.!))
+        acc >> QueryStr(Some(TUtils.toFieldVar(as)), Some(str.!))
       }
     }
 
