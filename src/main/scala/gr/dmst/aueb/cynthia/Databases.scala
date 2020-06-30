@@ -80,11 +80,11 @@ object DBSetup {
       case Postgres(_, _, _) =>
         if (dbcon != null) {
           val preStmt = dbcon.prepareStatement(
-            "SELECT 1 FROM pg_catalog.pg_database WHERE datname = ?")
-          preStmt.setString(1, dbname)
+            "SELECT datname FROM pg_catalog.pg_database WHERE datname = ?")
+          preStmt.setString(1, dbname.toLowerCase)
           if (!preStmt.executeQuery().next()) {
             val stmt = dbcon.createStatement()
-            stmt.executeUpdate("CREATE DATABASE " + dbname)
+            stmt.executeUpdate("CREATE DATABASE " + dbname.toLowerCase)
           }
         }
       case MySQL(_, _, _) =>
