@@ -111,10 +111,13 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   val matchesEnumerator = Stream.from(1).iterator
   val genEnumerator = Stream.from(1).iterator
 
+  val qGen = QueryGenerator(
+    options.minDepth, options.maxDepth, options.noCombined)
+
   // test and generate modes
   def genQuery(schema: Schema, limit: Int = 10) = {
     def _genQuery(i: Int): LazyList[Query] = {
-      val q = QueryGenerator(schema, options.noCombined)
+      val q = qGen(schema)
       if (i >= limit) q #:: LazyList.empty
       else q #:: _genQuery(i + 1)
     }
@@ -430,7 +433,7 @@ object Controller {
         }
         case _ => ???
       }
-    Await.ready(
+    Await.result(
       Future.sequence(testSessions) map { _ =>
         println("All testing sessions finished.")
       },

@@ -19,7 +19,9 @@ case class Options (
   schema: Option[String] = None,
   storeMatches: Boolean = false,
   all: Boolean = false,
-  mismatches: Seq[Int] = Seq()
+  mismatches: Seq[Int] = Seq(),
+  minDepth: Int = 5,
+  maxDepth: Int = 25
 )
 
 
@@ -74,6 +76,22 @@ object Cynthia {
             else success
           })
 
+      def minDepthOption() =
+        opt[Int]("min-depth")
+          .action((x, o) => o.copy(minDepth = x))
+          .text("Minimum depth of generated AQL queries")
+          .validate(x =>
+              if (x < 1) failure("Minimum depth must be greater than 1")
+              else success)
+
+      def maxDepthOption() =
+        opt[Int]("max-depth")
+          .action((x, o) => o.copy(maxDepth = x))
+          .text("Maximum depth of generated AQL queries")
+          .validate(x =>
+              if (x < 1) failure("Maximum depth must be greater than 1")
+              else success)
+
       note("\n")
 
       // Sub-commands
@@ -92,11 +110,13 @@ object Cynthia {
             if (x < 1) failure("You must generate at least one schema")
             else success
           }),
-        ormsOption(),
-        backendsOption(),
-        storeMatchesOption(),
-        noCombineOption(),
-        recordsOption()
+        ormsOption,
+        backendsOption,
+        storeMatchesOption,
+        noCombineOption,
+        recordsOption,
+        minDepthOption,
+        maxDepthOption
       )
       cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
         opt[Int]('n', "queries")
@@ -113,8 +133,10 @@ object Cynthia {
             if (x < 1) failure("You must generate at least one schema")
             else success
           }),
-        noCombineOption(),
-        recordsOption()
+        noCombineOption,
+        recordsOption,
+        minDepthOption,
+        maxDepthOption
       )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
@@ -133,9 +155,9 @@ object Cynthia {
               case _ => acc
             }
           }),
-        ormsOption(),
-        backendsOption(),
-        storeMatchesOption()
+        ormsOption,
+        backendsOption,
+        storeMatchesOption
       )
       cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")
@@ -156,10 +178,10 @@ object Cynthia {
               failure("File or directory " + x + " does not exist")
             else success
           }),
-          ormsOption(),
-          backendsOption(),
-          storeMatchesOption()
-      )
+          ormsOption,
+          backendsOption,
+          storeMatchesOption
+        )
       cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) }
       checkConfig(x =>
         x.mode match {
@@ -198,6 +220,5 @@ object Cynthia {
     } getOrElse {
       // Wrong arguments
     }
-
   }
 }

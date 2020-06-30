@@ -102,9 +102,11 @@ case class GenState(
 }
 
 
-case object QueryGenerator {
-
-  val maxDepth = 25
+case class QueryGenerator(
+  minDepth: Int,
+  maxDepth: Int,
+  noCombined: Boolean
+) {
 
   val predNodes = Seq(
     EqPred,
@@ -163,7 +165,15 @@ case object QueryGenerator {
       if (!forAggr && (s.depth >= maxDepth || RUtils.bool()))
         // If we reached the maximum depth, generate a leaf node.
         RUtils.chooseFrom(Seq(FExpr, ConstantExpr))
-      else RUtils.chooseFrom(s.exprCands)
+      else
+        if (!forAggr && (s.depth < minDepth))
+          if (s.exprCands.size > 1)
+            RUtils.chooseFrom(s.exprCands filter {
+              case FExpr | ConstantExpr => false
+              case _ => true
+            })
+          else RUtils.chooseFrom(s.exprCands)
+        else RUtils.chooseFrom(s.exprCands)
     exprNode match {
       case FExpr => {
         if (declaredOnly || (!s.dfields.isEmpty && RUtils.bool())) {
@@ -371,7 +381,7 @@ case object QueryGenerator {
       }
     }
 
-  def apply(schema: Schema, noCombined: Boolean): Query = {
+  def apply(schema: Schema): Query = {
     val qType = RUtils.chooseFrom(List(
       "set",
       "aggr",
