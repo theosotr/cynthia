@@ -34,19 +34,29 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     s"""const {Op, Sequelize} = require('sequelize');
     |const sequelize = ${setstr.!}
     |
+    |function toColumn(c) {
+    |  const segs = c.split('.')
+    |  if (segs.length > 2) {
+    |    const sub = segs.slice(0, segs.length - 1)
+    |    return "`" + sub.join("->") + "`.`" + segs[segs.length - 1] + "`"
+    |  }
+    |  return segs.join(".")
+    |}
+    |
+    |
     |function getC(e) {
     |  if (e.val !== undefined && typeof e.val !== 'object')
     |    return e.val;
     |  if (e.col !== undefined)
-    |    return e.col;
+    |    return toColumn(e.col);
     |  if (e.val.col !== undefined)
-    |    return e.val.col;
+    |    return toColumn(e.val.col);
     |  if (e.val.val === undefined) {
-    |    args = e.val.args
+    |    args = e.val.args[0]
     |    if (args === undefined)
     |      return e.val.fn + "()"
     |    return args.val !== undefined ? e.val.fn + "(" + args.val + ")" :
-    |      e.val.fn + "(" + args.col + ")"
+    |      e.val.fn + "(" + toColumn(args.col) + ")"
     |  }
     |  if (typeof e.val.val === 'string') return e.val.val;
     |  else return getC(e.val);
