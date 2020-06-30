@@ -96,20 +96,23 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
       } mkString(".")
     }
 
-  def constructOrderBy(spec: Seq[(String, Order)],
-                       withAlias: Boolean) = spec match {
+  def constructOrderBy(s: State, withAlias: Boolean) = s.orders match {
     case Seq() => ""
-    case _     =>
-      (
-        Str("order_by(") << (
-          spec map { x =>
-            x match {
-              case (k, Desc) => getPeeweeFieldName(k, withAlias = withAlias) + ".desc()"
-              case (k, Asc)  => getPeeweeFieldName(k, withAlias = withAlias) + ".asc()"
-            }
-          } mkString ","
-        ) << ")"
-      ).!
+    case spec  =>
+      (s.aggrs, target.db) match {
+        case (Seq(_*), Postgres(_, _, _)) => ""
+        case _ =>
+          (
+            Str("order_by(") << (
+              spec map { x =>
+                x match {
+                  case (k, Desc) => getPeeweeFieldName(k, withAlias = withAlias) + ".desc()"
+                  case (k, Asc)  => getPeeweeFieldName(k, withAlias = withAlias) + ".asc()"
+                }
+              } mkString ","
+            ) << ")"
+          ).!
+      }
   }
 
   def constructPrimAggr(fexpr: FieldExpr) = {
@@ -241,7 +244,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qstr.ret.get,
-        constructOrderBy(s.orders, true),
+        constructOrderBy(s, true),
         "objects()",
         s.aggrs match {
           case Seq() => ""
@@ -269,7 +272,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
-        constructOrderBy(s.orders, false),
+        constructOrderBy(s, false),
         "objects()",
         s.aggrs match {
           case Seq() => ""

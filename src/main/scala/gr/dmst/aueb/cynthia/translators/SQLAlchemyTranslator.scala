@@ -98,19 +98,23 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       } mkString(".")
     }
 
-  def constructOrderBy(spec: Seq[(String, Order)], withAlias: Boolean) = spec match {
+  def constructOrderBy(s: State, withAlias: Boolean) = s.orders match {
     case Seq() => ""
-    case _     =>
-      (
-        Str("order_by(") << (
-          spec map { x =>
-            x match {
-              case (k, Desc) => "desc(" + getSQLAlchemyFieldName(k, withAlias) + ")"
-              case (k, Asc)  => "asc(" + getSQLAlchemyFieldName(k, withAlias) + ")"
-            }
-          } mkString ","
-        ) << ")"
-      ).!
+    case spec  =>
+      (s.aggrs, target.db) match {
+        case (Seq(_*), Postgres(_, _, _)) => ""
+        case _ =>
+          (
+            Str("order_by(") << (
+              spec map { x =>
+                x match {
+                  case (k, Desc) => "desc(" + getSQLAlchemyFieldName(k, withAlias) + ")"
+                  case (k, Asc)  => "asc(" + getSQLAlchemyFieldName(k, withAlias) + ")"
+                }
+              } mkString ","
+            ) << ")"
+          ).!
+      }
   }
 
   def constructPrimAggr(fexpr: FieldExpr, fprefix: String) = {
@@ -254,7 +258,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     val qstr2 = qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qstr.ret.get,
-        constructOrderBy(s.orders, true),
+        constructOrderBy(s, true),
         if (!s.aggrs.isEmpty) "subquery()" else ""
       ) filter {
         case "" => false
@@ -290,7 +294,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         constructFilter(nonAggrP),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
-        constructOrderBy(s.orders, false),
+        constructOrderBy(s, false),
         s.aggrs match {
           case Seq() => ""
           case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
