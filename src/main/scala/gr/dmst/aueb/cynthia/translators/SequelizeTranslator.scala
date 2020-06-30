@@ -282,7 +282,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     }
     models.foldLeft(QueryStr()) { (acc, x) =>
       acc >> QueryStr(Some(x),
-        Some("sequelize.import(" + Utils.quoteStr(x.toLowerCase + ".js") + ")"))
+        Some("require(" + Utils.quoteStr(
+          "./" + x.toLowerCase + ".js") + ")(sequelize, Sequelize)"))
     }
   }
 
