@@ -35,6 +35,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     |const sequelize = ${setstr.!}
     |
     |function getC(e) {
+    |  if (e.val !== undefined && typeof e.val !== 'object')
+    |    return e.val;
     |  if (e.col !== undefined)
     |    return e.col;
     |  if (e.val.col !== undefined)
@@ -100,7 +102,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
 
     field.split('.').toList match {
       case Nil | _ :: Nil  => _constructField(field)
-      case _ :: (h :: Nil) => _constructField(h)
+      case h :: (f :: Nil) => _constructField(h + "." + f)
       case _ :: t          =>
         if (dollarSign) "'$" + t.mkString(".") + "$'"
         else Utils.quoteStr(t mkString ".")
