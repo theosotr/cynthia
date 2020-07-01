@@ -18,7 +18,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
    |
    |def dump(x, label):
    |    if isinstance(x, numbers.Number):
-   |        print(label, round(decimal.Decimal(x + 0.00), 2))
+   |        print(label, round(decimal.Decimal(float(x) + 0.00), 2))
    |    else:
    |        try:
    |            print(label, round(decimal.Decimal(float(x) + 0.00), 2))
@@ -40,9 +40,9 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       fields map { as =>
         s"""
         |${ident}if(isinstance($v, dict)):
-        |${ident}    dump($v['$as'], '$as')
+        |${ident}    dump($v.get('$as', None), '$as')
         |${ident}else:
-        |${ident}    dump($v.$as, '$as')""".stripMargin
+        |${ident}    dump(getattr($v, '$as', None), '$as')""".stripMargin
       } mkString "\n"
     q match {
       case SetRes (_) | SubsetRes(_, _, _) =>
