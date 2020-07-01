@@ -18,10 +18,10 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
    |
    |def dump(x, label):
    |    if isinstance(x, numbers.Number):
-   |        print(label, round(decimal.Decimal(x), 2))
+   |        print(label, round(decimal.Decimal(x + 0.00), 2))
    |    else:
    |        try:
-   |            print(label, round(decimal.Decimal(float(x)), 2))
+   |            print(label, round(decimal.Decimal(float(x) + 0.00), 2))
    |        except:
    |            if type(x) is bytes:
    |                print(label, str(x.decode('utf-8')))
