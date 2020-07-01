@@ -1,15 +1,24 @@
 package gr.dmst.aueb.cynthia
 
+import java.io.File
 import java.sql.{Connection, DriverManager, ResultSet}
 import scala.io.Source
 
 
 sealed trait DB {
+  val defaultDbs: Set[String]
   def getURI(): String
   def getName(): String
 }
 
 case class Postgres (user: String, password: String, dbname: String) extends DB {
+  val defaultDbs = Set(
+    "postgres",
+    "template1",
+    "dan",
+    "sys"
+  )
+
   override def getURI() =
     "postgresql://" + user + ":" + password + "@localhost/" + dbname
 
@@ -18,6 +27,13 @@ case class Postgres (user: String, password: String, dbname: String) extends DB 
 }
 
 case class MySQL (user: String, password: String, dbname: String) extends DB {
+  val defaultDbs = Set(
+    "mysql",
+    "information_schema",
+    "performance_schema",
+    "sys"
+  )
+
   override def getURI() =
     "mysql://" + user + ":" + password + "@localhost/" + dbname
 
@@ -26,6 +42,8 @@ case class MySQL (user: String, password: String, dbname: String) extends DB {
 }
 
 case class SQLite (dbname: String) extends DB {
+  val defaultDbs = Set()
+
   override def getURI() =
     "sqlite:///" + dbname
 
@@ -62,6 +80,41 @@ object DBSetup {
   def createdb(db: DB, dbname: String) =
     process(createdbFun, db, dbname)
 
+  def clean(db: DB) =
+    process(dropDatabases, db, "")
+
+  def getDatabases(db: DB, dbcon: Connection) = {
+    val query = db match {
+      case Postgres(_, _, _) =>
+        """
+        SELECT datname FROM pg_database
+        WHERE datistemplate = false;
+        """
+      case MySQL(_, _, _) => "show databases;"
+      case SQLite(_) => ??? // Unreachable case
+    }
+    val stmt = dbcon.createStatement
+    val rs = stmt.executeQuery(query)
+    Iterator.from(0).takeWhile(_ => rs.next()).map(_ => rs.getString(1)).toSet
+  }
+
+  def dropDatabases(db: DB, element: String, dbcon: Connection) = db match {
+    case SQLite(_) =>
+      Utils.listFiles(Utils.getDBDir, ext = "") match {
+        case Some(files) => files foreach Utils.emptyFile
+        case None => ()
+      }
+    case _ => {
+      val stmt = dbcon.createStatement
+      dbcon.setAutoCommit(false)
+      getDatabases(db, dbcon) filter { !db.defaultDbs.contains(_) } foreach { x =>
+        stmt.addBatch("DROP DATABASE IF EXISTS " + x)
+      }
+      stmt.executeBatch
+      dbcon.commit
+    }
+  }
+
   def setupSchemaFun(db: DB, schema: String, dbcon: Connection) =
     if (dbcon != null) {
       val stmt = dbcon.createStatement()
@@ -71,8 +124,8 @@ object DBSetup {
         .replace("\n", "")
         .split(";")
         .foreach { stmt.addBatch }
-      stmt.executeBatch()
-      dbcon.commit()
+      stmt.executeBatch
+      dbcon.commit
     }
 
   def createdbFun(db: DB, dbname: String, dbcon: Connection) =

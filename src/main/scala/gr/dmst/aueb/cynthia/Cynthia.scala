@@ -21,7 +21,9 @@ case class Options (
   all: Boolean = false,
   mismatches: Seq[Int] = Seq(),
   minDepth: Int = 5,
-  maxDepth: Int = 25
+  maxDepth: Int = 25,
+  dbUser: String = "orm_testing",
+  dbPass: String = "orm_testing"
 )
 
 

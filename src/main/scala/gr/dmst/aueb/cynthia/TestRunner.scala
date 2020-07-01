@@ -33,9 +33,7 @@ case class Target(orm: ORM, db: DB) {
 
 object TestRunnerCreator {
   def genBackends(backends: Seq[String], workdir: String,
-    dbname: Option[String]) = {
-    val dbUser = "orm_testing"
-    val dbPass = "orm_testing"
+    dbname: Option[String], dbUser: String, dbPass: String) = {
     val (pdb, mdb, sdb) = dbname match {
       case None         => ("postgres", "sys", workdir)
       case Some(dbname) => (dbname, dbname, workdir)
@@ -73,10 +71,14 @@ object TestRunnerCreator {
   def apply(options: Options, schema: Schema) = {
     val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
     val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
-    val createdb = Try(genBackends(options.dbs, dbDir, None).foreach { db =>
+    val createdb = Try(genBackends(
+      options.dbs, dbDir, None,
+      options.dbUser, options.dbPass
+    ) foreach { db =>
       DBSetup.createdb(db, schema.name)
     })
-    val dbs = genBackends(options.dbs, dbDir, Some(schema.name))
+    val dbs = genBackends(
+      options.dbs, dbDir, Some(schema.name), options.dbUser, options.dbPass)
     val schemadb = createdb.flatMap { _ =>
       Try(dbs.foreach { db =>
         DBSetup.setupSchema(db, schemaPath)
@@ -381,7 +383,7 @@ object Controller {
     def basenameWithoutExtension(x: String) =
         x.split("/").last.split("\\.(?=[^\\.]+$)").head
     Utils.setWorkDir()
-    val testSessions: List[Future[Unit]] =
+    val testSessions =
       options.mode match {
         case Some("test") =>
           List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
@@ -428,14 +430,20 @@ object Controller {
             }}
           }
         case Some("clean") => {
-          deleteRecursively(new File(".cynthia"))
-          sys.exit(0)
+          (List(
+            Postgres(options.dbUser, options.dbPass, "postgres"),
+            MySQL(options.dbUser, options.dbPass, "sys")
+          ) map { x =>
+            Future { DBSetup.clean(x) }
+          }) :+ Future {
+            deleteRecursively(new File(".cynthia"))
+          }
         }
         case _ => ???
       }
     Await.result(
       Future.sequence(testSessions) map { _ =>
-        println("All testing sessions finished.")
+        println(s"Command ${options.mode.get} finished successfully.")
       },
       Duration.Inf
     )
