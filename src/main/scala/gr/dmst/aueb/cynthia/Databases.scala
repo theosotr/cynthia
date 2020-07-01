@@ -105,12 +105,11 @@ object DBSetup {
       }
     case _ => {
       val stmt = dbcon.createStatement
-      dbcon.setAutoCommit(false)
+      dbcon.setAutoCommit(true)
       getDatabases(db, dbcon) filter { !db.defaultDbs.contains(_) } foreach { x =>
         stmt.addBatch("DROP DATABASE IF EXISTS " + x)
       }
       stmt.executeBatch
-      dbcon.commit
     }
   }
 
