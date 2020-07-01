@@ -436,8 +436,12 @@ object Controller {
             Postgres(options.dbUser, options.dbPass, "postgres"),
             MySQL(options.dbUser, options.dbPass, "sys")
           ) map { x =>
-            Future { DBSetup.clean(x) }
+            Future {
+              println("Cleaning backend " + x.getName + "...")
+              DBSetup.clean(x)
+            }
           }) :+ Future {
+            println("Cleaning working directory .cynthia...")
             deleteRecursively(new File(".cynthia"))
           }
         }
