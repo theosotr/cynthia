@@ -59,20 +59,20 @@ object ProjectCreator {
           Seq(
             bcmd, "-a", "postgresql",
             "-d", dbname, "-u", user, "-p", password,
-            "-o", orm.getModelsPath()
+            "-o", orm.getModelsPath
           ).mkString(" ")
         case MySQL(user, password, dbname) =>
           Seq(
             bcmd, "-a", "mysql2",
-            "-d", dbname, "-u", user, "-p", password,
-            "-o", orm.getModelsPath()
+            "-d", dbname.toLowerCase, "-u", user, "-p", password,
+            "-o", orm.getModelsPath
           ).mkString(" ")
         case SQLite(dbname) =>
           Seq(
             bcmd, "-a", "postgresql",
-            "-d", dbname.split("/").last,
+            "-d", dbname.split("/").last.toLowerCase,
             "-u", "orm_testing", "-p", "orm_testing",
-            "-o", orm.getModelsPath()
+            "-o", orm.getModelsPath
           ).mkString(" ")
       }
       Utils.runCmd(cmd, None)

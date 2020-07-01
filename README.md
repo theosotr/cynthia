@@ -39,8 +39,17 @@ The first time you should run Cynthia with postgres backend to initialize
 the Database
 
 ```bash
-sudo apt install ruby-full ruby-activerecord rudy-dev
-sudo gem install sqlite3 mysql2 postgres rmre pg
+sudo apt install ruby-full rudy-dev
+sudo gem install sqlite3 mysql2 postgres activerecord pg
+```
+
+For installing `rmre`, which is the tool for creating models, run
+
+```bash
+git clone https://github.com/theosotr/rmre
+cd rmre
+gem build rmre.gemspec
+sudo gem install rmre-0.0.9.gem
 ```
 
 __Redirect stderr to hide ruby warnings__
