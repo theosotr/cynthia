@@ -424,10 +424,12 @@ object Controller {
             case None => {
 
             }
-            Utils.getListOfFiles(options.dotCynthia + "/schemas") map (_.split('/').last) map { s => Future {
-              val schema = Schema(s, Map())
-              _run(options, schema, {_.start})
-            }}
+            Utils.getListOfFiles(
+              options.dotCynthia + "/schemas") map (_.split('/').last) map { s =>
+                Future {
+                  val schema = Schema(s, Map())
+                _run(options, schema, {_.start})
+              }}
           }
         case Some("clean") => {
           (List(
