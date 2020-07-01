@@ -112,7 +112,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
 
     field.split('.').toList match {
       case Nil | _ :: Nil  => _constructField(field)
-      case h :: (f :: Nil) => _constructField(h + "." + f)
+      case h :: (f :: Nil) => _constructField(h.toLowerCase + "." + f)
       case _ :: t          =>
         if (dollarSign) "'$" + t.mkString(".") + "$'"
         else Utils.quoteStr(t mkString ".")
@@ -189,7 +189,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   }
 
   def quoteDBName(name: String) = target.db match {
-    case MySQL(_, _, _) => Utils.quoteStr(name, quotes ="`")
+    case MySQL(_, _, _) => Utils.quoteStr(name, quotes ="\\`")
     case _              => Utils.quoteStr(name, quotes = "\\\"")
   }
 
