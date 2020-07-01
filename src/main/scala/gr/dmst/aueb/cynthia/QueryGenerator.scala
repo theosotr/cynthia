@@ -385,13 +385,29 @@ case class QueryGenerator(
     val qType = RUtils.chooseFrom(List(
       "set",
       "aggr",
-      "union"
+      "union",
+      "first",
+      "subset"
     ))
     val cands = if (noCombined) Seq(NewQS) else Seq(NewQS, UnionQS, IntersectQS)
     qType match {
       case "set" =>
         SetRes(generateQuerySet(GenState(
           schema, cands = cands, exprCands = exprNodes)).qs.get)
+      case "first" => {
+        val qs = generateQuerySet(GenState(
+          schema, cands = cands, exprCands = exprNodes)).qs.get
+        if (qs.ordered) FirstRes(qs)
+        else SetRes(qs)
+      }
+      case "subset" => {
+        val qs = generateQuerySet(GenState(
+          schema, cands = cands, exprCands = exprNodes)).qs.get
+        val offset = RUtils.integer()
+        if (qs.ordered)
+          SubsetRes(offset, limit = Some(offset + RUtils.integer()), qs)
+        else SetRes(qs)
+      }
       case "aggr" => {
         val exprCands = exprNodes filter { x => x match {
           case CountExpr | SumExpr | AvgExpr | MaxExpr | MinExpr => false

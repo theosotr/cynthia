@@ -22,8 +22,8 @@ object RUtils {
   def word(): String =
     Words.value(r.nextInt(Words.value.size))
 
-  def integer(n: Int = 10): Int =
-    r.nextInt(n)
+  def integer(from: Int = 0, n: Int = 10): Int =
+    r.nextInt(n) + from
 
   def bool() =
     r.nextBoolean

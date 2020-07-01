@@ -16,7 +16,7 @@ object DataGenerator {
       case VarChar(n) => Constant(RUtils.word(), Quoted)
       case Bool => Constant(RUtils.bool().toString, UnQuoted)
       case Foreign(_) => Constant(
-        (RUtils.integer(foreignKeyCands) + 1).toString, UnQuoted)
+        (RUtils.integer(n = foreignKeyCands) + 1).toString, UnQuoted)
     }}
 
   def apply(model: Model, foreignKeyCands: Int, limit: Int = 1000) = {
