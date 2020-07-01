@@ -14,9 +14,8 @@ sealed trait DB {
 case class Postgres (user: String, password: String, dbname: String) extends DB {
   val defaultDbs = Set(
     "postgres",
-    "template1",
-    "dan",
-    "sys"
+    "template0",
+    "template1"
   )
 
   override def getURI() =
