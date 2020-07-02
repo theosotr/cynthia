@@ -1,4 +1,8 @@
 #! /bin/sh
 
-dir=$(dirname $0)
-java -jar $dir/cynthia-assembly-0.1.0-SNAPSHOT.jar "$@"
+if [ -z $CYNTHIA_JAR_FILE ]; then
+  dir=$(dirname $0)
+  java -jar $dir/cynthia-assembly-0.1.0-SNAPSHOT.jar "$@"
+else
+  java -jar $CYNTHIA_JAR_FILE "$@"
+fi
