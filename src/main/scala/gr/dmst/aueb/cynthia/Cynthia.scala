@@ -23,7 +23,8 @@ case class Options (
   minDepth: Int = 5,
   maxDepth: Int = 25,
   dbUser: String = "orm_testing",
-  dbPass: String = "orm_testing"
+  dbPass: String = "orm_testing",
+  timeout: Option[Int] = None
 )
 
 
@@ -101,17 +102,24 @@ object Cynthia {
         opt[Int]('n', "queries")
           .action((x, o) => o.copy(nuqueries = x))
           .text("Number of queries to generate for each schema (Default value: 200)")
-          .validate(x => {
+          .validate(x =>
             if (x < 1) failure("You must generate at least one query")
             else success
-          }),
+          ),
         opt[Int]('s', "schemas")
           .action((x, o) => o.copy(schemas = x))
           .text("Number of schemas to generate (Default value: 1)")
-          .validate(x => {
+          .validate(x =>
             if (x < 1) failure("You must generate at least one schema")
             else success
-          }),
+          ),
+        opt[Int]("timeout")
+          .action((x, o) => o.copy(timeout = Some(x)))
+          .text("Timeout for testing in seconds")
+          .validate( x =>
+            if (x < 1) failure("Timeout must be greater than 1")
+            else success
+          ),
         ormsOption,
         backendsOption,
         storeMatchesOption,

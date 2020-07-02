@@ -444,11 +444,21 @@ object Controller {
         }
         case _ => ???
       }
-    Await.result(
-      Future.sequence(f) map { _ =>
-        println(s"Command ${options.mode.get} finished successfully.")
-      },
-      Duration.Inf
-    )
+    try {
+      Await.result(
+        Future.sequence(f) map { _ =>
+          println(s"Command ${options.mode.get} finished successfully.")
+        },
+        options.timeout match {
+          case None    => Duration.Inf
+          case Some(t) => t seconds
+        }
+      )
+    } catch {
+      case e: TimeoutException => {
+        println("Cynthia timed out")
+        System.exit(0)
+      }
+    }
   }
 }
