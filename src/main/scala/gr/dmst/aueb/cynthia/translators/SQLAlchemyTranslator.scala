@@ -151,7 +151,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
   def constructFieldExpr(fexpr: FieldExpr, fprefix: String = ""): String = fexpr match {
     case F(f)                  =>
       if (fprefix.equals("")) getSQLAlchemyFieldName(f)
-      else fprefix + "." + getSQLAlchemyFieldName(f)
+      else fprefix + "." + TUtils.toLabel(getSQLAlchemyFieldName(f))
     case Constant(v, UnQuoted) => "literal(" + v + ")"
     case Constant(v, Quoted)   => "literal(" + Utils.quoteStr(v) + ")"
     case _    =>

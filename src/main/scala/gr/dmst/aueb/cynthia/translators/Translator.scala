@@ -372,6 +372,9 @@ object TUtils {
   def toFieldVar(f: String) =
     f + "_cynthia"
 
+  def toLabel(v: String) =
+    v.replace("_cynthia", "")
+
   def filterMapAs(f: FieldDecl => Boolean)(fields: Iterable[FieldDecl]) =
     fields filter f map FieldDecl.as
 
