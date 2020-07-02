@@ -79,7 +79,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
       fields map { as =>
-        s"${ident}dump($v.dataValues.$as, '$as')"
+        s"${ident}dump($v === null ? $v : $v.dataValues.$as, '$as')"
       } mkString "\n"
     val str = q match {
       case SetRes(_)  | SubsetRes(_, _, _) =>
