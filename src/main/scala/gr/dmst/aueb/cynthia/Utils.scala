@@ -193,4 +193,7 @@ object Utils {
 
   def loadQuery(path: String): Query =
     readFromFile(path).parseJson.convertTo[Query]
+
+  def basenameWithoutExtension(x: String) =
+      x.split("/").last.split("\\.(?=[^\\.]+$)").head
 }

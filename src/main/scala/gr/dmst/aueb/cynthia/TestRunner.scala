@@ -379,11 +379,8 @@ object Controller {
 
 
   def apply(options: Options) = {
-    def isEmpty(x: String) = x == null || x.isEmpty
-    def basenameWithoutExtension(x: String) =
-        x.split("/").last.split("\\.(?=[^\\.]+$)").head
     Utils.setWorkDir()
-    val testSessions =
+    val f =
       options.mode match {
         case Some("test") =>
           List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
@@ -405,7 +402,7 @@ object Controller {
               case Some(x) => x
               case None    => ""
             }
-            val dst = basenameWithoutExtension(sql)
+            val dst = Utils.basenameWithoutExtension(sql)
             // If options.sql and dst are the same file then the direct copy
             // will fail
             Utils.copyFile(sql, "/tmp/cynthia_db")
@@ -428,7 +425,7 @@ object Controller {
               options.dotCynthia + "/schemas") map (_.split('/').last) map { s =>
                 Future {
                   val schema = Schema(s, Map())
-                _run(options, schema, {_.start})
+                  _run(options, schema, {_.start})
               }}
           }
         case Some("clean") => {
@@ -448,7 +445,7 @@ object Controller {
         case _ => ???
       }
     Await.result(
-      Future.sequence(testSessions) map { _ =>
+      Future.sequence(f) map { _ =>
         println(s"Command ${options.mode.get} finished successfully.")
       },
       Duration.Inf
