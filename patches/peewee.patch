@@ -1,0 +1,11 @@
+--- peewee.py	2020-07-02 11:44:41.581128820 +0300
++++ peewee_new.py	2020-07-02 11:45:14.829106857 +0300
+@@ -275,7 +275,7 @@
+     BETWEEN='BETWEEN',
+     REGEXP='REGEXP',
+     IREGEXP='IREGEXP',
+-    CONCAT='||',
++    CONCAT='+',
+     BITWISE_NEGATION='~')
+ 
+ # To support "django-style" double-underscore filters, create a mapping between

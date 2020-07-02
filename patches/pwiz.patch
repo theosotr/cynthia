@@ -1,0 +1,23 @@
+--- pwiz.py	2020-07-02 11:47:36.848970743 +0300
++++ new_pwiz.py	2020-07-02 11:48:32.612901156 +0300
+@@ -165,7 +165,7 @@
+     ao('-H', '--host', dest='host')
+     ao('-p', '--port', dest='port', type='int')
+     ao('-u', '--user', dest='user')
+-    ao('-P', '--password', dest='password', action='store_true')
++    ao('-P', '--password', dest='password')
+     engines = sorted(DATABASE_MAP)
+     ao('-e', '--engine', dest='engine', default='postgresql', choices=engines,
+        help=('Database type, e.g. sqlite, mysql, postgresql or cockroachdb. '
+@@ -188,10 +188,8 @@
+     return parser
+ 
+ def get_connect_kwargs(options):
+-    ops = ('host', 'port', 'user', 'schema')
++    ops = ('host', 'port', 'user', 'schema', 'password')
+     kwargs = dict((o, getattr(options, o)) for o in ops if getattr(options, o))
+-    if options.password:
+-        kwargs['password'] = getpass()
+     return kwargs
+ 
+ 
