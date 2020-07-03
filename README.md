@@ -62,6 +62,17 @@ npm install --save sequelize-auto
 npm install --save sqlite3
 ```
 
+* peewee (Python)
+
+```bash
+pip uninstall peewee
+git clone https://github.com/coleifer/peewee.git
+cd peewee
+patch < ../patches/pwiz.patch
+patch < ../patches/peewee.patch
+python setup.py install
+```
+
 ## Compile Cynthia
 
 Simply run
