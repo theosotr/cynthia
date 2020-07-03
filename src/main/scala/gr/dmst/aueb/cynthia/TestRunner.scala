@@ -429,18 +429,20 @@ object Controller {
               }}
           }
         case Some("clean") => {
-          (List(
-            Postgres(options.dbUser, options.dbPass, "postgres"),
-            MySQL(options.dbUser, options.dbPass, "sys")
-          ) map { x =>
-            Future {
-              println("Cleaning backend " + x.getName + "...")
-              DBSetup.clean(x)
-            }
-          }) :+ Future {
+          val f = Future {
             println("Cleaning working directory .cynthia...")
             deleteRecursively(new File(".cynthia"))
           }
+          if (options.onlyWorkDir) f :: Nil
+          else f :: (
+            List(
+              Postgres(options.dbUser, options.dbPass, "postgres"),
+              MySQL(options.dbUser, options.dbPass, "sys")
+            ) map { x => Future {
+              println("Cleaning backend " + x.getName + "...")
+              DBSetup.clean(x)
+              }
+            })
         }
         case _ => ???
       }

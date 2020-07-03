@@ -24,7 +24,8 @@ case class Options (
   maxDepth: Int = 25,
   dbUser: String = "orm_testing",
   dbPass: String = "orm_testing",
-  timeout: Option[Int] = None
+  timeout: Option[Int] = None,
+  onlyWorkDir: Boolean = false
 )
 
 
@@ -192,7 +193,11 @@ object Cynthia {
           backendsOption,
           storeMatchesOption
         )
-      cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) }
+      cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) } children(
+        opt[Unit]("only-workdir")
+          .action((x, o) => o.copy(onlyWorkDir = true))
+          .text("Clean only the working directory .cynthia")
+        )
       checkConfig(x =>
         x.mode match {
           case Some("test") =>
