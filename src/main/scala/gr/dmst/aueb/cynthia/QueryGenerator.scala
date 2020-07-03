@@ -158,9 +158,33 @@ case class QueryGenerator(
     }
   }
 
+  def chooseField(s: GenState, model: Model,  declaredOnly: Boolean,
+      nonAggrField: Boolean) =
+    if (declaredOnly || (!s.dfields.isEmpty && RUtils.bool())) {
+      if (nonAggrField)
+        s.dfields filter { !FieldDecl.isAggregate(_) } match {
+          case Seq() => {
+            val (columnName, columnType) = getColumn(s.schema, model)
+            (F(columnName), columnType)
+          }
+          case dfields => {
+            val dfield = RUtils.chooseFrom(dfields)
+            (F(dfield.as), dfield.ftype)
+          }
+        }
+      else {
+        val dfield = RUtils.chooseFrom(s.dfields)
+        (F(dfield.as), dfield.ftype)
+      }
+    } else {
+      val (columnName, columnType) = getColumn(s.schema, model)
+      (F(columnName), columnType)
+    }
+
   def generateFieldExpr(s: GenState, model: Model,
       forAggr: Boolean = false,
-      declaredOnly: Boolean = false): (FieldExpr, FieldType) = {
+      declaredOnly: Boolean = false,
+      nonAggrField: Boolean = false): (FieldExpr, FieldType) = {
     val exprNode =
       if (!forAggr && (s.depth >= maxDepth || RUtils.bool()))
         // If we reached the maximum depth, generate a leaf node.
@@ -175,60 +199,57 @@ case class QueryGenerator(
           else RUtils.chooseFrom(s.exprCands)
         else RUtils.chooseFrom(s.exprCands)
     exprNode match {
-      case FExpr => {
-        if (declaredOnly || (!s.dfields.isEmpty && RUtils.bool())) {
-          val dField = RUtils.chooseFrom(s.dfields)
-          (F(dField.as), dField.ftype)
-        } else {
-          val (columnName, columnType) = getColumn(s.schema, model)
-          (F(columnName), columnType)
-        }
-      }
+      case FExpr => chooseField(s, model, declaredOnly, nonAggrField)
       case ConstantExpr =>
         if (RUtils.bool) (Constant(RUtils.word, Quoted), StringF)
         else (Constant(s"${RUtils.integer()}", UnQuoted), IntF)
       case CountExpr => {
         // It's not meaningful to count a compound expression. revisit
         val s2 = s exprCandidates (List(FExpr))
-        (Count(Some(generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)._1)), IntF)
+        (Count(Some(generateFieldExpr(
+          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)._1)), IntF)
       }
       case SumExpr => {
         // You cannot apply an aggregate function to an aggregate function.
         val s2 = s.disgardAggregates
-        (Sum(generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)._1), DoubleF)
+        (Sum(generateFieldExpr(
+          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)._1), DoubleF)
       }
       case AvgExpr => {
         val s2 = s.disgardAggregates
-        (Avg(generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)._1), DoubleF)
+        (Avg(generateFieldExpr(
+          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)._1), DoubleF)
       }
       case MinExpr => {
         val s2 = s.disgardAggregates
-        val (e, eType) = generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)
+        val (e, eType) = generateFieldExpr(
+          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)
         (Min(e), eType)
       }
       case MaxExpr => {
         val s2 = s.disgardAggregates
-        val (e, eType) = generateFieldExpr(s2.++, model, declaredOnly = declaredOnly)
+        val (e, eType) = generateFieldExpr(
+          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)
         (Max(e), eType)
       }
       case AddExpr => {
-        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
-        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
         (Add(e1, e2), DoubleF)
       }
       case SubExpr => {
-        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
-        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
         (Sub(e1, e2), DoubleF)
       }
       case MulExpr => {
-        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
         val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
         (Mul(e1, e2), DoubleF)
       }
       case DivExpr => {
-        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
-        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
         (Div(e1, e2), DoubleF)
       }
     }
