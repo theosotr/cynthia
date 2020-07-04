@@ -147,8 +147,9 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       (Str(getSeqFieldName(k)) << ": " << "{[Op.lt]: " << constructFieldExpr(s, e) << "}").!
     case Lte(k, e) =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << constructFieldExpr(s, e) << "}").!
-    case Contains(k, e) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: " << constructFieldExpr(s, e) << "}").!
+    case Contains(k, Constant(v, _)) =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: sequelize.literal('" << v  << "')}").!
+    case Contains(_, _) => throw new UnsupportedException("contains expects only constants")
     case Not(pred)                  =>
       (Str("[Op.not]: {") << translatePred(s, pred) << "}").!
     case Or(p1, p2)                 =>
