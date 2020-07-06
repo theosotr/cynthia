@@ -57,9 +57,9 @@ __Redirect stderr to hide ruby warnings__
 * sequelize (nodejs)
 
 ```bash
-npm install --save sequelize
-npm install --save sequelize-auto
-npm install --save sqlite3
+npm install --save sequelize -g
+npm install --save sequelize-auto -g
+npm install --save sqlite3 -g
 ```
 
 * peewee (Python)
