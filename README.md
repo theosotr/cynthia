@@ -57,9 +57,10 @@ __Redirect stderr to hide ruby warnings__
 * sequelize (nodejs)
 
 ```bash
-npm install --save sequelize -g
-npm install --save sequelize-auto -g
-npm install --save sqlite3 -g
+sudo npm uninstall -g sqlite3 --unsafe-perm
+sudo npm uninstall -g sequelize --unsafe-perm
+npm install --save sequelize
+npm install --save sqlite3
 ```
 
 * peewee (Python)
