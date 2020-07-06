@@ -193,6 +193,7 @@ object Cynthia {
           backendsOption,
           storeMatchesOption
         )
+      cmd("group") action { (_, c) => c.copy(mode = Some("group")) }
       cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) } children(
         opt[Unit]("only-workdir")
           .action((x, o) => o.copy(onlyWorkDir = true))
@@ -204,13 +205,10 @@ object Cynthia {
             if (x.dbs.length + x.orms.length < 3)
               failure(
                 "Number of database backends + number of ORMs must be greather than 2.")
-            else
-              success
-          case Some("generate") =>
-            success
-          case Some("run") =>
-              success
-          case Some("replay") =>
+            else success
+          case Some("generate") => success
+          case Some("run")      => success
+          case Some("replay")   =>
             if (!Files.exists(Paths.get(x.dotCynthia)))
               failure("Directory " + x.dotCynthia + " does not exist")
             else if (!x.schema.isEmpty && !Files.exists(Paths.get(Utils.joinPaths(List(x.dotCynthia, "schemas", x.schema.get)))))
@@ -220,10 +218,9 @@ object Cynthia {
             else if (x.dbs.length + x.orms.length < 3)
               failure(
                 "Number of database backends + number of ORMs must be greather than 2.")
-            else
-              success
-          case Some("clean") =>
-            success
+            else success
+          case Some("group") => success
+          case Some("clean") => success
           case _ =>
             failure("A sub-command is required.")
         }

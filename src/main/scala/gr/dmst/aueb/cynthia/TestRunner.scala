@@ -428,6 +428,17 @@ object Controller {
                   _run(options, schema, {_.start})
               }}
           }
+        case Some("group") =>
+          Utils.listFiles(Utils.joinPaths(List(options.dotCynthia, "report")), ext = "") match {
+            case None           => Nil
+            case Some(projects) =>
+              projects.toList map { x => new File(x).getName } map { x =>
+                Future { println(x); GroupUtil(x) } map {
+                  case None => ()
+                  case Some(res) => println(res)
+                }
+              }
+          }
         case Some("clean") => {
           val f = Future {
             println("Cleaning working directory .cynthia...")
