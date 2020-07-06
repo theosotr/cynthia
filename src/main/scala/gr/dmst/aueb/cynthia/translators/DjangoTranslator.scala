@@ -210,6 +210,12 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     }
   }
 
+  def constructDistinct(distinct: Option[String]) = distinct match {
+    case Some("") => "distinct()"
+    case Some(x)  => s"distinct(${x})" // FIXME
+    case _        => ""
+  }
+
   override def constructCombinedQuery(s: State) = {
     val qstr = constructQueryPrefix(s)
     qstr >> QueryStr(
@@ -253,6 +259,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
         constructAnnotate(aggrF),
         constructOrderBy(s.orders),
         constructFilter(aggrP),
+        constructDistinct(s.distinct),
         constructValues((fieldVals filter { !FieldDecl.hidden(_) } map FieldDecl.as).toSet),
         constructAggrs(s.aggrs),
         constructFirst(first)

@@ -279,6 +279,12 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
           }
         }} mkString ", ") + ")"
 
+  def constructDistinct(distinct: Option[String]) = distinct match {
+    case Some("") => "distinct"
+    case Some(x)  => throw new UnsupportedException("Distincts with fields are not supported")
+    case _        => ""
+  }
+
   override def constructCombinedQuery(s: State) =
     throw new UnsupportedException("combined queries not supported")
 
@@ -300,6 +306,7 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
         constructOffsetLimit(offset, limit),
         constructSelects(nonHiddenFieldsMap),
         constructGroupBy(s.getNonConstantGroupingFields),
+        constructDistinct(s.distinct),
       ) filter {
         case "" => false
         case _ => true

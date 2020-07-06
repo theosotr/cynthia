@@ -241,8 +241,9 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
   implicit object OperationTypeJsonFormat extends JsonFormat[Operation] {
     def write(o: Operation) = {
       val value = o match {
-          case Filter(p) => JsObject("Filter" -> JsObject("p" -> p.toJson))
-          case Sort(s)   => JsObject("Sort"   -> JsObject("s" -> s.toJson))
+          case Filter(p)   => JsObject("Filter"   -> JsObject("p" -> p.toJson))
+          case Distinct(f) => JsObject("Distinct" -> JsObject("f" -> f.toJson))
+          case Sort(s)     => JsObject("Sort"     -> JsObject("s" -> s.toJson))
         }
       JsObject("Operation" -> value)
     }
@@ -257,6 +258,12 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
                     case JsObject(values) =>
                       Filter(values("p").convertTo[Predicate])
                     case _ => deserializationError("Filter expected")
+                  }
+                case "Distinct" =>
+                  fields("Distinct") match {
+                    case JsObject(values) =>
+                      Distinct(values("f").convertTo[Option[String]])
+                    case _ => deserializationError("Distinct expected")
                   }
                 case "Sort" =>
                   fields("Sort") match {

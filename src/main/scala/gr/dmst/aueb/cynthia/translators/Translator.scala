@@ -44,51 +44,61 @@ case class State(
   aggrs: Seq[FieldDecl] = Seq(),                // Aggregate functions to apply
   joins: Seq[Seq[String]] = Seq(),              // Models to join with source
   query: Option[QueryStr] = None,               // Query string (target), e.g. Unions
+  distinct: Option[String] = None,
   combined: Boolean = false,
   numGen: Iterator[Int] = LazyList.from(1).iterator
   ) {
 
   def source(s: String) =
     State(db, s, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins, query, combined, numGen)
+          joins, query, distinct, combined, numGen)
 
   def f(fd: FieldDecl) = fd match {
     case FieldDecl(_, as, _, _) =>
       State(db, source, fields + (as -> fd), preds, orders, nonAggrF, aggrF,
-            constantF, aggrs, joins, query, combined, numGen)
+            constantF, aggrs, joins, query, distinct, combined, numGen)
   }
 
   def pred(p: Predicate): State =
     State(db, source, fields, preds + p, orders, nonAggrF, aggrF, constantF,
-          aggrs, joins, query, combined, numGen)
+          aggrs, joins, query, distinct, combined, numGen)
 
   def order(o: (String, Order)): State =
     State(db, source, fields, preds, orders :+ o, nonAggrF, aggrF, constantF,
-          aggrs, joins, query, combined, numGen)
+          aggrs, joins, query, distinct, combined, numGen)
 
   def nonAggrF(f: Set[String]): State =
     State(db, source, fields, preds, orders, nonAggrF ++ f, aggrF, constantF,
-          aggrs, joins, query, combined, numGen)
+          aggrs, joins, query, distinct, combined, numGen)
 
   def addGroupF(f: String): State =
     State(db, source, fields, preds, orders, nonAggrF + f, aggrF, constantF,
-          aggrs, joins, query, combined, numGen)
+          aggrs, joins, query, distinct, combined, numGen)
 
   def aggrF(f: Set[String]): State =
     State(db, source, fields, preds, orders, nonAggrF, f, constantF, aggrs,
-          joins, query, combined, numGen)
+          joins, query, distinct, combined, numGen)
 
   def constantFields(c: Set[String]): State =
     State(db, source, fields, preds, orders, nonAggrF, aggrF, c, aggrs,
-          joins, query, combined, numGen)
+          joins, query, distinct, combined, numGen)
 
   def aggr(a: Seq[FieldDecl]): State =
     State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
-          aggrs ++ a, joins, query, combined, numGen)
+          aggrs ++ a, joins, query, distinct, combined, numGen)
 
   def join(p: Seq[String]): State =
     State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins :+ p, query, combined, numGen)
+          joins :+ p, query, distinct, combined, numGen)
+
+  def distinct(d: Option[String]): State = {
+    val distinct = d match {
+      case Some(x) => Some(x)
+      case _       => Some("")
+    }
+    State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
+          joins, query, distinct, combined, numGen)
+  }
 
   def getJoinPairs(): Set[(String, String)] =
     (joins map { x => {
@@ -107,16 +117,16 @@ case class State(
   def >>(qstr: QueryStr): State = query match {
     case None =>
       State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
-            aggrs, joins, Some(qstr), combined, numGen)
+            aggrs, joins, Some(qstr), distinct, combined, numGen)
     case Some(query) =>
       State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
-        aggrs, joins, Some(query >> qstr), combined, numGen)
+        aggrs, joins, Some(query >> qstr), distinct, combined, numGen)
   }
 
   def combinedQ(): State =
     // revisit
     State(db, source, fields, Set(), Seq(), nonAggrF, aggrF, constantF,
-          aggrs, joins, query, true, numGen)
+          aggrs, joins, query, distinct, true, numGen)
 }
 
 
@@ -284,6 +294,10 @@ abstract class Translator(val target: Target) {
       val (groupF, aggrF) = groupFields(s2, f)
       val s3 = s2 nonAggrF groupF
       traverseDeclaredFields(s3 aggrF aggrF, f)
+    }
+    case Apply(Distinct(field), qs) => {
+      val s1 = evalQuerySet(s)(qs)
+      s1 distinct field
     }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state

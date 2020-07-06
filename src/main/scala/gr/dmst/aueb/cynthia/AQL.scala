@@ -126,6 +126,7 @@ case object Desc extends Order
 sealed trait Operation
 case class Filter (pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
+case class Distinct(field: Option[String]) extends Operation
 
 sealed trait FieldType {
   def convertType(db: DB): String

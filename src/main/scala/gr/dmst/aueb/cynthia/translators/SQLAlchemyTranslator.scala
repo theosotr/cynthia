@@ -253,6 +253,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         groupBy map { x => getSQLAlchemyFieldName(x) } mkString ", ") + ")"
   }
 
+  def constructDistinct(distinct: Option[String]) = distinct match {
+    case Some("") => "distinct()"
+    case Some(x)  => s"distinct(${x})" // FIXME
+    case _        => ""
+  }
+
   override def constructCombinedQuery(s: State) = {
     val qstr = constructQueryPrefix(s)
     val qstr2 = qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
@@ -295,6 +301,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
         constructOrderBy(s, false),
+        constructDistinct(s.distinct),
         s.aggrs match {
           case Seq() => ""
           case Seq(FieldDecl(Count(None), _, _, _)) => "count()"

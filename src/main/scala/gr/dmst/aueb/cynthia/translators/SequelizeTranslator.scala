@@ -132,7 +132,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         val head :: tail = _getSeqOrderSpec(t, List())
         // Quote the first element, reverse the list and create the string.
         (Utils.quoteStr(head) :: tail).reverse mkString ","
-      } 
+      }
     }
   }
 
@@ -339,6 +339,10 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
 
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = {
+    s.distinct match {
+      case Some(x) => throw new UnsupportedException("unions are not supported")
+      case None    => ()
+    }
     val fieldVals = s.fields.values
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val method = if (first) ".findOne" else ".findAll"

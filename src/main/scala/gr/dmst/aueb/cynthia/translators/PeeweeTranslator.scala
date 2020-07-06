@@ -236,6 +236,12 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         groupBy map { x => getPeeweeFieldName(x) } mkString ", ") + ")"
   }
 
+  def constructDistinct(distinct: Option[String]) = distinct match {
+    case Some("") => "distinct()"
+    case Some(x)  => s"distinct(${x})" // FIXME
+    case _        => ""
+  }
+
   override def constructCombinedQuery(s: State) = {
     if (!s.aggrs.isEmpty)
       throw UnsupportedException(
@@ -273,6 +279,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
         constructOrderBy(s, false),
+        constructDistinct(s.distinct),
         "objects()",
         s.aggrs match {
           case Seq() => ""
