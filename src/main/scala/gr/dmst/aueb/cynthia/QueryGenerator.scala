@@ -5,6 +5,7 @@ sealed trait QuerySetNode
 case object NewQS extends QuerySetNode
 case object ApplySort extends QuerySetNode
 case object ApplyFilter extends QuerySetNode
+case object ApplyDistinct extends QuerySetNode
 case object UnionQS extends QuerySetNode
 case object IntersectQS extends QuerySetNode
 
@@ -363,7 +364,7 @@ case class QueryGenerator(
                                       number = declF)
           val qs = New(model.name, s2.dfields)
           val s3 = s2 queryset qs
-          val s4 = s3 candidates List(ApplySort, ApplyFilter)
+          val s4 = s3 candidates List(ApplySort, ApplyFilter, ApplyDistinct)
           generateQuerySet(s4 model model)
         }
         case UnionQS => {
@@ -397,6 +398,20 @@ case class QueryGenerator(
           val qs = Apply(Filter(pred), s.qs.get)
           val s2 = s queryset qs
           val s3 = s2 candidates (s2.cands filter { x => x != ApplyFilter })
+          generateQuerySet(s3)
+        }
+        case ApplyDistinct => {
+          assert(s.model.isDefined)
+          // With field
+          val qs =
+            if (RUtils.bool) {
+              val field = RUtils.chooseFrom(s.getFields(false))
+              Apply(Distinct(Some(field)), s.qs.get)
+            } else { // Without Field
+              Apply(Distinct(Option.empty[String]), s.qs.get)
+            }
+          val s2 = s queryset qs
+          val s3 = s2 candidates (s2.cands filter { x => x != ApplyDistinct })
           generateQuerySet(s3)
         }
       }
