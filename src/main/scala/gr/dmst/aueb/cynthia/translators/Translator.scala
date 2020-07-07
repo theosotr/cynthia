@@ -297,7 +297,10 @@ abstract class Translator(val target: Target) {
     }
     case Apply(Distinct(field), qs) => {
       val s1 = evalQuerySet(s)(qs)
-      s1 distinct field
+      field match {
+        case None    => s1 distinct field
+        case Some(f) => updateJoins(f, s1) distinct field
+      }
     }
     case Apply(Filter(pred), qs) => {
       val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state
