@@ -253,9 +253,20 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         groupBy map { x => getSQLAlchemyFieldName(x) } mkString ", ") + ")"
   }
 
-  def constructDistinct(distinct: Option[String]) = distinct match {
+  def constructDistinct(distinct: Option[String], s: State) = distinct match {
     case Some("") => "distinct()"
-    case Some(x)  => s"distinct(${x})" // FIXME
+    case Some(x)  => {
+      target.db match {
+        case Postgres(_, _, _) => {
+          if (x.split('.').size > 1)
+            s"distinct(${getSQLAlchemyFieldName(x)})"
+          else
+            s"distinct(${TUtils.toFieldVar(x)})"
+        }
+        case _                 =>
+          throw new UnsupportedException("Distinct on is supported only by Postgres")
+      }
+    }
     case _        => ""
   }
 
@@ -301,7 +312,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
         constructOrderBy(s, false),
-        constructDistinct(s.distinct),
+        constructDistinct(s.distinct, s),
         s.aggrs match {
           case Seq() => ""
           case Seq(FieldDecl(Count(None), _, _, _)) => "count()"

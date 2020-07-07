@@ -238,7 +238,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
 
   def constructDistinct(distinct: Option[String]) = distinct match {
     case Some("") => "distinct()"
-    case Some(x)  => s"distinct(${x})" // FIXME
+    case Some(x)  => s"distinct(${getPeeweeFieldName(x, withAlias = false)})"
     case _        => ""
   }
 

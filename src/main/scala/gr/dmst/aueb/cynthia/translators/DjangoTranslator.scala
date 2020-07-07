@@ -212,7 +212,12 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
 
   def constructDistinct(distinct: Option[String]) = distinct match {
     case Some("") => "distinct()"
-    case Some(x)  => s"distinct(${x})" // FIXME
+    case Some(x)  => {
+      if (x.split('.').size > 1)
+        s"distinct('${getDjangoFieldName(x)}')"
+      else
+        throw new UnsupportedException("Distincts with compound fields are not supported")
+    }
     case _        => ""
   }
 
@@ -246,6 +251,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     }
     val fieldsTopSort = Utils.topologicalSort(computeFieldGraph(s.fields))
     val (aggrF, nonAggrF) = fieldsTopSort partition { x => s.aggrF.contains(x) }
+    // "buz"
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
