@@ -8,3 +8,4 @@ scripts/cynthia-assembly-0.1.0-SNAPSHOT.jar: $(SCALA_FILES) $(RESOURCES)
 
 clean:
 	rm -f scripts/${JAR_FILE}
+	sbt clean
