@@ -11,4 +11,4 @@ SQLAlchemy,Fixed,SQLite,https://github.com/theosotr/cynthia/issues/14
 Django,Confirmed,select,,https://github.com/theosotr/cynthia/issues/15
 Django,Confirmed,aggregate,,https://github.com/theosotr/cynthia/issues/17
 SQLAlchemy,Fixed,distinct,,https://github.com/theosotr/cynthia/issues/27
-Peewee,Fixed,distinct,,https://github.com/theosotr/cynthia/issues/28
+Peewee,Fixed,distinct,postgres,https://github.com/theosotr/cynthia/issues/28
