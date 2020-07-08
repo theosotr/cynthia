@@ -18,6 +18,12 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
         "\tusername: " << Utils.quoteStr(user) << ",\n" <<
         "\tpassword: " << Utils.quoteStr(password) << ",\n" <<
         "\tdatabase: " << Utils.quoteStr(dbname)
+    case Cockroachdb(user, password, dbname) =>
+      Str("\tadapter: 'cockroachdb',\n") <<
+        "\thost: 'localhost',\n" <<
+        "\tport: '26257',\n" <<
+        "\tusername: " << Utils.quoteStr(user) << ",\n" <<
+        "\tdatabase: " << Utils.quoteStr(dbname)
     case SQLite(dbname) =>
       Str("\tadapter: 'sqlite3',\n") <<
         "\tdatabase: " << Utils.quoteStr(dbname)

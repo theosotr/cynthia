@@ -20,6 +20,13 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         Utils.quoteStr(user) << ", " <<
         Utils.quoteStr(password) << ", {\n" <<
         "  dialect: " << Utils.quoteStr(target.db.getName()) << ",\n"
+    case Cockroachdb(user, password, dbname) =>
+      Str("new Sequelize(") <<
+        Utils.quoteStr(dbname) << ", " <<
+        Utils.quoteStr(user) << ", " <<
+        "''" << ", {\n" <<
+        "  dialect: " << "'postgres'" << ",\n" <<
+        "  port: " << "26257" << ",\n"
     case SQLite(dbname) =>
       Str("new Sequelize(") <<
         Utils.quoteStr(dbname) << "," <<
@@ -30,8 +37,12 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   val setstr = dbsettings << "  logging: false,\n" <<
     "  define: { timestamps: false }\n});\n"
 
+  val sequelizePreamble = "const {Op, Sequelize} = require('sequelize');"
+  val cockroachdbSequelizePreamble = "const {Op, Sequelize} = require('sequelize-cockroachdb');"
+
   val preamble =
-    s"""const {Op, Sequelize} = require('sequelize');
+    s"""
+    |${if (target.db.getName().equals("cockroachdb")) cockroachdbSequelizePreamble else sequelizePreamble}
     |const sequelize = ${setstr.!}
     |
     |function toColumn(c) {

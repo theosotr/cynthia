@@ -44,6 +44,8 @@ object ProjectCreator {
               s" -e mysql -u $user -H localhost $dbname -P $password"
             case SQLite(dbname) =>
               s" -e sqlite $dbname"
+            case Cockroachdb(user, _, dbname) =>
+              s" -e cockroachdb -u $user -H localhost $dbname "
           }
           val models = Utils.runCmd(bcmd + cmd, None)
           Utils.writeToFile(
@@ -74,6 +76,13 @@ object ProjectCreator {
             "-u", "orm_testing", "-p", "orm_testing",
             "-o", orm.getModelsPath
           ).mkString(" ")
+        case Cockroachdb(user, password, dbname) =>
+          Seq(
+            bcmd, "-a", "postgresql",
+            "-s", "localhost", "--port", "26257",
+            "-d", dbname, "-u", user,
+            "-o", orm.getModelsPath
+          ).mkString(" ")
       }
       Utils.runCmd(cmd, None)
     }
@@ -100,6 +109,13 @@ object ProjectCreator {
             bcmd, "-h", "localhost",
             "-u", "foo", "-d",
             dbname, "--dialect", db.getName(),
+            "-o", pdir
+          ).mkString(" ")
+        case Cockroachdb(user, password, dbname) =>
+          Seq(
+            bcmd, "-h", "localhost", "-p", "26257",
+            "-u", user, "-d", dbname,
+            "--dialect", db.getName(),
             "-o", pdir
           ).mkString(" ")
       }
@@ -156,6 +172,17 @@ object ProjectCreator {
                 "'PASSWORD'" -> ("'" + password + "'"),
                 "'PORT'" -> "3306",
                 "'ENGINE'" -> "'django.db.backends.mysql'"
+              ).map(_.productIterator.mkString(":")).mkString(",\n") +
+            "},"
+          case Cockroachdb(user, password, dbname) =>
+            acc + "'cockroachdb': {" +
+              Map(
+                "'NAME'" -> ("'" + dbname + "'"),
+                "'HOST'" -> "'localhost'",
+                "'USER'" -> ("'" + user + "'"),
+                "'PASSWORD'" -> ("'" + password + "'"),
+                "'PORT'" -> "26257",
+                "'ENGINE'" -> "'django_cockroachdb'"
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
             "},"
           case SQLite(dbname) =>

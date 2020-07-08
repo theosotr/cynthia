@@ -31,16 +31,18 @@ case class Target(orm: ORM, db: DB) {
 object TestRunnerCreator {
   def genBackends(backends: Seq[String], workdir: String,
     dbname: Option[String], dbUser: String, dbPass: String) = {
-    val (pdb, mdb, sdb) = dbname match {
-      case None         => ("postgres", "sys", workdir)
-      case Some(dbname) => (dbname, dbname, workdir)
+    // Get default databases per backend
+    val (pdb, mdb, cdb, sdb) = dbname match {
+      case None         => ("postgres", "sys", "defaultdb", workdir)
+      case Some(dbname) => (dbname, dbname, dbname, workdir)
     }
     backends.map { x => x match {
         // In postgress, the database should be in lowercase.
-        case "postgres" => Postgres(dbUser, dbPass, pdb.toLowerCase)
-        case "mysql"    => MySQL(dbUser, dbPass, mdb)
-        case "sqlite"   => SQLite(sdb)
-        case _          => ???
+        case "postgres"       => Postgres(dbUser, dbPass, pdb.toLowerCase)
+        case "mysql"          => MySQL(dbUser, dbPass, mdb)
+        case "cockroachdb"    => Cockroachdb("root", "", cdb.toLowerCase)
+        case "sqlite"         => SQLite(sdb)
+        case _                => ???
       }
     }
   }

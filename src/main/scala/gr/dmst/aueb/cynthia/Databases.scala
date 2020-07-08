@@ -50,6 +50,21 @@ case class SQLite (dbname: String) extends DB {
     "sqlite"
 }
 
+case class Cockroachdb (user: String, password: String, dbname: String) extends DB {
+  val defaultDbs = Set(
+    "defaultdb",
+    "system",
+    "postgres"
+  )
+
+  // We use this function in SQLAlchemy translator
+  override def getURI() =
+    "cockroachdb://" + user + "@localhost:26257/" + dbname
+
+  override def getName() =
+    "cockroachdb"
+}
+
 
 object DBSetup {
 
@@ -60,6 +75,9 @@ object DBSetup {
     case MySQL(user, password, dbname) =>
       "jdbc:mysql://localhost:3306/" + dbname +
           "?user=" + user + "&password=" + password
+    case Cockroachdb(user, _, dbname) =>
+      "jdbc:postgresql://localhost:26257/" + dbname +
+          "?user=" + user
     case SQLite(dbname) => "jdbc:sqlite:" + dbname
   }
 
@@ -89,7 +107,7 @@ object DBSetup {
         SELECT datname FROM pg_database
         WHERE datistemplate = false;
         """
-      case MySQL(_, _, _) => "show databases;"
+      case MySQL(_, _, _) | Cockroachdb(_, _, _) => "show databases;"
       case SQLite(_) => ??? // Unreachable case
     }
     val stmt = dbcon.createStatement
@@ -138,7 +156,7 @@ object DBSetup {
             stmt.executeUpdate("CREATE DATABASE " + dbname.toLowerCase)
           }
         }
-      case MySQL(_, _, _) =>
+      case MySQL(_, _, _) | Cockroachdb(_, _, _) =>
         if (dbcon != null) {
           val stmt = dbcon.createStatement()
           stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS " + dbname)

@@ -88,6 +88,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       val dbname = s.db match {
         case Postgres (_, _, _) => "postgres"
         case MySQL (_, _, _)    => "mysql"
+        case Cockroachdb (_, _, _)    => "cockroachdb"
         case SQLite (_)         => "default"
       }
       QueryStr(Some("ret" + s.numGen.next().toString),

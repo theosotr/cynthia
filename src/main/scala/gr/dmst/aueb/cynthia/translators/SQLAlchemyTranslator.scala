@@ -16,7 +16,10 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     |# Ignore SQLAlchemy warnings
     |warnings.simplefilter("ignore", category=SAWarning)
     |
-    |engine = create_engine('${target.db.getURI()}')
+    |engine = create_engine(
+    |             '${target.db.getURI()}'
+    |             ${if (target.db.getName().equals("cockroachdb")) ",connect_args={'sslmode': 'disable'}" else ""}
+    |         )
     |Session = sessionmaker(bind=engine)
     |session = Session()
 
