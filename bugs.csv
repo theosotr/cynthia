@@ -1,0 +1,14 @@
+Django,Confirmed,Unions,MySQL,https://github.com/theosotr/cynthia/issues/2
+SQLAlchemy,Fixed,type_coerce,,https://github.com/theosotr/cynthia/issues/3
+Sequelize,Fixed,Op,,https://github.com/theosotr/cynthia/issues/4
+Sequelize,Confirmed,count,,https://github.com/theosotr/cynthia/issues/5
+Sequelize,Fixed,group_by,,https://github.com/theosotr/cynthia/issues/6
+Django,Fixed,group_by,,https://github.com/theosotr/cynthia/issues/7
+SQLAlchemy,Confirmed,add,,https://github.com/theosotr/cynthia/issues/8
+Django,Fixed,grouping,,https://github.com/theosotr/cynthia/issues/10
+Peewee,Fixed,parentheses,,https://github.com/theosotr/cynthia/issues/11
+SQLAlchemy,Fixed,SQLite,https://github.com/theosotr/cynthia/issues/14
+Django,Confirmed,select,,https://github.com/theosotr/cynthia/issues/15
+Django,Confirmed,aggregate,,https://github.com/theosotr/cynthia/issues/17
+SQLAlchemy,Fixed,distinct,,https://github.com/theosotr/cynthia/issues/27
+Peewee,Fixed,distinct,,https://github.com/theosotr/cynthia/issues/28
