@@ -193,7 +193,7 @@ object Cynthia {
           backendsOption,
           storeMatchesOption
         )
-      cmd("group") action { (_, c) => c.copy(mode = Some("group")) }
+      cmd("inspect") action { (_, c) => c.copy(mode = Some("inspect")) }
       cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) } children(
         opt[Unit]("only-workdir")
           .action((x, o) => o.copy(onlyWorkDir = true))
@@ -219,7 +219,7 @@ object Cynthia {
               failure(
                 "Number of database backends + number of ORMs must be greather than 2.")
             else success
-          case Some("group") => success
+          case Some("inspect") => success
           case Some("clean") => success
           case _ =>
             failure("A sub-command is required.")

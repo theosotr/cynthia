@@ -324,7 +324,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
                 val qid = mismatchEnumerator.next()
                 val reportDir = getMismatchesDir(qid)
                 val msg =
-                  s"""${Console.GREEN}[INFO]: Mismatch found in schema '${schema.name}':${Console.WHITE}
+                  s"""${Console.GREEN}[INFO]: Mismatch found in schema '${schema.name}':${Console.RESET}
                   |  - Query ID: $qid
                   |  - Report Directory: $reportDir
                   |  - OK Target Groups:\n${oks.map { case (_, v) =>
@@ -428,16 +428,26 @@ object Controller {
                   _run(options, schema, {_.start})
               }}
           }
-        case Some("group") =>
+        case Some("inspect") =>
           Utils.listFiles(Utils.joinPaths(List(options.dotCynthia, "report")), ext = "") match {
             case None           => Nil
             case Some(projects) =>
-              projects.toList map { x => new File(x).getName } map { x =>
-                Future { println(x); GroupUtil(x) } map {
-                  case None => ()
-                  case Some(res) => println(res)
-                }
-              }
+              List(
+                Future.sequence(
+                  projects.toList map { x => new File(x).getName } map { x =>
+                    Future { (x, Inspector(x)) }
+                }) map { res => res map { case (project, res) => {
+                    println(s"${Console.GREEN}Project: ${project}${Console.RESET}")
+                    res match {
+                      case None      => println("No mismatches found")
+                      case Some(res) => {
+                        InspectRes.printCrashes(res, startIdent = 2)
+                        InspectRes.printMismatches(res, startIdent = 2)
+                        println("==================================")
+                      }
+                    }
+                  } }
+                })
           }
         case Some("clean") => {
           val f = Future {
