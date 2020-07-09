@@ -428,18 +428,23 @@ object Controller {
                   _run(options, schema, {_.start})
               }}
           }
-        case Some("inspect") =>
-          Utils.listFiles(Utils.joinPaths(List(options.dotCynthia, "report")), ext = "") match {
+        case Some("inspect") => {
+          val reportDir = List(options.dotCynthia, Utils.reportDir)
+          val projects = options.schema match {
+            case None    => Utils.listFiles(Utils.joinPaths(reportDir), ext = "")
+            case Some(s) => Some(Array(Utils.joinPaths(reportDir :+ s)))
+          }
+          projects match {
             case None           => Nil
             case Some(projects) =>
               List(
                 Future.sequence(
                   projects.toList map { x => new File(x).getName } map { x =>
-                    Future { (x, Inspector(x)) }
+                    Future { (x, Inspector(x, options.mismatches, options.dotCynthia)) }
                 }) map { res => res map { case (project, res) => {
                     println(s"${Console.GREEN}Project: ${project}${Console.RESET}")
                     res match {
-                      case None      => println("No mismatches found")
+                      case None      => println(s"No mismatches found for project '${project}'")
                       case Some(res) => {
                         InspectRes.printCrashes(res, startIdent = 2)
                         InspectRes.printMismatches(res, startIdent = 2)
@@ -449,6 +454,7 @@ object Controller {
                   } }
                 })
           }
+        }
         case Some("clean") => {
           val f = Future {
             println("Cleaning working directory .cynthia...")

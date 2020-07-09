@@ -152,10 +152,10 @@ object Cynthia {
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
           .action((x, o) => o.copy(dotCynthia = x))
-          .text("cynthia directory for replaying missmatches (Default .cynthia)"),
+          .text("cynthia directory for replaying missmatches (default .cynthia)"),
         opt[String]('s', "schema")
           .action((x, o) => o.copy(schema = Some(x)))
-          .text("Schema to replay"),
+          .text("schema to replay"),
         opt[Unit]('a', "all")
           .action((x, o) => o.copy(all = true))
           .text("Replay all queries. Always use it with --store-matches to not remove matches queries"),
@@ -193,7 +193,17 @@ object Cynthia {
           backendsOption,
           storeMatchesOption
         )
-      cmd("inspect") action { (_, c) => c.copy(mode = Some("inspect")) }
+      cmd("inspect") action { (_, c) => c.copy(mode = Some("inspect")) } children(
+        opt[String]('c', "cynthia")
+          .action((x, o) => o.copy(dotCynthia = x))
+          .text("cynthia directory for inspecting missmatches (default .cynthia)"),
+        opt[String]('s', "schema")
+          .action((x, o) => o.copy(schema = Some(x)))
+          .text("schema to inspect"),
+        opt[Seq[Int]]('m', "mismatches")
+          .action((x, o) => o.copy(mismatches = x))
+          .text("mismatches to inspect")
+        )
       cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) } children(
         opt[Unit]("only-workdir")
           .action((x, o) => o.copy(onlyWorkDir = true))

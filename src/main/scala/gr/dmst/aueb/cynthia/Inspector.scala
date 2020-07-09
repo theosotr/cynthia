@@ -110,12 +110,18 @@ object Inspector {
     }
   }
 
-  def apply(schema: String): Option[InspectRes] = {
-    val dir = Utils.joinPaths(List(Utils.getReportDir, schema, "mismatches"))
+  def apply(schema: String, mismatches: Seq[Int],
+            workdir: String): Option[InspectRes] = {
+    val dir = Utils.joinPaths(List(
+      workdir, Utils.reportDir, schema, "mismatches"))
     Utils.listFiles(dir, ext = "") match {
       case None          => None
       case Some(queries) => {
-        Some(queries.foldLeft(InspectRes()) { (acc, x) =>
+        val q = mismatches match {
+          case Seq() => queries
+          case _     => queries map { _.toInt } filter { mismatches.contains(_) } map { _.toString }
+        }
+        Some(q.foldLeft(InspectRes()) { (acc, x) =>
           inspectMismatch(Utils.joinPaths(List(dir, x)), acc)
         })
       }
