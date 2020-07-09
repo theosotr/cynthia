@@ -13,9 +13,6 @@ import pprint.PPrinter.BlackWhite
 import spray.json._
 import DefaultJsonProtocol._
 
-import gr.dmst.aueb.cynthia.Utils.{readFromFile, getListOfFiles, deleteRecursively}
-import gr.dmst.aueb.cynthia.gen.SchemaGenerator
-import gr.dmst.aueb.cynthia.translators.SchemaTranslator
 import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
 
 
@@ -130,7 +127,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   def getQueriesFromDisk(path: String) = {
     if (Files.isDirectory(Paths.get(path)))
       // Revisit We want to return a LazyList
-      getListOfFiles(path).map(Utils.loadQuery(_))
+      Utils.getListOfFiles(path).map(Utils.loadQuery(_))
     else
       LazyList(Utils.loadQuery(path))
   }
@@ -156,8 +153,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
             val queryJsonFile = Utils.joinPaths(List(invalidQDir, q + ".json"))
             val queryFile = Utils.joinPaths(List(invalidQDir, q))
             val query = Utils.loadQuery(queryJsonFile)
-            deleteRecursively(new File(queryFile))
-            deleteRecursively(new File(queryJsonFile))
+            Utils.deleteRecursively(new File(queryFile))
+            Utils.deleteRecursively(new File(queryJsonFile))
             query
           })
           case _ => Seq[Query]()
@@ -170,7 +167,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       val queryJsonFile = Utils.joinPaths(List(x, "query.aql.json"))
       val query = Utils.loadQuery(queryJsonFile)
       // Remove old report
-      deleteRecursively(new File(x))
+      Utils.deleteRecursively(new File(x))
       query
     })
     queries ++ invalidQueries
@@ -366,128 +363,5 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       |Mismatches: ${stats.mismatches}
       |Invalid Queries: ${stats.invalid}\n""".stripMargin
     println(msg)
-  }
-}
-
-
-object Controller {
-  def _run(options: Options, s: Schema, x: TestRunner => Unit) =
-    TestRunnerCreator(options, s) match {
-      case Success(testRunner) => x(testRunner) // testRunner.start
-      case Failure(e)          => println(e.getMessage)
-    }
-
-
-  def apply(options: Options) = {
-    Utils.setWorkDir()
-    val f =
-      options.mode match {
-        case Some("test") =>
-          List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s, options.records))
-            _run(options, s, {_.start})
-          }}
-        case Some("generate") =>
-          List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s, options.records))
-            _run(options, s, {_.generate})
-          }}
-        case Some("run") =>
-          List { Future {
-            val sql = options.sql match {
-              case Some(x) => x
-              case None    => ""
-            }
-            val schema = options.schema match {
-              case Some(x) => x
-              case None    => ""
-            }
-            val dst = Utils.basenameWithoutExtension(sql)
-            // If options.sql and dst are the same file then the direct copy
-            // will fail
-            Utils.copyFile(sql, "/tmp/cynthia_db")
-            Utils.copyFile("/tmp/cynthia_db", Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
-            val s = Schema(dst, Map())
-            _run(options, s, {_.start})
-          }}
-        case Some("replay") =>
-          options.schema match {
-            case Some(x) => {
-              List { Future {
-                val s = Schema(x, Map())
-                _run(options, s, {_.start})
-              }}
-            }
-            case None => {
-
-            }
-            Utils.getListOfFiles(
-              options.dotCynthia + "/schemas") map (_.split('/').last) map { s =>
-                Future {
-                  val schema = Schema(s, Map())
-                  _run(options, schema, {_.start})
-              }}
-          }
-        case Some("inspect") => {
-          val reportDir = List(options.dotCynthia, Utils.reportDir)
-          val projects = options.schema match {
-            case None    => Utils.listFiles(Utils.joinPaths(reportDir), ext = "")
-            case Some(s) => Some(Array(Utils.joinPaths(reportDir :+ s)))
-          }
-          projects match {
-            case None           => Nil
-            case Some(projects) =>
-              List(
-                Future.sequence(
-                  projects.toList map { x => new File(x).getName } map { x =>
-                    Future { (x, Inspector(x, options.mismatches, options.dotCynthia)) }
-                }) map { res => res map { case (project, res) => {
-                    println(s"${Console.GREEN}Project: ${project}${Console.RESET}")
-                    res match {
-                      case None      => println(s"No mismatches found for project '${project}'")
-                      case Some(res) => {
-                        InspectRes.printCrashes(res, startIdent = 2)
-                        InspectRes.printMismatches(res, startIdent = 2)
-                        println("==================================")
-                      }
-                    }
-                  } }
-                })
-          }
-        }
-        case Some("clean") => {
-          val f = Future {
-            println("Cleaning working directory .cynthia...")
-            deleteRecursively(new File(".cynthia"))
-          }
-          if (options.onlyWorkDir) f :: Nil
-          else f :: (
-            List(
-              Postgres(options.dbUser, options.dbPass, "postgres"),
-              MySQL(options.dbUser, options.dbPass, "sys")
-            ) map { x => Future {
-              println("Cleaning backend " + x.getName + "...")
-              DBSetup.clean(x)
-              }
-            })
-        }
-        case _ => ???
-      }
-    try {
-      Await.result(
-        Future.sequence(f) map { _ =>
-          println(s"Command ${options.mode.get} finished successfully.")
-        },
-        options.timeout match {
-          case None    => Duration.Inf
-          case Some(t) => t seconds
-        }
-      )
-    } catch {
-      case e: TimeoutException => {
-        println("Cynthia timed out")
-        System.exit(0)
-      }
-    }
   }
 }
