@@ -216,9 +216,9 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
       if (x.split('.').size > 1)
         s"distinct('${getDjangoFieldName(x)}')"
       else
-        throw new UnsupportedException("Distincts with compound fields are not supported")
+        throw new UnsupportedException("Distincts with declared fields are not supported")
     }
-    case _        => ""
+    case _  => ""
   }
 
   override def constructCombinedQuery(s: State) = {

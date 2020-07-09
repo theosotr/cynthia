@@ -340,7 +340,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = {
     s.distinct match {
-      case Some(x) => throw new UnsupportedException("unions are not supported")
+      case Some(x) => throw new UnsupportedException("distinct is not supported")
       case None    => ()
     }
     val fieldVals = s.fields.values
