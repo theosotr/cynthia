@@ -100,7 +100,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     case Seq() => ""
     case spec  =>
       (s.aggrs, target.db) match {
-        case (Seq(_, _*), Postgres(_, _, _)) => ""
+        case (Seq(_, _*), Postgres(_, _, _)) | (Seq(_, _*), Cockroachdb(_, _, _)) => ""
         case _ =>
           (
             Str("order_by(") << (

@@ -105,7 +105,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case Seq() => ""
     case spec  =>
       (s.aggrs, target.db) match {
-        case (Seq(_, _*), Postgres(_, _, _)) => ""
+        case (Seq(_, _*), Postgres(_, _, _)) | (Seq(_, _*), Cockroachdb(_, _, _)) => ""
         case _ =>
           (
             Str("order_by(") << (
@@ -260,7 +260,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case Some("") => "distinct()"
     case Some(x)  => {
       target.db match {
-        case Postgres(_, _, _) => {
+        case Postgres(_, _, _) | Cockroachdb(_, _, _) => {
           if (x.split('.').size > 1)
             s"distinct(${getSQLAlchemyFieldName(x)})"
           else
