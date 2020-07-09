@@ -139,8 +139,8 @@ case object StringF extends FieldType {
 }
 case object IntF extends FieldType {
   override def convertType(db: DB) = db match {
-    case Postgres(_, _, _) => "integer"
-    case _                 => "signed"
+    case Postgres(_, _, _) | Cockroachdb(_, _, _) => "integer"
+    case _ => "signed"
   }
 }
 case object DoubleF extends FieldType {

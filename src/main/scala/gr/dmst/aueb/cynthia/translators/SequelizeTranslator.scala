@@ -78,8 +78,9 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     |    console.log(label, '0.00')
     |    return;
     |  }
-    |  if (typeof x === 'number') {
-    |    console.log(label, x.toFixed(2))
+    |  const val = parseFloat(x);
+    |  if (!Number.isNaN(val)) {
+    |    console.log(label, val.toFixed(2))
     |  } else {
     |    console.log(label, x)
     |  }
