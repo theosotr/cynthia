@@ -36,7 +36,10 @@ object ProjectCreator {
     case Peewee(_, pdir) => {
       val bcmd = "python -m pwiz"
       // Generate a models.py file for each backend.
-      dbs.foreach { db => {
+      dbs filter {
+        case MSSQL(_, _, _) => false
+        case _         => true
+      } foreach { db => {
           val cmd = db match {
             case Postgres(user, password, dbname) =>
               s" -e postgres -u $user -H localhost $dbname -P $password"

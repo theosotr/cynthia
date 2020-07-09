@@ -4,6 +4,11 @@ import gr.dmst.aueb.cynthia._
 
 
 case class PeeweeTranslator(t: Target) extends Translator(t) {
+  target.db match {
+    case MSSQL(_, _, _) =>
+      throw UnsupportedException("Peewee does not support MSSQL queries")
+    case _ => ()
+  }
 
   override val preamble =
     s"""import numbers, decimal
