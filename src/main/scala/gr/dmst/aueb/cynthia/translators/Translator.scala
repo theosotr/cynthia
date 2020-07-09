@@ -45,7 +45,7 @@ case class State(
   joins: Seq[Seq[String]] = Seq(),              // Models to join with source
   query: Option[QueryStr] = None,               // Query string (target), e.g. Unions
   combined: Boolean = false,
-  numGen: Iterator[Int] = Stream.from(1).iterator
+  numGen: Iterator[Int] = LazyList.from(1).iterator
   ) {
 
   def source(s: String) =

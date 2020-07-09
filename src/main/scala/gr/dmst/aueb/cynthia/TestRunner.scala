@@ -106,9 +106,9 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
 }
 
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
-  val mismatchEnumerator = Stream.from(1).iterator
-  val matchesEnumerator = Stream.from(1).iterator
-  val genEnumerator = Stream.from(1).iterator
+  val mismatchEnumerator = LazyList.from(1).iterator
+  val matchesEnumerator = LazyList.from(1).iterator
+  val genEnumerator = LazyList.from(1).iterator
 
   val qGen = QueryGenerator(
     options.minDepth, options.maxDepth, options.noCombined)
@@ -149,7 +149,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       if (options.all) {
         val invalidQDir = getInvalidQDir
         Utils.listFiles(invalidQDir, ".aql") match {
-          case Some(x) => x.map(q => {
+          case Some(x) => x.toIndexedSeq.map(q => {
             val queryJsonFile = Utils.joinPaths(List(invalidQDir, q + ".json"))
             val queryFile = Utils.joinPaths(List(invalidQDir, q))
             val query = Utils.loadQuery(queryJsonFile)
