@@ -5,6 +5,5 @@ django
 sqlalchemy
 sqlacodegen
 peewee
-sqlite3
 django-cockroachdb
 sqlalchemy-cockroachdb
