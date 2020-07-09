@@ -266,6 +266,10 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
 
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
       limit: Option[Int]) = {
+    if (!s.aggrs.isEmpty && s.distinct.isDefined) {
+      throw new UnsupportedException(
+        "Distinct is not supported in aggregate queries.")
+    }
     val fieldVals = s.fields.values
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val aliasStms = constructAliases(s.joins)
