@@ -40,7 +40,7 @@ the Database
 
 ```bash
 sudo apt install ruby-full rudy-dev
-sudo gem install sqlite3 mysql2 postgres activerecord pg activerecord-cockroachdb-adapter
+sudo gem install sqlite3 mysql2 postgres activerecord pg activerecord-cockroachdb-adapter ruby-odbc sqlserver
 ```
 
 For installing `rmre`, which is the tool for creating models, run
@@ -57,10 +57,13 @@ __Redirect stderr to hide ruby warnings__
 * sequelize (nodejs)
 
 ```bash
-sudo npm uninstall -g sqlite3 --unsafe-perm
-sudo npm uninstall -g sequelize --unsafe-perm
+sudo npm install -g sqlite3 --unsafe-perm
+sudo npm install -g tedious --unsafe-perm
+sudo npm install -g sequelize --unsafe-perm
+sudo npm install -g sequelize-auto --unsafe-perm
 npm install --save sequelize
 npm install --save sqlite3
+npm install --save tedious
 npm install --save sequelize-cockroachdb
 ```
 

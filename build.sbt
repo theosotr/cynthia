@@ -16,5 +16,6 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % "2.13.1",
   "com.lihaoyi" %% "pprint" % "0.5.9",
   "io.spray" %%  "spray-json" % "1.3.5",
+  "com.microsoft.sqlserver" % "mssql-jdbc" % "8.2.2.jre11",
 )
 scalacOptions := Seq("-unchecked", "-deprecation")

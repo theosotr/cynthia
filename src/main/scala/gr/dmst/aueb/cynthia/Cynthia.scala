@@ -55,7 +55,7 @@ object Cynthia {
           .action((x, o) => o.copy(dbs = o.dbs ++ x))
           .text("Database backends to store data (Default Value: sqlite)")
           .validate(_.foldLeft (success) { (acc, x) => x match {
-              case "mysql" | "postgres" | "cockroachdb" => acc
+              case "mysql" | "postgres" | "cockroachdb" | "mssql" => acc
               case "sqlite"             => failure ("SQLite is used by default")
               case _                    => failure ("Database backend '" + x + "' is not supported")
             }

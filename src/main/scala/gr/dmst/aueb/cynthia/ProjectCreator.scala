@@ -46,6 +46,8 @@ object ProjectCreator {
               s" -e sqlite $dbname"
             case Cockroachdb(user, _, dbname) =>
               s" -e cockroachdb -u $user -H localhost $dbname "
+            case MSSQL(_, _, _) =>
+              ??? // Unreachable
           }
           val models = Utils.runCmd(bcmd + cmd, None)
           Utils.writeToFile(
@@ -83,6 +85,12 @@ object ProjectCreator {
             "-d", dbname, "-u", user,
             "-o", orm.getModelsPath
           ).mkString(" ")
+        case MSSQL(user, _, dbname) =>
+          Seq(
+            bcmd, "-a", "postgresql",
+            "-d", dbname, "-u", user, "-p", "orm_testing",
+            "-o", orm.getModelsPath
+          ).mkString(" ")
       }
       Utils.runCmd(cmd, None)
     }
@@ -116,6 +124,13 @@ object ProjectCreator {
             bcmd, "-h", "localhost", "-p", "26257",
             "-u", user, "-d", dbname,
             "--dialect", db.getName(),
+            "-o", pdir
+          ).mkString(" ")
+        case MSSQL(user, password, dbname) =>
+          Seq(
+            bcmd, "-h", "localhost",
+            "-u", "foo", "-d",
+            dbname, "--dialect", db.getName(),
             "-o", pdir
           ).mkString(" ")
       }
@@ -172,6 +187,17 @@ object ProjectCreator {
                 "'PASSWORD'" -> ("'" + password + "'"),
                 "'PORT'" -> "3306",
                 "'ENGINE'" -> "'django.db.backends.mysql'"
+              ).map(_.productIterator.mkString(":")).mkString(",\n") +
+            "},"
+          case MSSQL(user, password, dbname) =>
+            acc + "'mssql': {" +
+              Map(
+                "'NAME'" -> ("'" + dbname + "'"),
+                "'HOST'" -> "'localhost'",
+                "'USER'" -> ("'" + user + "'"),
+                "'PASSWORD'" -> ("'" + password + "'"),
+                "'ENGINE'" -> "'sql_server.pyodbc'",
+                "'OPTIONS'" -> "{'driver': 'ODBC Driver 17 for SQL Server',}"
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
             "},"
           case Cockroachdb(user, password, dbname) =>

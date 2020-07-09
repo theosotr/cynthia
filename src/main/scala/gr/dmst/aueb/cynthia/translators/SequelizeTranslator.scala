@@ -20,6 +20,12 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
         Utils.quoteStr(user) << ", " <<
         Utils.quoteStr(password) << ", {\n" <<
         "  dialect: " << Utils.quoteStr(target.db.getName()) << ",\n"
+    case MSSQL(user, password, dbname) =>
+      Str("new Sequelize(") <<
+        Utils.quoteStr(dbname) << ", " <<
+        Utils.quoteStr(user) << ", " <<
+        Utils.quoteStr(password) << ", {\n" <<
+        "  dialect: " << Utils.quoteStr(target.db.getName()) << ",\n"
     case Cockroachdb(user, password, dbname) =>
       Str("new Sequelize(") <<
         Utils.quoteStr(dbname) << ", " <<

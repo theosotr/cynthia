@@ -7,3 +7,4 @@ sqlacodegen
 peewee
 django-cockroachdb
 sqlalchemy-cockroachdb
+django-mssql-backend

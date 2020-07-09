@@ -18,6 +18,7 @@ case class Postgres (user: String, password: String, dbname: String) extends DB 
     "template1"
   )
 
+  // We use this function in SQLAlchemy translator
   override def getURI() =
     "postgresql://" + user + ":" + password + "@localhost/" + dbname
 
@@ -33,6 +34,7 @@ case class MySQL (user: String, password: String, dbname: String) extends DB {
     "sys"
   )
 
+  // We use this function in SQLAlchemy translator
   override def getURI() =
     "mysql://" + user + ":" + password + "@localhost/" + dbname
 
@@ -43,6 +45,7 @@ case class MySQL (user: String, password: String, dbname: String) extends DB {
 case class SQLite (dbname: String) extends DB {
   val defaultDbs = Set()
 
+  // We use this function in SQLAlchemy translator
   override def getURI() =
     "sqlite:///" + dbname
 
@@ -65,6 +68,21 @@ case class Cockroachdb (user: String, password: String, dbname: String) extends 
     "cockroachdb"
 }
 
+case class MSSQL (user: String, password: String, dbname: String) extends DB {
+  val defaultDbs = Set(
+    "master",
+    "tempdb",
+    "model",
+    "msdb"
+  )
+
+  // We use this function in SQLAlchemy translator, 1433 is the ODBC port
+  override def getURI() =
+    "mssql+pyodbc://" + user + ":" + password + "@localhost:1433/" + dbname + "?driver=ODBC+Driver+17+for+SQL+Server"
+
+  override def getName() =
+    "mssql"
+}
 
 object DBSetup {
 
@@ -78,6 +96,9 @@ object DBSetup {
     case Cockroachdb(user, _, dbname) =>
       "jdbc:postgresql://localhost:26257/" + dbname +
           "?user=" + user
+    case MSSQL (user, password, dbname) =>
+      "jdbc:sqlserver://localhost:1434;database=" + dbname +
+          ";user=" + user + ";password=" + password + ";"
     case SQLite(dbname) => "jdbc:sqlite:" + dbname
   }
 
@@ -108,6 +129,7 @@ object DBSetup {
         WHERE datistemplate = false;
         """
       case MySQL(_, _, _) | Cockroachdb(_, _, _) => "show databases;"
+      case MSSQL(_, _, _) => "select name from sys.databases"
       case SQLite(_) => ??? // Unreachable case
     }
     val stmt = dbcon.createStatement
@@ -150,6 +172,16 @@ object DBSetup {
         if (dbcon != null) {
           val preStmt = dbcon.prepareStatement(
             "SELECT datname FROM pg_catalog.pg_database WHERE datname = ?")
+          preStmt.setString(1, dbname.toLowerCase)
+          if (!preStmt.executeQuery().next()) {
+            val stmt = dbcon.createStatement()
+            stmt.executeUpdate("CREATE DATABASE " + dbname.toLowerCase)
+          }
+        }
+      case MSSQL(_, _, _) =>
+        if (dbcon != null) {
+          val preStmt = dbcon.prepareStatement(
+            "SELECT name FROM sys.databases WHERE name = ?")
           preStmt.setString(1, dbname.toLowerCase)
           if (!preStmt.executeQuery().next()) {
             val stmt = dbcon.createStatement()
