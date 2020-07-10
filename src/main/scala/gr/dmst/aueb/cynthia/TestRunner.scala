@@ -108,8 +108,20 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
 }
 
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
-  val mismatchEnumerator = LazyList.from(1).iterator
-  val matchesEnumerator = LazyList.from(1).iterator
+  def _GetMaxId(path: String) =
+    new File(path).listFiles.map(_.getPath).map(_.split('/').last).map(_.toInt).max + 1
+  val mismatchEnumerator =
+    if (options.mismatches.nonEmpty)
+      options.mismatches.iterator
+    else if (options.mode.contains("run") && Files.exists(Paths.get(getMismatchDir)))
+        LazyList.from(_GetMaxId(getMismatchDir)).iterator
+    else
+      LazyList.from(1).iterator
+  val matchesEnumerator =
+    if (options.mode.contains("run") && Files.exists(Paths.get(getMatchDir)))
+        LazyList.from(_GetMaxId(getMatchDir)).iterator
+    else
+      LazyList.from(1).iterator
   val genEnumerator = LazyList.from(1).iterator
 
   val qGen = QueryGenerator(
@@ -339,6 +351,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
                 storeInvalid(q, qid)
                 acc ++ (invd = true)
               } else {
+                if (options.mismatches.nonEmpty)
+                  mismatchEnumerator.next()
                 if (options.storeMatches) {
                   val qid = matchesEnumerator.next()
                   val reportDir = getMatchesDir(qid)
