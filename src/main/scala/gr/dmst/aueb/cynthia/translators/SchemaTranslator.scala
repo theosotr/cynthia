@@ -26,7 +26,7 @@ object SchemaTranslator {
     def getForeignKeys() =
       (m.fields filter Field.isForeign).foldLeft(Str("")) { (acc, x) =>
         acc << ",\nFOREIGN KEY (" << x.name << "_id) REFERENCES " <<
-          x.name << "(id) ON DELETE CASCADE"
+          x.name << "(id) ON DELETE NO ACTION"
       }
 
     def getInsertStms() =
