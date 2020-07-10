@@ -196,4 +196,10 @@ object Utils {
 
   def basenameWithoutExtension(x: String) =
       x.split("/").last.split("\\.(?=[^\\.]+$)").head
+
+  def removeDups[T](l: Seq[T]): Seq[T] =
+    l.foldLeft((Seq[T](), Set[T]())) { case ((acc, v), x) =>
+      if (v.contains(x)) (acc, v)
+      else (acc :+ x, v + x)
+    }._1
 }
