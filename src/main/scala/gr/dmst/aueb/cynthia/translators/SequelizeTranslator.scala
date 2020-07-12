@@ -194,7 +194,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     case _     =>
       (
         Str("order: [\n") << (
-          spec map { x => {
+          Utils.removeDups(spec) map { x => {
             val name =
               if (fields.contains(x._1)) TUtils.toFieldVar(x._1)
               else getSeqOrderSpec(x._1)
