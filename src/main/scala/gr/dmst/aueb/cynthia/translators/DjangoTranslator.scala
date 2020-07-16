@@ -57,7 +57,13 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
 
   def constructFilter(preds: Set[Predicate]) =
     preds map { x =>
-      (Str("filter(") << translatePred(x) << ")").!
+      x match {
+        case Not(p) => RUtils.chooseFrom(Seq(
+          (Str("filter(") << translatePred(x) << ")").!,
+          (Str("exclude(") << translatePred(p) << ")").!
+        ))
+        case _ => (Str("filter(") << translatePred(x) << ")").!
+      }
     } mkString(".")
 
   def constructOrderBy(spec: Seq[(String, Order)]) = spec match {
