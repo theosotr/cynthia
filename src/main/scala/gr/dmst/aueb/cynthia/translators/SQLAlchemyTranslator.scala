@@ -82,6 +82,10 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case Contains(k, Constant(v, _)) =>
       (Str(getSQLAlchemyFieldName(k)) << ".contains(" << Utils.quoteStr(v) << ")").!
     case Contains(_, _) => throw new UnsupportedException("contains expects only constants")
+    case StartsWith(k, e) =>
+      (Str(getSQLAlchemyFieldName(k)) << ".startswith(" << Utils.quoteStr(e) << ")").!
+    case EndsWith(k, e) =>
+      (Str(getSQLAlchemyFieldName(k)) << ".endswith(" << Utils.quoteStr(e) << ")").!
     case Not(pred)                  =>
       (Str("not_(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>

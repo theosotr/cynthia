@@ -106,6 +106,14 @@ case class Contains(key: String, value: FieldExpr) extends Predicate {
   def hasAggregate(fields: Map[String, FieldDecl]) =
     value.isAggregate || isAggregateField(key, fields)
 }
+case class StartsWith(key: String, value: String) extends Predicate {
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    false
+}
+case class EndsWith(key: String, value: String) extends Predicate {
+  def hasAggregate(fields: Map[String, FieldDecl]) =
+    false
+}
 case class And(p1: Predicate, p2: Predicate) extends Predicate {
   def hasAggregate(fields: Map[String, FieldDecl]) =
     p1.hasAggregate(fields) || p2.hasAggregate(fields)

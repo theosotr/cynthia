@@ -273,15 +273,17 @@ abstract class Translator(val target: Target) {
     }
 
   def traversePredicate(s: State, pred: Predicate): State = pred match {
-    case Eq(k, e)       => traverseFieldExpr(setJoinAndGroup(k, s), e)
-    case Gt(k, e)       => traverseFieldExpr(setJoinAndGroup(k, s), e)
-    case Gte(k, e)      => traverseFieldExpr(setJoinAndGroup(k, s), e)
-    case Lt(k, e)       => traverseFieldExpr(setJoinAndGroup(k, s), e)
-    case Lte(k, e)      => traverseFieldExpr(setJoinAndGroup(k, s), e)
-    case Contains(k, e) => traverseFieldExpr(setJoinAndGroup(k, s), e)
-    case Not(pred)      => traversePredicate(s, pred)
-    case Or(p1, p2)     => traversePredicate(traversePredicate(s, p1), p2)
-    case And(p1, p2)    => traversePredicate(traversePredicate(s, p1), p2)
+    case Eq(k, e)         => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Gt(k, e)         => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Gte(k, e)        => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Lt(k, e)         => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Lte(k, e)        => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Contains(k, e)   => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case StartsWith(k, e) => setJoinAndGroup(k, s)
+    case EndsWith(k, e)   => setJoinAndGroup(k, s)
+    case Not(pred)        => traversePredicate(s, pred)
+    case Or(p1, p2)       => traversePredicate(traversePredicate(s, p1), p2)
+    case And(p1, p2)      => traversePredicate(traversePredicate(s, p1), p2)
   }
 
   def traverseSortedFields(s: State, fields: Seq[String]): State =

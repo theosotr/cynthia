@@ -17,6 +17,8 @@ case object GtePred extends PredNode
 case object LtPred extends PredNode
 case object LtePred extends PredNode
 case object ContainsPred extends PredNode
+case object StartsWithPred extends PredNode
+case object EndsWithPred extends PredNode
 case object AndPred extends PredNode
 case object OrPred extends PredNode
 case object NotPred extends PredNode
@@ -116,6 +118,8 @@ case class QueryGenerator(
     LtPred,
     LtePred,
     ContainsPred,
+    StartsWithPred,
+    EndsWithPred,
     AndPred,
     OrPred,
     NotPred
@@ -289,9 +293,10 @@ case class QueryGenerator(
       }
       case ContainsPred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s2.++, model)._1
-        Contains(field, e)
+        Contains(field, Constant(RUtils.subword, Quoted))
       }
+      case StartsWithPred => StartsWith(RUtils.chooseFrom(fields), RUtils.subword)
+      case EndsWithPred => EndsWith(RUtils.chooseFrom(fields), RUtils.subword)
       case AndPred => And(generatePredicate(s2.++, model), generatePredicate(s2.++, model))
       case OrPred  => Or(generatePredicate(s2.++, model), generatePredicate(s2.++, model))
       case NotPred => Not(generatePredicate(s2.++, model))

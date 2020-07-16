@@ -157,15 +157,17 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
   implicit object PredicateJsonFormat extends RootJsonFormat[Predicate] {
     def write(predicate: Predicate) = {
       val value = predicate match {
-        case Eq(k, f)       => JsObject("Eq"       -> JsObject("k" -> JsString(k), "f" -> f.toJson))
-        case Gt(k, f)       => JsObject("Gt"       -> JsObject("k" -> JsString(k), "f" -> f.toJson))
-        case Lt(k, f)       => JsObject("Lt"       -> JsObject("k" -> JsString(k), "f" -> f.toJson))
-        case Gte(k, f)      => JsObject("Gte"      -> JsObject("k" -> JsString(k), "f" -> f.toJson))
-        case Lte(k, f)      => JsObject("Lte"      -> JsObject("k" -> JsString(k), "f" -> f.toJson))
-        case Contains(k, f) => JsObject("Contains" -> JsObject("k" -> JsString(k), "f" -> f.toJson))
-        case And(p1, p2)    => JsObject("And"      -> JsObject("p1" -> p1.toJson, "p2" -> p2.toJson))
-        case Or(p1, p2)     => JsObject("Or"       -> JsObject("p1" -> p1.toJson, "p2" -> p2.toJson))
-        case Not(p)         => JsObject("Not"      -> JsObject("p" -> p.toJson))
+        case Eq(k, f)         => JsObject("Eq"         -> JsObject("k" -> JsString(k), "f" -> f.toJson))
+        case Gt(k, f)         => JsObject("Gt"         -> JsObject("k" -> JsString(k), "f" -> f.toJson))
+        case Lt(k, f)         => JsObject("Lt"         -> JsObject("k" -> JsString(k), "f" -> f.toJson))
+        case Gte(k, f)        => JsObject("Gte"        -> JsObject("k" -> JsString(k), "f" -> f.toJson))
+        case Lte(k, f)        => JsObject("Lte"        -> JsObject("k" -> JsString(k), "f" -> f.toJson))
+        case Contains(k, f)   => JsObject("Contains"   -> JsObject("k" -> JsString(k), "f" -> f.toJson))
+        case StartsWith(k, f) => JsObject("StartsWith" -> JsObject("k" -> JsString(k), "f" -> f.toJson))
+        case EndsWith(k, f)   => JsObject("EndsWith"   -> JsObject("k" -> JsString(k), "f" -> f.toJson))
+        case And(p1, p2)      => JsObject("And"        -> JsObject("p1" -> p1.toJson, "p2" -> p2.toJson))
+        case Or(p1, p2)       => JsObject("Or"         -> JsObject("p1" -> p1.toJson, "p2" -> p2.toJson))
+        case Not(p)           => JsObject("Not"        -> JsObject("p" -> p.toJson))
       }
       JsObject("Predicate" -> value)
     }
@@ -210,6 +212,18 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
                     case JsObject(values) =>
                       Contains(values("k").convertTo[String], values("f").convertTo[FieldExpr])
                     case _ => deserializationError("Contains expected")
+                  }
+                case "StartsWith" =>
+                  fields("StartsWith") match {
+                    case JsObject(values) =>
+                      StartsWith(values("k").convertTo[String], values("f").convertTo[String])
+                    case _ => deserializationError("StartsWith expected")
+                  }
+                case "EndsWith" =>
+                  fields("EndsWith") match {
+                    case JsObject(values) =>
+                      EndsWith(values("k").convertTo[String], values("f").convertTo[String])
+                    case _ => deserializationError("EndsWith expected")
                   }
                 case "And" =>
                   fields("And") match {

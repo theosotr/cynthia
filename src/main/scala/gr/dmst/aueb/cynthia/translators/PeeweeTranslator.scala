@@ -82,6 +82,10 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     case Contains(k, Constant(v, _)) =>
       (Str(getPeeweeFieldName(k)) << ".contains(" << Utils.quoteStr(v) << ")").!
     case Contains(_, _) => throw new UnsupportedException("contains expects only constants")
+    case StartsWith(k, v) =>
+      (Str(getPeeweeFieldName(k)) << ".startswith(" << Utils.quoteStr(v) << ")").!
+    case EndsWith(k, v) =>
+      (Str(getPeeweeFieldName(k)) << ".endswith(" << Utils.quoteStr(v) << ")").!
     case Not(pred)                  =>
       (Str("~(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>

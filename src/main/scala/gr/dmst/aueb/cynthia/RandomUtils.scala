@@ -22,6 +22,13 @@ object RUtils {
   def word(): String =
     Words.value(r.nextInt(Words.value.size))
 
+  def subword(): String = {
+    val w = word()
+    val from = integer(n = w.size)
+    val to = integer(from = from, n = w.size - from)
+    w.slice(from, to)
+  }
+
   def integer(from: Int = 0, n: Int = 10): Int =
     r.nextInt(n) + from
 
