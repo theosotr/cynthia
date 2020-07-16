@@ -84,6 +84,33 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
     if (field.contains(".")) field.split('.').array(field.count(_ == '.')) else
       field
 
+  def getSelectFieldName(field: String) = {
+    val fieldElems = field.split('.')
+    val numberOfDots = fieldElems.length
+    if (numberOfDots > 2)
+      fieldElems.takeRight(numberOfDots - 1).mkString(".")
+    else
+      field
+  }
+
+  def getSelectFields(s: State, nonAggrHidden: Map[String, String]) = {
+    def _checkId(field: String) = {
+      val fields = field.split('_')
+      if (s.source.equals(fields(0).capitalize) && fields(1).equals("id"))
+        "id"
+      else
+        field
+    }
+    s.distinct match {
+      case Some(_) => nonHiddenFieldsMap ++ s.orders.filter(
+        x => !nonHiddenFieldsMap.contains(x._1)).map{
+          case (s, _) =>
+            (_checkId(s.replace('.', '_')) -> getSelectFieldName(s.toLowerCase))
+        }.toMap
+      case _ => nonHiddenFieldsMap
+    }
+  }
+
   def constructJoins(joins: Set[(String, String)], source: String): String = {
     if (joins.isEmpty) ""
     else {
@@ -143,7 +170,7 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
           case Some(s)  => s
       }
       if (symbol == "LIKE")
-        (key + s" $symbol '%${constructFieldExpr(e, fields, unquoted)}%'", "")
+        (key + s" $symbol ?", s""", "%#${constructFieldExpr(e, fields, unquoted)}%"""")
       else
         (key + s" $symbol ?", ", " + constructFieldExpr(e, fields, unquoted))
     }
@@ -157,38 +184,42 @@ case class ActiveRecordTranslator(t: Target) extends Translator(t) {
       case Or(p1, p2)     => {
         val res1 = translatePred(p1, fields)
         val res2 = translatePred(p2, fields)
-        (res1._1 + " AND " + res2._1, res1._2 + res2._2)
+        (res1._1 + " OR " + res2._1, res1._2 + res2._2)
       }
       case And(p1, p2)    => {
         val res1 = translatePred(p1, fields)
         val res2 = translatePred(p2, fields)
         (res1._1 + " AND " + res2._1, res1._2 + res2._2)
       }
-      case _ => ("", "")
+      case Not(p)        => {
+        val res = translatePred(p, fields)
+        ("NOT " + res._1, res._2)
+      }
     }
   }
 
   def constructFilter(preds: Set[Predicate], fields: Map[String, String], having: Boolean = false): String = {
+    def _handleAndOrWithNot(p1: Predicate, p2: Predicate, x: Predicate) =
+      p1 match {
+        case Not(p1) => {
+          val res1 = translatePred(p1, fields)
+          val res2 = constructFilter(Set(p2), fields, having)
+          (Str("where.not([\"") << res1._1 << "\"" << res1._2 << "])."
+            << res2
+          ).!
+        }
+        case _ => {
+          val res = translatePred(x, fields)
+          (Str("where([\"") << res._1 << "\"" << res._2 << "])").!
+        }
+      }
     preds map { x => x match {
       case Not(x) => {
         val res = translatePred(x, fields)
         (Str("where.not([\"") << res._1 << "\"" << res._2 << "])").!
       }
-      case And(p1, p2) => {
-        p1 match {
-          case Not(p1) => {
-            val res1 = translatePred(p1, fields)
-            val res2 = constructFilter(Set(p2), fields, having)
-            (Str("where.not([\"") << res1._1 << "\"" << res1._2 << "])."
-              << res2
-            ).!
-          }
-          case _ => {
-            val res = translatePred(x, fields)
-            (Str("where([\"") << res._1 << "\"" << res._2 << "])").!
-          }
-        }
-      }
+      case And(p1, p2) => _handleAndOrWithNot(p1, p2, x)
+      case Or(p1, p2) => _handleAndOrWithNot(p1, p2, x)
       case _ => {
         val res = translatePred(x, fields)
         (Str("where([\"") << res._1 << "\"" << res._2 << "])").!
@@ -306,6 +337,9 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
     val model = s.source
     fieldsMap = extractFields(s.fields)
     nonHiddenFieldsMap = (fieldsMap.view filterKeys filterNonHiddenFieldDecls).toMap
+    // satisfy postgres need that ORDER BY columns be part of the SELECT list
+    // when DISTINCT is used
+    val selectFields = getSelectFields(s, nonHiddenFieldsMap)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
@@ -314,11 +348,11 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
         constructOrderBy(s.orders, fieldsMap),
         constructFilter(nonAggrP, fieldsMap),
         constructFilter(aggrP, fieldsMap, having=true),
-        if (first) "first" else "all",
         constructOffsetLimit(offset, limit),
-        constructSelects(nonHiddenFieldsMap),
+        constructSelects(selectFields),
         constructGroupBy(s.getNonConstantGroupingFields),
         constructDistinct(s.distinct),
+        if (first) "first" else "all",
       ) filter {
         case "" => false
         case _ => true
