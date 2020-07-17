@@ -202,4 +202,7 @@ object Utils {
       if (v.contains(x)) (acc, v)
       else (acc :+ x, v + x)
     }._1
+
+  def escapeStr(str: String): String =
+    str.replace("'", "''").replace("\\", "\\\\")
 }

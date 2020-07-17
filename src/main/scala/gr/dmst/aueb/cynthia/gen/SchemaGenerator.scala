@@ -21,9 +21,9 @@ object SchemaGenerator {
             if (schema.getModels.size > 0) types
             else types dropRight 1
           ) match {
-            case "int"     => Some(RUtils.word.toLowerCase, Int32, foreignF)
-            case "numeric" => Some(RUtils.word.toLowerCase, Numeric, foreignF)
-            case "string"  => Some(RUtils.word.toLowerCase, VarChar(50), foreignF)
+            case "int"     => Some(RUtils.word(special = false).toLowerCase, Int32, foreignF)
+            case "numeric" => Some(RUtils.word(special = false).toLowerCase, Numeric, foreignF)
+            case "string"  => Some(RUtils.word(special = false).toLowerCase, VarChar(50), foreignF)
             case "foreign" => {
               val model = RUtils.chooseFrom(schema.getModels)
               if (foreignF.contains(model)) None
@@ -41,8 +41,10 @@ object SchemaGenerator {
   def generateModels(schema: Schema, lowerBound: Int = 5): Schema =
     if (schema.getModels.size > lowerBound && RUtils.bool()) schema
     else
-      generateModels(schema + Model(RUtils.word.capitalize, generateFields(schema)))
+      generateModels(schema + Model(
+        RUtils.word(special = false).toLowerCase.capitalize,
+        generateFields(schema)))
 
   def apply(models: Option[Int] = None): Schema =
-    generateModels(Schema(RUtils.word.capitalize, Map()))
+    generateModels(Schema(RUtils.word(special = false).capitalize, Map()))
 }

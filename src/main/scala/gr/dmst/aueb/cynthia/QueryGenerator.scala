@@ -206,7 +206,7 @@ case class QueryGenerator(
     exprNode match {
       case FExpr => chooseField(s, model, declaredOnly, nonAggrField)
       case ConstantExpr =>
-        if (RUtils.bool) (Constant(RUtils.word, Quoted), StringF)
+        if (RUtils.bool) (Constant(RUtils.word(), Quoted), StringF)
         else (Constant(s"${RUtils.integer()}", UnQuoted), IntF)
       case CountExpr => {
         // It's not meaningful to count a compound expression. revisit
@@ -317,7 +317,7 @@ case class QueryGenerator(
       else {
         val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr,
                                            declaredOnly = declaredOnly)
-        val f = FieldDecl(e, RUtils.word(), eType,
+        val f = FieldDecl(e, RUtils.word(special = false), eType,
                           if (nonHidden) RUtils.bool() else false)
         _generateFieldDecl(if (forAggr) s afield f else s dfield f, i + 1)
       }

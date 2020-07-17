@@ -239,7 +239,8 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     fexpr match {
       case Constant(v, UnQuoted) => "sequelize.literal(" + v + ")"
       case Constant(v, Quoted)   =>
-        "sequelize.literal(" + Utils.quoteStr(s"\\'${v}\\'") + ")"
+        "sequelize.literal(" + Utils.quoteStr(
+          s"\\'${Utils.escapeStr(v)}\\'") + ")"
       case F(f) => {
         val str = "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
         if (subCol && this.fieldDecls.contains(f)) TUtils.toFieldVar(f)

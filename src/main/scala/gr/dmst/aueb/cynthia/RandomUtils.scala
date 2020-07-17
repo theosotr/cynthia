@@ -19,8 +19,16 @@ object RUtils {
   def string(n: Int = 10): String =
     r.alphanumeric.take(r.nextInt(n)) mkString ""
 
-  def word(): String =
-    Words.value(r.nextInt(Words.value.size))
+  def word(special: Boolean = true): String = {
+    val w = Words.value(r.nextInt(Words.value.size))
+    if (!special || bool) w
+    else
+      w.patch(
+        0, chooseFrom(Seq("%", "_", "\"", "'", "/", "\\")), w.size - 1
+      ).patch(
+        0, chooseFrom(Seq("%", "_", "\"", "'", "/", "\\")), w.size - 1
+      )
+  }
 
   def subword(): String = {
     val w = word()
