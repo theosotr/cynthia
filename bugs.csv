@@ -12,3 +12,6 @@ Django,Confirmed,select,,https://github.com/theosotr/cynthia/issues/15
 Django,Confirmed,aggregate,,https://github.com/theosotr/cynthia/issues/17
 SQLAlchemy,Fixed,distinct,,https://github.com/theosotr/cynthia/issues/27
 Peewee,Fixed,distinct,postgres,https://github.com/theosotr/cynthia/issues/28
+Django,Fixed,combined,,https://github.com/theosotr/cynthia/issues/30
+Peewee,Fixed,contains with %,,https://github.com/theosotr/cynthia/issues/36
+ActiveRecord,Confirmed,distinct,,https://github.com/theosotr/cynthia/issues/37
