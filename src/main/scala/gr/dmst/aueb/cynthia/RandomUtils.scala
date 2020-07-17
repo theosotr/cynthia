@@ -23,11 +23,10 @@ object RUtils {
     val w = Words.value(r.nextInt(Words.value.size))
     if (!special || bool) w
     else
-      w.patch(
-        0, chooseFrom(Seq("%", "_", "\"", "'", "/", "\\")), w.size - 1
-      ).patch(
-        0, chooseFrom(Seq("%", "_", "\"", "'", "/", "\\")), w.size - 1
-      )
+      new StringBuilder(w)
+        .insert(w.size - 1, chooseFrom(Seq("%", "_", "\"", "'", "/", "\\")))
+        .insert(w.size - 1, chooseFrom(Seq("%", "_", "\"", "'", "/", "\\")))
+        .toString
   }
 
   def subword(): String = {
