@@ -24,8 +24,8 @@ object RUtils {
     if (!special || bool) w
     else
       new StringBuilder(w)
-        .insert(w.size - 1, chooseFrom(Seq("%", "_", "\"", "'", "/", "\\")))
-        .insert(w.size - 1, chooseFrom(Seq("%", "_", "\"", "'", "/", "\\")))
+        .insert(w.size - 1, chooseFrom(Seq("%", "_", "'", "/", "\\")))
+        .insert(w.size - 1, chooseFrom(Seq("%", "_", "'", "/", "\\")))
         .toString
   }
 

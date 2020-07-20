@@ -18,21 +18,23 @@ object SchemaTranslator {
     def getColumns() =
       m.fields.foldLeft(Str("")) { (acc, f) => f.ftype match {
         case Foreign(_) =>
-          acc << f.name << "_id " << convertDataType(f.ftype) << ",\n"
+          acc << "\"" << f.name << "_id\" " << convertDataType(f.ftype) << ",\n"
         case _ =>
-          acc << f.name << " " << convertDataType(f.ftype) << ",\n"
+          acc << Utils.quoteStr(f.name, quotes = "\"") << " " <<
+            convertDataType(f.ftype) << ",\n"
       }}
 
     def getForeignKeys() =
       (m.fields filter Field.isForeign).foldLeft(Str("")) { (acc, x) =>
-        acc << ",\nFOREIGN KEY (" << x.name << "_id) REFERENCES " <<
-          x.name << "(id) ON DELETE NO ACTION"
+        acc << ",\nFOREIGN KEY (\"" << x.name << "_id\") REFERENCES " <<
+          Utils.quoteStr(x.name, quotes = "\"") << "(id) ON DELETE NO ACTION"
       }
 
     def getInsertStms() =
       DataGenerator(m, numRecords, limit = numRecords).foldLeft(Str("")) { (acc, row) =>
-        acc << "INSERT INTO " << m.name.toLowerCase << "(" <<
-          (m.fields map Field.dbname mkString ",") << ") VALUES (" <<
+        acc << "INSERT INTO " << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << "(" <<
+          (m.fields map { x => Utils.quoteStr(Field.dbname(x), quotes = "\"") } mkString ",") <<
+          ") VALUES (" <<
           (row map {
             case Constant(v, Quoted)  => Utils.quoteStr(v)
             case Constant(v, UnQuoted) => v
@@ -41,7 +43,8 @@ object SchemaTranslator {
 
 
     QueryStr(None,
-      Some((Str("CREATE TABLE ") << m.name.toLowerCase << " (\n" << getColumns <<
+      Some((Str("CREATE TABLE ") << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") <<
+        " (\n" << getColumns <<
       "PRIMARY KEY (id)" << getForeignKeys << "\n);\n" << getInsertStms).!)
     )
   }
@@ -60,7 +63,7 @@ object SchemaTranslator {
     val topSort = Utils.topologicalSort(modelMap)
     // Create drop statements in reverse topological order
     val qstr = topSort.reverse.foldLeft(QueryStr()) { case (acc, m) => {
-      acc >> QueryStr(None, Some("DROP TABLE IF EXISTS " + m.toLowerCase + ";"))
+      acc >> QueryStr(None, Some("DROP TABLE IF EXISTS " + Utils.quoteStr(m.toLowerCase, quotes = "\"") + ";"))
     }}
     // Traverse models in topological order and create the corresponding
     // CREATE TABLE statements.

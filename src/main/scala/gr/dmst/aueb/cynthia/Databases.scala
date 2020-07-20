@@ -157,9 +157,12 @@ object DBSetup {
     if (dbcon != null) {
       val stmt = dbcon.createStatement()
       dbcon.setAutoCommit(false)
-      Source.fromFile(schema)
-        .mkString
-        .replace("\n", "")
+      val sql = db match {
+        case MySQL(_, _, _) =>
+          Source.fromFile(schema).mkString.replaceAll("\"([^\"\n]+)\"", "`$1`")
+        case _ => Source.fromFile(schema).mkString
+      }
+      sql.replace("\n", "")
         .split(";")
         .foreach { stmt.addBatch }
       stmt.executeBatch
