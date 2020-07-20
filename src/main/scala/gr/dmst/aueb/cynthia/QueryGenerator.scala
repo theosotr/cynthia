@@ -36,6 +36,31 @@ case object SubExpr extends ExprNode
 case object MulExpr extends ExprNode
 case object DivExpr extends ExprNode
 
+sealed trait FType
+case object NumberF extends FType
+case object StrF extends FType
+
+
+case object FieldFilterer {
+  def filterDeclaredField(fType: Option[FType])(f: FieldDecl) = fType match {
+    case None => true
+    case Some(NumberF) => f.ftype.isNumeric
+    case Some(StrF)    => f.ftype.isStr
+  }
+
+  def filterModelField(fType: Option[FType], filterForeign: Boolean = false)(f: Field) = fType match {
+    case None => true
+    case Some(NumberF) => f.ftype match {
+      case Foreign(_) => true
+      case _          => f.ftype.isNumeric
+    }
+    case Some(StrF) => f.ftype match {
+      case Foreign(_) => !filterForeign
+      case _          => f.ftype.isStr
+    }
+  }
+}
+
 
 case class GenState(
   schema: Schema,
@@ -79,6 +104,15 @@ case class GenState(
   def exprCandidates(c: Seq[ExprNode]) =
     GenState(schema, model, depth, cands, c, qs, dfields, aggrF)
 
+  def strExprCandidates() =
+    GenState(schema, model, depth, cands,
+             exprCands filter {
+               case CountExpr | SumExpr | AvgExpr | AddExpr |
+                 SubExpr | MulExpr | DivExpr => false
+               case _ => true
+             },
+             qs, dfields, aggrF)
+
   def dfield(f: FieldDecl) =
     GenState(schema, model, depth, cands, exprCands, qs, dfields :+ f, aggrF)
 
@@ -93,22 +127,26 @@ case class GenState(
     GenState(schema, model, depth, cands, aggregateNodes, qs, dfields, aggrF)
   }
 
-  def getFields(declaredOnly: Boolean) = {
-    val declFields = dfields filter { !FieldDecl.hidden(_) } map FieldDecl.as
+  def getFields(declaredOnly: Boolean, fType: Option[FType]) = {
+    val declFields = dfields filter FieldFilterer.filterDeclaredField(fType) filter {
+      !FieldDecl.hidden(_) } map FieldDecl.as
     if (declaredOnly) declFields
     else declFields ++
-      (model.get.fields map { x => x match {
-        case Field(n, Foreign(_)) => model.get.name + "." + n + ".id"
-        case Field(n, _)          => model.get.name + "." + n
+      (model.get.fields filter FieldFilterer.filterModelField(fType, filterForeign = true) map { x =>
+        x match {
+          case Field(n, Foreign(_)) => model.get.name + "." + n + ".id"
+          case Field(n, _)          => model.get.name + "." + n
       }})
   }
 }
 
 
+
 case class QueryGenerator(
   minDepth: Int,
   maxDepth: Int,
-  noCombined: Boolean
+  noCombined: Boolean,
+  wellTyped: Boolean
 ) {
 
   val predNodes = Seq(
@@ -140,8 +178,9 @@ case class QueryGenerator(
   )
 
   def getColumn(schema: Schema, model: Model,
+                fType: Option[FType],
                 columnName: String = ""): (String, FieldType) = {
-    val field = RUtils.chooseFrom(model.fields)
+    val field = RUtils.chooseFrom(model.fields filter FieldFilterer.filterModelField(fType))
     val fieldName = columnName match {
       case "" => s"${model.name.capitalize}.${field.name}"
       case _  => s"$columnName.${field.name}"
@@ -158,137 +197,157 @@ case class QueryGenerator(
       case Field(_, Foreign(t)) => {
         assert(schema.models.contains(t))
         val targetModel = schema.models(t)
-        getColumn(schema, targetModel, fieldName)
+        getColumn(schema, targetModel, fType, fieldName)
       }
     }
   }
 
   def chooseField(s: GenState, model: Model,  declaredOnly: Boolean,
-      nonAggrField: Boolean) =
+    nonAggrField: Boolean, fType: Option[FType]) = {
     if (declaredOnly || (!s.dfields.isEmpty && RUtils.bool())) {
-      if (nonAggrField)
-        s.dfields filter { !FieldDecl.isAggregate(_) } match {
-          case Seq() => {
-            val (columnName, columnType) = getColumn(s.schema, model)
-            (F(columnName), columnType)
-          }
-          case dfields => {
-            val dfield = RUtils.chooseFrom(dfields)
-            (F(dfield.as), dfield.ftype)
-          }
+      val typedDFields = s.dfields filter FieldFilterer.filterDeclaredField(fType)
+      val dfields =
+        if (nonAggrField) typedDFields filter { !FieldDecl.isAggregate(_) }
+        else typedDFields
+      dfields match {
+        case Seq() => {
+          val (columnName, columnType) = getColumn(s.schema, model, fType)
+          (F(columnName), columnType)
         }
-      else {
-        val dfield = RUtils.chooseFrom(s.dfields)
-        (F(dfield.as), dfield.ftype)
+        case dfields => {
+          val dfield = RUtils.chooseFrom(dfields)
+          (F(dfield.as), dfield.ftype)
+        }
       }
     } else {
-      val (columnName, columnType) = getColumn(s.schema, model)
+      val (columnName, columnType) = getColumn(s.schema, model, fType)
       (F(columnName), columnType)
     }
+  }
+
+  def getGenStateExpr(s: GenState, fType: Option[FType]) = fType match {
+    case None | Some(NumberF) => s
+    case Some(StrF)           => s.strExprCandidates
+  }
+
+  def genConstant(fType: Option[FType]) = fType match {
+    case None =>
+      if(RUtils.bool) (Constant(RUtils.word(), Quoted), StringF)
+      else (Constant(RUtils.integer().toString, UnQuoted), IntF)
+    case Some(NumberF) => (Constant(RUtils.integer().toString, UnQuoted), IntF)
+    case _ => (Constant(RUtils.word(), Quoted), StringF)
+  }
 
   def generateFieldExpr(s: GenState, model: Model,
+      fType: Option[FType],
       forAggr: Boolean = false,
       declaredOnly: Boolean = false,
       nonAggrField: Boolean = false): (FieldExpr, FieldType) = {
+    val s2 = getGenStateExpr(s, fType)
     val exprNode =
-      if (!forAggr && (s.depth >= maxDepth || RUtils.bool()))
+      if (!forAggr && (s2.depth >= maxDepth || RUtils.bool()))
         // If we reached the maximum depth, generate a leaf node.
         RUtils.chooseFrom(Seq(FExpr, ConstantExpr))
       else
-        if (!forAggr && (s.depth < minDepth))
-          if (s.exprCands.size > 1)
-            RUtils.chooseFrom(s.exprCands filter {
-              case FExpr | ConstantExpr => false
-              case _ => true
-            })
-          else RUtils.chooseFrom(s.exprCands)
-        else RUtils.chooseFrom(s.exprCands)
+        if (!forAggr && (s2.depth < minDepth)) {
+          val fExprs = s2.exprCands filter {
+            case FExpr | ConstantExpr => false
+            case _ => true
+          }
+          if (fExprs.size > 1) RUtils.chooseFrom(fExprs)
+          else RUtils.chooseFrom(s2.exprCands)
+        }
+        else RUtils.chooseFrom(s2.exprCands)
     exprNode match {
-      case FExpr => chooseField(s, model, declaredOnly, nonAggrField)
-      case ConstantExpr =>
-        if (RUtils.bool) (Constant(RUtils.word(), Quoted), StringF)
-        else (Constant(s"${RUtils.integer()}", UnQuoted), IntF)
+      case FExpr => chooseField(s2, model, declaredOnly, nonAggrField, fType)
+      case ConstantExpr => genConstant(fType)
       case CountExpr => {
         // It's not meaningful to count a compound expression. revisit
-        val s2 = s exprCandidates (List(FExpr))
+        val s3 = s2 exprCandidates (List(FExpr))
         (Count(Some(generateFieldExpr(
-          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)._1)), IntF)
+          s3.++, model, fType, declaredOnly = declaredOnly, nonAggrField = true)._1)), IntF)
       }
       case SumExpr => {
         // You cannot apply an aggregate function to an aggregate function.
-        val s2 = s.disgardAggregates
+        val s3 = s2.disgardAggregates
         (Sum(generateFieldExpr(
-          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)._1), DoubleF)
+          s3.++, model, fType, declaredOnly = declaredOnly, nonAggrField = true)._1), DoubleF)
       }
       case AvgExpr => {
-        val s2 = s.disgardAggregates
+        val s3 = s2.disgardAggregates
         (Avg(generateFieldExpr(
-          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)._1), DoubleF)
+          s3.++, model, fType, declaredOnly = declaredOnly, nonAggrField = true)._1), DoubleF)
       }
       case MinExpr => {
-        val s2 = s.disgardAggregates
+        val s3 = s2.disgardAggregates
         val (e, eType) = generateFieldExpr(
-          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)
+          s3.++, model, fType, declaredOnly = declaredOnly, nonAggrField = true)
         (Min(e), eType)
       }
       case MaxExpr => {
-        val s2 = s.disgardAggregates
+        val s3 = s2.disgardAggregates
         val (e, eType) = generateFieldExpr(
-          s2.++, model, declaredOnly = declaredOnly, nonAggrField = true)
+          s3.++, model, fType, declaredOnly = declaredOnly, nonAggrField = true)
         (Max(e), eType)
       }
       case AddExpr => {
-        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
-        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e1 = generateFieldExpr(s2.++, model, fType, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e2 = generateFieldExpr(s2.++, model, fType, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
         (Add(e1, e2), DoubleF)
       }
       case SubExpr => {
-        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
-        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e1 = generateFieldExpr(s2.++, model, fType, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e2 = generateFieldExpr(s2.++, model, fType, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
         (Sub(e1, e2), DoubleF)
       }
       case MulExpr => {
-        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
-        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly)._1
+        val e1 = generateFieldExpr(s2.++, model, fType, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e2 = generateFieldExpr(s2.++, model, fType, declaredOnly = declaredOnly)._1
         (Mul(e1, e2), DoubleF)
       }
       case DivExpr => {
-        val e1 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
-        val e2 = generateFieldExpr(s.++, model, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e1 = generateFieldExpr(s2.++, model, fType, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
+        val e2 = generateFieldExpr(s2.++, model, fType, declaredOnly = declaredOnly, nonAggrField = nonAggrField)._1
         (Div(e1, e2), DoubleF)
       }
     }
   }
 
-  def generatePredicate(s: GenState, model: Model): Predicate = {
+  def generatePredicate(s: GenState, model: Model, fType: Option[FType]): Predicate = {
     assert(s.model.isDefined)
-    val fields = s.getFields(false)
-    val predNode = RUtils.chooseFrom(predNodes)
+    val fields = s.getFields(false, fType)
+    val predExprs = fType match {
+      case None | Some(StrF) => predNodes
+      case Some(NumberF) => predNodes filter {
+        case ContainsPred | StartsWithPred | EndsWithPred => false
+        case _ => true }
+    }
+    val predNode = RUtils.chooseFrom(predExprs)
     val s2 = s.disgardAggregates
     predNode match {
       case EqPred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s2.++, model)._1
+        val e = generateFieldExpr(s2.++, model, fType)._1
         Eq(field, e)
       }
       case GtPred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s2.++, model)._1
+        val e = generateFieldExpr(s2.++, model, fType)._1
         Gt(field, e)
       }
       case GtePred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s2.++, model)._1
+        val e = generateFieldExpr(s2.++, model, fType)._1
         Gte(field, e)
       }
       case LtPred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s2.++, model)._1
+        val e = generateFieldExpr(s2.++, model, fType)._1
         Lt(field, e)
       }
       case LtePred => {
         val field = RUtils.chooseFrom(fields)
-        val e = generateFieldExpr(s2.++, model)._1
+        val e = generateFieldExpr(s2.++, model, fType)._1
         Lte(field, e)
       }
       case ContainsPred => {
@@ -297,32 +356,40 @@ case class QueryGenerator(
       }
       case StartsWithPred => StartsWith(RUtils.chooseFrom(fields), RUtils.subword)
       case EndsWithPred => EndsWith(RUtils.chooseFrom(fields), RUtils.subword)
-      case AndPred => And(generatePredicate(s2.++, model), generatePredicate(s2.++, model))
-      case OrPred  => Or(generatePredicate(s2.++, model), generatePredicate(s2.++, model))
-      case NotPred => Not(generatePredicate(s2.++, model))
+      case AndPred => And(generatePredicate(s2.++, model, fType), generatePredicate(s2.++, model, fType))
+      case OrPred  => Or(generatePredicate(s2.++, model, fType), generatePredicate(s2.++, model, fType))
+      case NotPred => Not(generatePredicate(s2.++, model, fType))
     }
   }
 
-  def generateDeclFields(s: GenState, model: Model, nonHidden: Boolean = true,
-      number: Option[Int] = None, forAggr: Boolean = false,
-      declaredOnly: Boolean = false) = {
-    def _generateFieldDecl(s: GenState, i: Int): GenState = {
-      val stopCond =
-        if(forAggr) !s.aggrF.isEmpty && RUtils.bool()
-        else number match {
-          case None    => RUtils.bool() // We randomly choose whether to stop or not.
-          case Some(n) => i >= n
+  def generateDeclFields(s: GenState, model: Model,
+                         nonHidden: Boolean = true,
+                         declF: Option[List[FType]] = None,
+                         forAggr: Boolean = false,
+                         declaredOnly: Boolean = false) = {
+    def _generateFieldDecl(s: GenState, declF: Option[List[FType]]): GenState = {
+      val (stopCond, fields) =
+        if(forAggr) (!s.aggrF.isEmpty && RUtils.bool(), None)
+        else declF match {
+          case None      => (RUtils.bool(), None) // We randomly choose whether to stop or not.
+          case Some(Nil) => (true, None) // We do not have more fields to generate.
+          case _         => (false, declF)
         }
       if (stopCond) s
       else {
-        val (e, eType) = generateFieldExpr(s.++, model, forAggr = forAggr,
+        val (ftype, tail) = fields match {
+          case None         => (genQSType, None)
+          case Some(h :: t) => (Some(h), Some(t))
+          case _            => ???
+        }
+        val (e, eType) = generateFieldExpr(s.++, model, ftype, forAggr = forAggr,
                                            declaredOnly = declaredOnly)
         val f = FieldDecl(e, RUtils.word(special = false), eType,
                           if (nonHidden) RUtils.bool() else false)
-        _generateFieldDecl(if (forAggr) s afield f else s dfield f, i + 1)
+        _generateFieldDecl(if (forAggr) s afield f else s dfield f, tail)
       }
     }
-    _generateFieldDecl(s, 0)
+    _generateFieldDecl(s, declF)
   }
 
   def generateQuerySetforCombined(s: GenState) = s.qs match {
@@ -331,15 +398,16 @@ case class QueryGenerator(
     case None => {
       // Determine the number of fields in each sub-query
       val nuf = RUtils.integer() + 1
+      val dFields = List.range(0, nuf) map { _ => RUtils.chooseFrom(Seq(NumberF, StrF)) }
       (
         // first sub-query
         generateQuerySet(
           GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
-          declF = Some(nuf), hiddenF = false),
+          declF = Some(dFields), hiddenF = false),
         // second sub-query
         generateQuerySet(
           GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
-          declF = Some(nuf), hiddenF = false)
+          declF = Some(dFields), hiddenF = false)
       )
     }
     // Second option: generate a single query, and combine it
@@ -349,12 +417,19 @@ case class QueryGenerator(
         s,
         generateQuerySet(
           GenState(s.schema, cands = Seq(NewQS), exprCands = exprNodes),
-          declF = Some(s.dfields.size), hiddenF = false)
+          declF = Some((s.dfields map FieldDecl.ftype map {
+            case StringF => StrF
+            case _       => NumberF
+          }).toList), hiddenF = false)
       )
     }
   }
 
-  def generateQuerySet(s: GenState, declF: Option[Int] = None,
+  def genQSType() =
+    if (wellTyped) Some(RUtils.chooseFrom(Seq(NumberF, StrF)))
+    else None
+
+  def generateQuerySet(s: GenState, declF: Option[List[FType]] = None,
       hiddenF: Boolean = false, declaredOnly: Boolean = false): GenState =
     // We randomly decide if we should stop query generation or not.
     if (s.qs.isDefined && RUtils.bool() || s.cands.isEmpty) s
@@ -365,8 +440,8 @@ case class QueryGenerator(
         case NewQS => {
           // Choose a random model to query.
           val model = RUtils.chooseFrom(s.schema.models.values.toSeq)
-          val s2 = generateDeclFields(s.++, model, nonHidden = hiddenF,
-                                      number = declF)
+          val s2 = generateDeclFields(s.++, model,
+                                      nonHidden = hiddenF, declF = declF)
           val qs = New(model.name, s2.dfields)
           val s3 = s2 queryset qs
           val s4 = s3 candidates List(ApplySort, ApplyFilter, ApplyDistinct)
@@ -386,7 +461,7 @@ case class QueryGenerator(
         }
         case ApplySort => {
           assert(s.model.isDefined)
-          val sortedFields = RUtils.sample(s.getFields(declaredOnly))
+          val sortedFields = RUtils.sample(s.getFields(declaredOnly, None))
           val s2 = s candidates (s.cands filter { x => x != ApplySort })
           if (sortedFields.isEmpty) generateQuerySet(s2)
           else {
@@ -399,7 +474,7 @@ case class QueryGenerator(
         }
         case ApplyFilter => {
           assert(s.model.isDefined)
-          val pred = generatePredicate(s.++, s.model.get)
+          val pred = generatePredicate(s.++, s.model.get, genQSType)
           val qs = Apply(Filter(pred), s.qs.get)
           val s2 = s queryset qs
           val s3 = s2 candidates (s2.cands filter { x => x != ApplyFilter })
@@ -410,7 +485,7 @@ case class QueryGenerator(
           // With field
           val qs =
             if (RUtils.bool) {
-              val field = RUtils.chooseFrom(s.getFields(false))
+              val field = RUtils.chooseFrom(s.getFields(false, None))
               Apply(Distinct(Some(field)), s.qs.get)
             } else { // Without Field
               Apply(Distinct(Option.empty[String]), s.qs.get)

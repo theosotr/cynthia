@@ -1,16 +1,46 @@
 package gr.dmst.aueb.cynthia
 
 
-sealed trait DataType
-case object Serial extends DataType
-case object Bool extends DataType
-case object Int8 extends DataType
-case object Int16 extends DataType
-case object Int32 extends DataType
-case object Int64 extends DataType
-case object Numeric extends DataType
-case class VarChar(n: Int) extends DataType
-case class Foreign(to: String) extends DataType
+sealed trait DataType {
+  def isNumeric(): Boolean
+  def isStr(): Boolean
+}
+case object Serial extends DataType {
+  override def isNumeric() = true
+  override def isStr() = false
+}
+case object Bool extends DataType {
+  override def isNumeric() = true
+  override def isStr() = false
+}
+case object Int8 extends DataType {
+  override def isNumeric() = true
+  override def isStr() = false
+}
+case object Int16 extends DataType {
+  override def isNumeric() = true
+  override def isStr() = false
+}
+case object Int32 extends DataType {
+  override def isNumeric() = true
+  override def isStr() = false
+}
+case object Int64 extends DataType {
+  override def isNumeric() = true
+  override def isStr() = false
+}
+case object Numeric extends DataType {
+  override def isNumeric() = true
+  override def isStr() = false
+}
+case class VarChar(n: Int) extends DataType {
+  override def isNumeric() = false
+  override def isStr() = true
+}
+case class Foreign(to: String) extends DataType {
+  override def isNumeric() = false
+  override def isStr() = false
+}
 
 
 // TODO Maybe we should add field constraints.

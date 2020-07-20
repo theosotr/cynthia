@@ -22,6 +22,7 @@ case class Options (
   mismatches: Seq[Int] = Seq(),
   minDepth: Int = 5,
   maxDepth: Int = 25,
+  wellTyped: Boolean = false,
   dbUser: String = "orm_testing",
   dbPass: String = "orm_testing",
   timeout: Option[Int] = None,
@@ -96,6 +97,11 @@ object Cynthia {
               if (x < 1) failure("Maximum depth must be greater than 1")
               else success)
 
+      def wellTypedOption() =
+        opt[Unit]("well-typed")
+          .action((_, c) => c.copy(wellTyped = true))
+          .text("Generate well-typed queries")
+
       note("\n")
 
       // Sub-commands
@@ -127,7 +133,8 @@ object Cynthia {
         noCombineOption,
         recordsOption,
         minDepthOption,
-        maxDepthOption
+        maxDepthOption,
+        wellTypedOption
       )
       cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
         opt[Int]('n', "queries")
@@ -147,7 +154,8 @@ object Cynthia {
         noCombineOption,
         recordsOption,
         minDepthOption,
-        maxDepthOption
+        maxDepthOption,
+        wellTypedOption
       )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")

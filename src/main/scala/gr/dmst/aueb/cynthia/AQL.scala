@@ -138,30 +138,47 @@ case class Distinct(field: Option[String]) extends Operation
 
 sealed trait FieldType {
   def convertType(db: DB): String
+  def isNumeric(): Boolean
+  def isStr(): Boolean
 }
 case object StringF extends FieldType {
   override def convertType(db: DB) = db match {
     case MySQL(_, _, _) => "char"
     case _              => "varchar(100)"
   }
+
+  override def isNumeric() = false
+  override def isStr() = true
 }
 case object IntF extends FieldType {
   override def convertType(db: DB) = db match {
     case Postgres(_, _, _) | Cockroachdb(_, _, _) | MSSQL(_, _, _)=> "integer"
     case _ => "signed"
   }
+
+  override def isNumeric() = true
+  override def isStr() = false
 }
 case object DoubleF extends FieldType {
   override def convertType(db: DB) = db match {
     case SQLite(_) => "float"
     case _         => "decimal(10, 2)"
   }
+
+  override def isNumeric() = true
+  override def isStr() = false
 }
 case object BooleanF extends FieldType {
   override def convertType(db: DB) = "boolean"
+
+  override def isNumeric() = true
+  override def isStr() = false
 }
 case object DateTimeF extends FieldType {
   override def convertType(db: DB) = "datetime"
+
+  override def isNumeric() = true
+  override def isStr() = false
 }
 
 case class FieldDecl(f: FieldExpr, as: String, ftype: FieldType, hidden: Boolean = false)
@@ -173,6 +190,10 @@ object FieldDecl {
 
   def as(fieldDecl: FieldDecl) = fieldDecl match {
     case FieldDecl(_, as, _, _) => as
+  }
+
+  def ftype(fieldDecl: FieldDecl) = fieldDecl match {
+    case FieldDecl(_, _, t, _) => t
   }
 
   def hidden(fieldDecl: FieldDecl) = fieldDecl match {

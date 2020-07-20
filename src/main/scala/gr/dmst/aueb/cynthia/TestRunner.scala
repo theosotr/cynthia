@@ -126,7 +126,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   val genEnumerator = LazyList.from(1).iterator
 
   val qGen = QueryGenerator(
-    options.minDepth, options.maxDepth, options.noCombined)
+    options.minDepth, options.maxDepth, options.noCombined, options.wellTyped)
 
   // test and generate modes
   def genQuery(schema: Schema, limit: Int = 10) = {

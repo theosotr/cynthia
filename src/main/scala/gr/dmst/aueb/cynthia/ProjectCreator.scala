@@ -99,7 +99,7 @@ object ProjectCreator {
     }
     case Sequelize(_, pdir) => {
       val db = dbs(0)
-      val bcmd = "sequelize-auto"
+      val bcmd = "node_modules/sequelize-auto/bin/sequelize-auto"
       val cmd = db match {
         case Postgres(user, password, dbname) =>
           Seq(
