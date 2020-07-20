@@ -21,11 +21,12 @@ object RUtils {
 
   def word(special: Boolean = true): String = {
     val w = Words.value(r.nextInt(Words.value.size))
+    val specialChars = Seq("%", "_", "'", "/", "\\")
     if (!special || bool) w
     else
       new StringBuilder(w)
-        .insert(w.size - 1, chooseFrom(Seq("%", "_", "'", "/", "\\")))
-        .insert(w.size - 1, chooseFrom(Seq("%", "_", "'", "/", "\\")))
+        .insert(w.size - 1, chooseFrom(specialChars))
+        .insert(w.size - 1, chooseFrom(specialChars))
         .toString
   }
 
