@@ -51,6 +51,8 @@ object ProjectCreator {
               s" -e cockroachdb -u $user -H localhost $dbname "
             case MSSQL(_, _, _) =>
               ??? // Unreachable
+            case Oracle(_, _, _, _) =>
+              ??? // Unreachable
           }
           val models = Utils.runCmd(bcmd + cmd, None)
           Utils.writeToFile(
@@ -94,6 +96,7 @@ object ProjectCreator {
             "-d", dbname, "-u", user, "-p", "orm_testing",
             "-o", orm.getModelsPath
           ).mkString(" ")
+        case Oracle(_, _, _, _) => ??? // FIXME
       }
       Utils.runCmd(cmd, None)
     }
@@ -136,6 +139,8 @@ object ProjectCreator {
             dbname, "--dialect", db.getName(),
             "-o", pdir
           ).mkString(" ")
+        case Oracle (_, _, _, _) =>
+          ??? // Unreachable
       }
       Utils.runCmd(cmd, None)
     }
@@ -212,6 +217,17 @@ object ProjectCreator {
                 "'PASSWORD'" -> ("'" + password + "'"),
                 "'PORT'" -> "26257",
                 "'ENGINE'" -> "'django_cockroachdb'"
+              ).map(_.productIterator.mkString(":")).mkString(",\n") +
+            "},"
+          case Oracle(user, password, hostname, sid) =>
+            acc + "'oracle': {" +
+              Map(
+                "'NAME'" -> ("'" + sid + "'"),
+                "'HOST'" -> ("'" + hostname + "'"),
+                "'USER'" -> ("'" + user + "'"),
+                "'PASSWORD'" -> ("'" + password + "'"),
+                "'PORT'" -> "1521",
+                "'ENGINE'" -> "'django.db.backends.oracle'"
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
             "},"
           case SQLite(dbname) =>

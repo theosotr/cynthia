@@ -32,15 +32,16 @@ object TestRunnerCreator {
   def genBackends(backends: Seq[String], workdir: String,
     dbname: Option[String], dbUser: String, dbPass: String) = {
     // Get default databases per backend
-    val (pdb, mdb, cdb, msdb, sdb) = dbname match {
-      case None         => ("postgres", "sys", "defaultdb", "master", workdir)
-      case Some(dbname) => (dbname, dbname, dbname, dbname, workdir)
+    val (pdb, mdb, cdb, msdb, oraclesid, sdb) = dbname match {
+      case None         => ("postgres", "sys", "defaultdb", "master", "test", workdir) // TODO
+      case Some(dbname) => (dbname, dbname, dbname, dbname, dbname, workdir)
     }
     backends.map { x => x match {
         // In postgress, the database should be in lowercase.
         case "postgres"       => Postgres(dbUser, dbPass, pdb.toLowerCase)
         case "mysql"          => MySQL(dbUser, dbPass, mdb)
         case "mssql"          => MSSQL(dbUser, "orm_testing1", msdb)
+        case "oracle"         => Oracle("\"sys as sysdba\"", "Password123", "10.26.43.128", oraclesid)
         case "cockroachdb"    => Cockroachdb("root", "", cdb.toLowerCase)
         case "sqlite"         => SQLite(sdb)
         case _                => ???

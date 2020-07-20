@@ -7,7 +7,6 @@ lazy val root = (project in file(".")).
     name := "cynthia"
   )
 
-
 libraryDependencies ++= Seq(
   "com.github.scopt" %% "scopt" % "4.0.0-RC2",
   "org.postgresql" % "postgresql" % "42.2.10",
@@ -17,5 +16,6 @@ libraryDependencies ++= Seq(
   "com.lihaoyi" %% "pprint" % "0.5.9",
   "io.spray" %%  "spray-json" % "1.3.5",
   "com.microsoft.sqlserver" % "mssql-jdbc" % "8.2.2.jre11",
+  "com.oracle.ojdbc" % "ojdbc8" % "19.3.0.0",
 )
 scalacOptions := Seq("-unchecked", "-deprecation")
