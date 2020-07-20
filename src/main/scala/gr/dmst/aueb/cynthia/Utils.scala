@@ -203,6 +203,9 @@ object Utils {
       else (acc :+ x, v + x)
     }._1
 
+  def escapeSQLStr(str: String): String =
+    str.replace("\\", "\\\\").replace("'", "''")
+
   def escapeStr(str: String): String =
-    str.replace("'", "''").replace("\\", "\\\\")
+    str.replace("\\", "\\\\").replace("'", "\\'")
 }

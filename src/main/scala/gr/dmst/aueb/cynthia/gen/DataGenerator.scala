@@ -13,7 +13,7 @@ object DataGenerator {
           (RUtils.integer() * (RUtils.chooseFrom(List(1, -1)))).toString,
           UnQuoted
         )
-      case VarChar(n) => Constant(Utils.escapeStr(RUtils.word()), Quoted)
+      case VarChar(n) => Constant(Utils.escapeSQLStr(RUtils.word()), Quoted)
       case Bool => Constant(RUtils.bool().toString, UnQuoted)
       case Foreign(_) => Constant(
         (RUtils.integer(n = foreignKeyCands) + 1).toString, UnQuoted)

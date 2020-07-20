@@ -80,12 +80,12 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
     case Lte(k, e) =>
       (Str(getSQLAlchemyFieldName(k)) << " <= " << constructFieldExpr(e)).!
     case Contains(k, Constant(v, _)) =>
-      (Str(getSQLAlchemyFieldName(k)) << ".contains(" << Utils.quoteStr(v) << ")").!
+      (Str(getSQLAlchemyFieldName(k)) << ".contains(" << Utils.quoteStr(Utils.escapeStr(v)) << ", autoescape=True)").!
     case Contains(_, _) => throw new UnsupportedException("contains expects only constants")
     case StartsWith(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << ".startswith(" << Utils.quoteStr(e) << ")").!
+      (Str(getSQLAlchemyFieldName(k)) << ".startswith(" << Utils.quoteStr(Utils.escapeStr(e)) << ", autoescape=True)").!
     case EndsWith(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << ".endswith(" << Utils.quoteStr(e) << ")").!
+      (Str(getSQLAlchemyFieldName(k)) << ".endswith(" << Utils.quoteStr(Utils.escapeStr(e)) << ", autoescape=True)").!
     case Not(pred)                  =>
       (Str("not_(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>
@@ -162,7 +162,7 @@ case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
       if (fprefix.equals("")) getSQLAlchemyFieldName(f)
       else fprefix + "." + TUtils.toLabel(getSQLAlchemyFieldName(f))
     case Constant(v, UnQuoted) => "literal(" + v + ")"
-    case Constant(v, Quoted)   => "literal(" + Utils.quoteStr(v) + ")"
+    case Constant(v, Quoted)   => "literal(" + Utils.quoteStr(Utils.escapeStr(v)) + ")"
     case _    =>
       if (!fexpr.compound) constructPrimAggr(fexpr, fprefix)
       else constructCompoundAggr(fexpr, fprefix)

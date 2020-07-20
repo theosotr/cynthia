@@ -131,7 +131,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     case Mul(a1, a2) => "(" + constructFieldExpr(a1) + " * " + constructFieldExpr(a2) + ")"
     case Div(a1, a2) => "(" + constructFieldExpr(a1) + " / " + constructFieldExpr(a2) + ")"
     case Constant(v, UnQuoted) => "Value(" + v + ")"
-    case Constant(v, Quoted)   => "Value(" + Utils.quoteStr(v) + ")"
+    case Constant(v, Quoted)   => "Value(" + Utils.quoteStr(Utils.escapeStr(v)) + ")"
     case _           => constructPrimAggr(fexpr, fieldType)
   }
 
@@ -310,9 +310,9 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
     case Contains(k, e)             =>
       (Str(getDjangoFieldName(k)) << "__contains=" << constructFieldExpr(e)).!
     case StartsWith(k, e)           =>
-      (Str(getDjangoFieldName(k)) << "__startswith=" << Utils.quoteStr(e)).!
+      (Str(getDjangoFieldName(k)) << "__startswith=" << Utils.quoteStr(Utils.escapeStr(e))).!
     case EndsWith(k, e)           =>
-      (Str(getDjangoFieldName(k)) << "__endswith=" << Utils.quoteStr(e)).!
+      (Str(getDjangoFieldName(k)) << "__endswith=" << Utils.quoteStr(Utils.escapeStr(e))).!
     case Not(pred)                  =>
       (Str("~Q(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>

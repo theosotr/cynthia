@@ -80,12 +80,12 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
     case Lte(k, e) =>
       (Str(getPeeweeFieldName(k)) << " <= " << constructFieldExpr(e)).!
     case Contains(k, Constant(v, _)) =>
-      (Str(getPeeweeFieldName(k)) << ".contains(" << Utils.quoteStr(v) << ")").!
+      (Str(getPeeweeFieldName(k)) << ".contains(" << Utils.quoteStr(Utils.escapeStr(v)) << ")").!
     case Contains(_, _) => throw new UnsupportedException("contains expects only constants")
     case StartsWith(k, v) =>
-      (Str(getPeeweeFieldName(k)) << ".startswith(" << Utils.quoteStr(v) << ")").!
+      (Str(getPeeweeFieldName(k)) << ".startswith(" << Utils.quoteStr(Utils.escapeStr(v)) << ")").!
     case EndsWith(k, v) =>
-      (Str(getPeeweeFieldName(k)) << ".endswith(" << Utils.quoteStr(v) << ")").!
+      (Str(getPeeweeFieldName(k)) << ".endswith(" << Utils.quoteStr(Utils.escapeStr(v)) << ")").!
     case Not(pred)                  =>
       (Str("~(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>
@@ -152,7 +152,7 @@ case class PeeweeTranslator(t: Target) extends Translator(t) {
   def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {
     case F(f)                  => getPeeweeFieldName(f)
     case Constant(v, UnQuoted) => s"Value($v, converter=False)"
-    case Constant(v, Quoted)   => s"Value(${Utils.quoteStr(v)}, converter=False)"
+    case Constant(v, Quoted)   => s"Value(${Utils.quoteStr(Utils.escapeStr(v))}, converter=False)"
     case _    =>
       if (!fexpr.compound) constructPrimAggr(fexpr)
       else constructCompoundAggr(fexpr)

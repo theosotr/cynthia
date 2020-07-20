@@ -154,6 +154,12 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     }
   }
 
+  def literalOrValue(v: String) =
+    RUtils.chooseFrom(Seq(
+      s"sequelize.literal(`${Utils.escapeSQLStr(v)}`)",
+      Utils.quoteStr(Utils.escapeStr(v), quotes = "`")
+    ))
+
   def translatePred(s: State, pred: Predicate): String = pred match {
     case Eq(k, e) =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << constructFieldExpr(s, e) << "}").!
@@ -166,12 +172,12 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
     case Lte(k, e) =>
       (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << constructFieldExpr(s, e) << "}").!
     case Contains(k, Constant(v, _)) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: sequelize.literal('" << v  << "')}").!
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: " << literalOrValue(v) << "}").!
     case Contains(_, _) => throw new UnsupportedException("contains expects only constants")
     case StartsWith(k, v) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.startsWith]: sequelize.literal('" << v << "')}").!
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.startsWith]: " << literalOrValue(v) << "}").!
     case EndsWith(k, v) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.endsWith]: sequelize.literal('" << v << "')}").!
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.endsWith]: " << literalOrValue(v) << "}").!
     case Not(pred)                  =>
       (Str("[Op.not]: {") << translatePred(s, pred) << "}").!
     case Or(p1, p2)                 =>
@@ -219,7 +225,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
   def constructNestedFieldExpr(s: State, fexpr: FieldExpr, subCol: Boolean): String = {
     def _f(expr: FieldExpr) = expr match {
       case Constant(v, UnQuoted) => v
-      case Constant(v, Quoted)   => s"\\'${v}\\'"
+      case Constant(v, Quoted)   => s"\\'${Utils.escapeSQLStr(v)}\\'"
       case F(f)                  => s.fields get f match {
         case None => {
           val segs = (f split '.').toList
@@ -240,7 +246,7 @@ case class SequelizeTranslator(t: Target) extends Translator(t) {
       case Constant(v, UnQuoted) => "sequelize.literal(" + v + ")"
       case Constant(v, Quoted)   =>
         "sequelize.literal(" + Utils.quoteStr(
-          s"\\'${Utils.escapeStr(v)}\\'") + ")"
+          s"\\'${Utils.escapeSQLStr(v)}\\'", quotes = "`") + ")"
       case F(f) => {
         val str = "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
         if (subCol && this.fieldDecls.contains(f)) TUtils.toFieldVar(f)
