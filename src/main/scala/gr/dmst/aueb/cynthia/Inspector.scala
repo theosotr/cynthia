@@ -74,7 +74,7 @@ case object InspectRes {
 object Inspector {
   val execPattern = ".*(Error|Exception):\\(?[^:\\n]*".r
   val nodePattern = "\\(node:[0-9]+\\)[ ]"
-  val quotedStrPattern = "[\"'`][a-zA-Z\\.]+[\"'`]"
+  val quotedStrPattern = "[\"'`][a-z\\.]+[\"'`]"
 
   def inspectContent(out: String, orm: String, backend: String,
                      queryId: Int, res: InspectRes) =
