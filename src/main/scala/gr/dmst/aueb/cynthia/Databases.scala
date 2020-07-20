@@ -156,10 +156,13 @@ object DBSetup {
   def setupSchemaFun(db: DB, schema: String, dbcon: Connection) =
     if (dbcon != null) {
       val stmt = dbcon.createStatement()
+      val pattern = "\"([^\"\n]+)\""
       dbcon.setAutoCommit(false)
       val sql = db match {
         case MySQL(_, _, _) =>
-          Source.fromFile(schema).mkString.replaceAll("\"([^\"\n]+)\"", "`$1`")
+          Source.fromFile(schema).mkString.replaceAll(pattern, "`$1`")
+        case MSSQL(_, _, _) =>
+          Source.fromFile(schema).mkString.replaceAll(pattern, "[$1]")
         case _ => Source.fromFile(schema).mkString
       }
       sql.replace("\n", "")
