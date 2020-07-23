@@ -373,8 +373,11 @@ abstract class Translator {
       case Seq() => Seq("id")
       case f     => f.map  { FieldDecl.as }.toSeq
     }
-    preamble + "\n" + qStr.toString + "\n" + emitPrint(
-      q, dfields, qStr.ret.get)
+    val str = preamble + "\n" + qStr.toString
+    qStr.ret match {
+      case None => str
+      case Some(ret) => str + "\n" + emitPrint(q, dfields, ret)
+    }
   }
 
   def constructQuery(s: State, first: Boolean = false, offset: Int = 0,

@@ -1,7 +1,7 @@
 package gr.dmst.aueb.cynthia.translators
 
 import gr.dmst.aueb.cynthia._
-import gr.dmst.aueb.cynthia.gen.DataGenerator
+import gr.dmst.aueb.cynthia.gen.NaiveDataGenerator
 
 
 object SchemaTranslator {
@@ -31,7 +31,7 @@ object SchemaTranslator {
       }
 
     def getInsertStms() =
-      DataGenerator(m, numRecords, limit = numRecords).foldLeft(Str("")) { (acc, row) =>
+      NaiveDataGenerator(m, numRecords, limit = numRecords).foldLeft(Str("")) { (acc, row) =>
         acc << "INSERT INTO " << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << "(" <<
           (m.fields map { x => Utils.quoteStr(Field.dbname(x), quotes = "\"") } mkString ",") <<
           ") VALUES (" <<

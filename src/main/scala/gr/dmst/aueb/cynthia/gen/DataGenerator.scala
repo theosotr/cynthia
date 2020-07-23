@@ -2,9 +2,10 @@ package gr.dmst.aueb.cynthia.gen
 
 
 import gr.dmst.aueb.cynthia._
+import gr.dmst.aueb.cynthia.translators.Z3SolverTranslator
 
 
-object DataGenerator {
+object NaiveDataGenerator {
   def generateRow(fields: Seq[Field], i: Int, foreignKeyCands: Int): Seq[Constant] =
     fields map { case Field(n, t) =>  t match {
       case Serial => Constant(i.toString, UnQuoted)
@@ -25,5 +26,14 @@ object DataGenerator {
       else _generateData(generateRow(model.fields, i, foreignKeyCands) #:: data, i - 1)
 
     _generateData(LazyList.empty, limit)
+  }
+}
+
+
+object SolverDataGenerator {
+  def apply(q: Query, s: Schema) = {
+    val formula = Z3SolverTranslator(s)(q)
+    println(formula)
+    Utils.writeToFile("solve.py", formula)
   }
 }
