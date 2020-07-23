@@ -17,5 +17,6 @@ libraryDependencies ++= Seq(
   "com.lihaoyi" %% "pprint" % "0.5.9",
   "io.spray" %%  "spray-json" % "1.3.5",
   "com.microsoft.sqlserver" % "mssql-jdbc" % "8.2.2.jre11",
+  "com.microsoft.z3 " % "microsoft-z3" % "1.0" from "file://" + file("lib/com.microsoft.z3.jar").getAbsolutePath
 )
 scalacOptions := Seq("-unchecked", "-deprecation")
