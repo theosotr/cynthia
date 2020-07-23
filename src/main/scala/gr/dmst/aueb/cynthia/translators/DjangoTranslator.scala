@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia.translators
 import gr.dmst.aueb.cynthia._
 
 
-case class DjangoTranslator(t: Target) extends Translator(t) {
+case class DjangoTranslator(target: Target) extends Translator {
   private val hidden: scala.collection.mutable.Set[String] = scala.collection.mutable.Set()
 
   override val preamble =
@@ -91,7 +91,7 @@ case class DjangoTranslator(t: Target) extends Translator(t) {
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None => {
-      val dbname = s.db match {
+      val dbname = target.db match {
         case Postgres (_, _, _) => "postgres"
         case MySQL (_, _, _)    => "mysql"
         case MSSQL (_, _, _)    => "mssql"

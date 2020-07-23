@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia.translators
 import gr.dmst.aueb.cynthia._
 
 
-case class SequelizeTranslator(t: Target) extends Translator(t) {
+case class SequelizeTranslator(target: Target) extends Translator {
   private val fieldDecls: scala.collection.mutable.Set[String] =
     scala.collection.mutable.Set()
 

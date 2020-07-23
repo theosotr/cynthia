@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia.translators
 import gr.dmst.aueb.cynthia._
 
 
-case class PeeweeTranslator(t: Target) extends Translator(t) {
+case class PeeweeTranslator(target: Target) extends Translator {
   target.db match {
     case MSSQL(_, _, _) =>
       throw UnsupportedException("Peewee does not support MSSQL queries")

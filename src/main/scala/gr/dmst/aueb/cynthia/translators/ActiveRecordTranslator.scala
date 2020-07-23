@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia.translators
 import gr.dmst.aueb.cynthia._
 
 
-case class ActiveRecordTranslator(t: Target) extends Translator(t) {
+case class ActiveRecordTranslator(target: Target) extends Translator {
 
   val dbsettings = target.db match {
     case Postgres(user, password, dbname) =>

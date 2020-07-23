@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia.translators
 import gr.dmst.aueb.cynthia._
 
 
-case class SQLAlchemyTranslator(t: Target) extends Translator(t) {
+case class SQLAlchemyTranslator(target: Target) extends Translator {
 
   override val preamble =
     s"""from sqlalchemy import (create_engine, or_, and_, not_, func,

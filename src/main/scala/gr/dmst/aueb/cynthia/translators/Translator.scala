@@ -33,7 +33,6 @@ case class QueryStr(
 }
 
 case class State(
-  db: DB,
   source: String = "",                          // model
   fields: Map[String, FieldDecl] = ListMap(),   // FieldDecl.as FieldDecl
   preds: Set[Predicate] = Set(),
@@ -50,45 +49,45 @@ case class State(
   ) {
 
   def source(s: String) =
-    State(db, s, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
+    State(s, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
           joins, query, distinct, combined, numGen)
 
   def f(fd: FieldDecl) = fd match {
     case FieldDecl(_, as, _, _) =>
-      State(db, source, fields + (as -> fd), preds, orders, nonAggrF, aggrF,
+      State(source, fields + (as -> fd), preds, orders, nonAggrF, aggrF,
             constantF, aggrs, joins, query, distinct, combined, numGen)
   }
 
   def pred(p: Predicate): State =
-    State(db, source, fields, preds + p, orders, nonAggrF, aggrF, constantF,
+    State(source, fields, preds + p, orders, nonAggrF, aggrF, constantF,
           aggrs, joins, query, distinct, combined, numGen)
 
   def order(o: (String, Order)): State =
-    State(db, source, fields, preds, orders :+ o, nonAggrF, aggrF, constantF,
+    State(source, fields, preds, orders :+ o, nonAggrF, aggrF, constantF,
           aggrs, joins, query, distinct, combined, numGen)
 
   def nonAggrF(f: Set[String]): State =
-    State(db, source, fields, preds, orders, nonAggrF ++ f, aggrF, constantF,
+    State(source, fields, preds, orders, nonAggrF ++ f, aggrF, constantF,
           aggrs, joins, query, distinct, combined, numGen)
 
   def addGroupF(f: String): State =
-    State(db, source, fields, preds, orders, nonAggrF + f, aggrF, constantF,
+    State(source, fields, preds, orders, nonAggrF + f, aggrF, constantF,
           aggrs, joins, query, distinct, combined, numGen)
 
   def aggrF(f: Set[String]): State =
-    State(db, source, fields, preds, orders, nonAggrF, f, constantF, aggrs,
+    State(source, fields, preds, orders, nonAggrF, f, constantF, aggrs,
           joins, query, distinct, combined, numGen)
 
   def constantFields(c: Set[String]): State =
-    State(db, source, fields, preds, orders, nonAggrF, aggrF, c, aggrs,
+    State(source, fields, preds, orders, nonAggrF, aggrF, c, aggrs,
           joins, query, distinct, combined, numGen)
 
   def aggr(a: Seq[FieldDecl]): State =
-    State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
+    State(source, fields, preds, orders, nonAggrF, aggrF, constantF,
           aggrs ++ a, joins, query, distinct, combined, numGen)
 
   def join(p: Seq[String]): State =
-    State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
+    State(source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
           joins :+ p, query, distinct, combined, numGen)
 
   def distinct(d: Option[String]): State = {
@@ -96,7 +95,7 @@ case class State(
       case Some(x) => Some(x)
       case _       => Some("")
     }
-    State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
+    State(source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
           joins, query, distinct, combined, numGen)
   }
 
@@ -116,21 +115,21 @@ case class State(
 
   def >>(qstr: QueryStr): State = query match {
     case None =>
-      State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
+      State(source, fields, preds, orders, nonAggrF, aggrF, constantF,
             aggrs, joins, Some(qstr), distinct, combined, numGen)
     case Some(query) =>
-      State(db, source, fields, preds, orders, nonAggrF, aggrF, constantF,
+      State(source, fields, preds, orders, nonAggrF, aggrF, constantF,
         aggrs, joins, Some(query >> qstr), distinct, combined, numGen)
   }
 
   def combinedQ(): State =
     // revisit
-    State(db, source, fields, Set(), Seq(), nonAggrF, aggrF, constantF,
+    State(source, fields, Set(), Seq(), nonAggrF, aggrF, constantF,
           aggrs, joins, query, distinct, true, numGen)
 }
 
 
-abstract class Translator(val target: Target) {
+abstract class Translator {
   val preamble: String
 
   def updateJoins(field: String, s: State) = {
@@ -345,7 +344,7 @@ abstract class Translator(val target: Target) {
   }
 
   def apply(q: Query): String = {
-    val s1 = State(target.db)
+    val s1 = State()
     val (s, qStr) = q match {
       case FirstRes(qs) => {
         val s2 = evalQuerySet(s1)(qs)
