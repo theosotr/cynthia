@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia.gen
 import scala.sys.process._
 import scala.collection.immutable.ListMap
 
-import com.microsoft.z3.{Solver,Context,Status,Expr,IntExpr,SeqExpr,BoolExpr}
+import com.microsoft.z3.{Solver,Context,Status,Expr,ArithExpr,IntExpr,SeqExpr,BoolExpr}
 
 import gr.dmst.aueb.cynthia._
 import gr.dmst.aueb.cynthia.translators.State
@@ -41,9 +41,86 @@ object SolverDataGenerator {
     vars get field match {
       case None => throw new Exception(s"Variable of field $field not found.")
       case Some((expr, _)) => expr(i)
-      case Some((expr, _)) => expr(i)
-      case Some((expr, _)) => expr(i)
     }
+
+  def constructExpr(e: FieldExpr, i: Int, c: Context,
+      vars: ListMap[String, (Seq[Expr], FieldType)]): Expr = e match {
+    case Constant(v, UnQuoted) => c.mkInt(v)
+    case Constant(v, Quoted)   => c.mkString(v)
+    case F(f)                  => getVariable(f, i, vars)
+    case Count(_)              => c.mkInt("1") // It's the number of records included in each group.
+    case Sum(e)                => constructExpr(e, i, c, vars)
+    case Avg(e)                => constructExpr(e, i, c, vars)
+    case Max(e)                => constructExpr(e, i, c, vars)
+    case Min(e)                => constructExpr(e, i, c, vars)
+    case Add(e1, e2)           =>
+      c.mkAdd(
+        constructExpr(e1, i, c, vars).asInstanceOf[ArithExpr],
+        constructExpr(e2, i, c, vars).asInstanceOf[ArithExpr]
+      )
+    case Sub(e1, e2)           =>
+      c.mkSub(
+        constructExpr(e1, i, c, vars).asInstanceOf[ArithExpr],
+        constructExpr(e2, i, c, vars).asInstanceOf[ArithExpr]
+      )
+    case Mul(e1, e2)           =>
+      c.mkMul(
+        constructExpr(e1, i, c, vars).asInstanceOf[ArithExpr],
+        constructExpr(e2, i, c, vars).asInstanceOf[ArithExpr]
+      )
+    case Div(e1, e2)           =>
+      c.mkDiv(
+        constructExpr(e1, i, c, vars).asInstanceOf[ArithExpr],
+        constructExpr(e2, i, c, vars).asInstanceOf[ArithExpr]
+      )
+  }
+
+  def constructConstraint(k: String, e: FieldExpr, op: (Expr, Expr) => BoolExpr,
+      c: Context, vars: ListMap[String, (Seq[Expr], FieldType)]) = {
+    val cons = List.range(0, 5) map { i =>
+      op(getVariable(k, i, vars), constructExpr(e, i, c, vars))
+    }
+    c.mkOr(cons:_*)
+  }
+
+  def predToFormula(pred: Predicate, c: Context,
+      vars: ListMap[String, (Seq[Expr], FieldType)]): BoolExpr = pred match {
+    case Eq(k, e)       => constructConstraint(k, e, c.mkEq, c, vars)
+    case Lt(k, e)       => constructConstraint(k, e, { (e1, e2) => c.mkLt(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) }, c, vars)
+    case Lte(k, e)      => constructConstraint(k, e, { (e1, e2) => c.mkLe(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) }, c, vars)
+    case Gt(k, e)       => constructConstraint(k, e, { (e1, e2) => c.mkGt(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) }, c, vars)
+    case Gte(k, e)      => constructConstraint(k, e, { (e1, e2) => c.mkGe(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) }, c, vars)
+    case Contains(k, Constant(v, _)) =>
+      constructConstraint(
+        k,
+        Constant(v, Quoted),
+        { (e1, e2) => c.mkContains(e1.asInstanceOf[SeqExpr], e2.asInstanceOf[SeqExpr]) },
+        c, vars
+      )
+    case StartsWith(k, v) =>
+      constructConstraint(
+        k,
+        Constant(v, Quoted),
+        { (e1, e2) => c.mkPrefixOf(e2.asInstanceOf[SeqExpr], e1.asInstanceOf[SeqExpr]) },
+        c, vars
+      )
+    case EndsWith(k, v) =>
+      constructConstraint(
+        k,
+        Constant(v, Quoted),
+        { (e1, e2) => c.mkSuffixOf(e2.asInstanceOf[SeqExpr], e1.asInstanceOf[SeqExpr]) },
+        c, vars
+      )
+    case Not(p) => c.mkNot(predToFormula(p, c, vars))
+    case Or(p1, p2) =>
+      c.mkOr(predToFormula(p1, c, vars), predToFormula(p2, c, vars))
+    case And(p1, p2) => 
+      c.mkAnd(predToFormula(p1, c, vars), predToFormula(p2, c, vars))
+  }
+
+  def getPredConstraints(preds: Set[Predicate], c: Context,
+      vars: ListMap[String, (Seq[Expr], FieldType)]) =
+    preds map { p => predToFormula(p, c, vars) }
 
   def getFieldConstraints(m: Model, ctx: Context,
       vars: ListMap[String, (Seq[Expr], FieldType)]) = m.fields map {
@@ -87,17 +164,28 @@ object SolverDataGenerator {
       acc + (varName -> (vars, FieldType.dataTypeToFieldType(t))) }
     }
 
+  def constructCompoundVariables(s: State, c: Context,
+      vars: ListMap[String, (Seq[Expr], FieldType)]) =
+    s.fields.values.foldLeft(vars) { case (acc, FieldDecl(e, as, t, _)) =>
+      val exprs = List.range(0, 5) map { i =>
+        constructExpr(e, i, c, acc)
+      }
+      acc + (as -> (exprs, t))
+    }
+
   def generateData(m: Model, s: Solver,
-      vars: ListMap[String, (Seq[Expr], FieldType)]): Seq[Seq[Constant]] = s.check match {
+      vars: ListMap[String, (Seq[Expr], FieldType)]) = s.check match {
     case Status.SATISFIABLE => {
       val m = s.getModel
-      List.range(0, 5) map { i =>
+      Some(List.range(0, 5) map { i =>
         (vars map {
-          case (_, (exprs, StringF)) => Constant(m.eval(exprs(i), false).toString, Quoted)
+          case (_, (exprs, StringF)) =>
+            Constant(m.eval(exprs(i), false).toString.replace("\"", ""), Quoted)
           case (_, (exprs, _)) => Constant(m.eval(exprs(i), false).toString, UnQuoted)
         }).toSeq
-      }
+      })
     }
+    case _ => None 
   }
 
   def apply(q: Query, state: State, s: Schema) = s.models get state.source match {
@@ -105,11 +193,13 @@ object SolverDataGenerator {
       s"Model '${state.source}' not found in schema '${s.name}'")
     case Some(m) => {
       val ctx = new Context
-      val vars = constructModelVariables(m, ctx)
-      val cons = getFieldConstraints(m, ctx, vars)
+      val modelVars = constructModelVariables(m, ctx)
+      val vars = constructCompoundVariables(state, ctx, modelVars) 
+      val cons = getFieldConstraints(m, ctx, vars) ++ getPredConstraints(
+        state.preds, ctx, vars)
       val s = ctx.mkSolver
       s.add(cons:_*)
-      generateData(m, s, vars)
+      generateData(m, s, modelVars)
     }
   }
 }
