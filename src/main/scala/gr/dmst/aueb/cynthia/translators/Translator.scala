@@ -228,7 +228,7 @@ case object QueryInterpreter {
           case Some((e, h)) => {
             val g2 =
               if (e.isAggregate)
-                if (h) g - as else (g - as) + f
+                if (h) g - as else (g - as) - f
               else
                 if (h) g else g + f
             _computeGroupBy(e, as, g2)
