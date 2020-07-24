@@ -3,7 +3,7 @@ package gr.dmst.aueb.cynthia
 import scala.util.{Try, Success, Failure}
 import scala.sys.process._
 
-import gr.dmst.aueb.cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery}
+import gr.dmst.aueb.cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery, State}
 
 sealed trait QueryRes
 case class Ok(res: String) extends QueryRes {
@@ -28,8 +28,8 @@ case class Invalid(msg: String) extends QueryRes {
 
 object QueryExecutor {
   
-  def apply(q: Query, target: Target) = {
-    Try(ORMTranslator(q, target)) match {
+  def apply(q: Query, s: State, target: Target) = {
+    Try(ORMTranslator(q, s, target)) match {
       case Success(ormQ) =>
         Utils.writeToFile(target.orm.getDriverPath(target.db), ormQ)
         val (stdout, stderr) = (new StringBuilder, new StringBuilder)

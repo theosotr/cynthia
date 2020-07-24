@@ -45,50 +45,51 @@ case class State(
   query: Option[QueryStr] = None,               // Query string (target), e.g. Unions
   distinct: Option[String] = None,
   combined: Boolean = false,
+  from: Option[CombinedState] = None,
   numGen: Iterator[Int] = LazyList.from(1).iterator
   ) {
 
   def source(s: String) =
     State(s, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins, query, distinct, combined, numGen)
+          joins, query, distinct, combined, from, numGen)
 
   def f(fd: FieldDecl) = fd match {
     case FieldDecl(_, as, _, _) =>
       State(source, fields + (as -> fd), preds, orders, nonAggrF, aggrF,
-            constantF, aggrs, joins, query, distinct, combined, numGen)
+            constantF, aggrs, joins, query, distinct, combined, from, numGen)
   }
 
   def pred(p: Predicate): State =
     State(source, fields, preds + p, orders, nonAggrF, aggrF, constantF,
-          aggrs, joins, query, distinct, combined, numGen)
+          aggrs, joins, query, distinct, combined, from, numGen)
 
   def order(o: (String, Order)): State =
     State(source, fields, preds, orders :+ o, nonAggrF, aggrF, constantF,
-          aggrs, joins, query, distinct, combined, numGen)
+          aggrs, joins, query, distinct, combined, from, numGen)
 
   def nonAggrF(f: Set[String]): State =
     State(source, fields, preds, orders, nonAggrF ++ f, aggrF, constantF,
-          aggrs, joins, query, distinct, combined, numGen)
+          aggrs, joins, query, distinct, combined, from, numGen)
 
   def addGroupF(f: String): State =
     State(source, fields, preds, orders, nonAggrF + f, aggrF, constantF,
-          aggrs, joins, query, distinct, combined, numGen)
+          aggrs, joins, query, distinct, combined, from, numGen)
 
   def aggrF(f: Set[String]): State =
     State(source, fields, preds, orders, nonAggrF, f, constantF, aggrs,
-          joins, query, distinct, combined, numGen)
+          joins, query, distinct, combined, from, numGen)
 
   def constantFields(c: Set[String]): State =
     State(source, fields, preds, orders, nonAggrF, aggrF, c, aggrs,
-          joins, query, distinct, combined, numGen)
+          joins, query, distinct, combined, from, numGen)
 
   def aggr(a: Seq[FieldDecl]): State =
     State(source, fields, preds, orders, nonAggrF, aggrF, constantF,
-          aggrs ++ a, joins, query, distinct, combined, numGen)
+          aggrs ++ a, joins, query, distinct, combined, from, numGen)
 
   def join(p: Seq[String]): State =
     State(source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins :+ p, query, distinct, combined, numGen)
+          joins :+ p, query, distinct, combined, from, numGen)
 
   def distinct(d: Option[String]): State = {
     val distinct = d match {
@@ -96,7 +97,7 @@ case class State(
       case _       => Some("")
     }
     State(source, fields, preds, orders, nonAggrF, aggrF, constantF, aggrs,
-          joins, query, distinct, combined, numGen)
+          joins, query, distinct, combined, from, numGen)
   }
 
   def getJoinPairs(): Set[(String, String)] =
@@ -116,21 +117,38 @@ case class State(
   def >>(qstr: QueryStr): State = query match {
     case None =>
       State(source, fields, preds, orders, nonAggrF, aggrF, constantF,
-            aggrs, joins, Some(qstr), distinct, combined, numGen)
+            aggrs, joins, Some(qstr), distinct, combined, from, numGen)
     case Some(query) =>
       State(source, fields, preds, orders, nonAggrF, aggrF, constantF,
-        aggrs, joins, Some(query >> qstr), distinct, combined, numGen)
+        aggrs, joins, Some(query >> qstr), distinct, combined, from, numGen)
   }
-
-  def combinedQ(): State =
-    // revisit
-    State(source, fields, Set(), Seq(), nonAggrF, aggrF, constantF,
-          aggrs, joins, query, distinct, true, numGen)
 }
 
 
-abstract class Translator {
-  val preamble: String
+sealed trait CombinedState
+case class UnionState(s1: State, s2: State) extends CombinedState
+case object UnionState {
+
+  def combine(s1: State, s2: State): State =
+    State(s1.source, s1.fields, Set(), Seq(), s1.nonAggrF, s1.aggrF,
+          s1.constantF,
+          s1.aggrs, s1.joins, s1.query, s1.distinct, true,
+          Some(UnionState(s1, s2)),
+          s1.numGen)
+}
+case class IntersectState(s1: State, s2: State) extends CombinedState
+case object IntersectState {
+
+  def combine(s1: State, s2: State): State =
+    State(s1.source, s1.fields, Set(), Seq(), s1.nonAggrF, s1.aggrF,
+          s1.constantF,
+          s1.aggrs, s1.joins, s1.query, s1.distinct, true,
+          Some(IntersectState(s1, s2)),
+          s1.numGen)
+}
+
+
+case object QueryInterpreter {
 
   def updateJoins(field: String, s: State) = {
     field split '.' match {
@@ -288,7 +306,7 @@ abstract class Translator {
   def traverseSortedFields(s: State, fields: Seq[String]): State =
     fields.foldLeft (s) { (acc, x) => setJoinAndGroup(x, acc) }
 
-  def evalQuerySet(s: State)(qs: QuerySet): State = qs match {
+  def interpretQuerySet(s: State, qs: QuerySet): State = qs match {
     case New(m, f) => { // Add source and fields to state
       val s1 = f.foldLeft(s source m) { (acc, x) => acc f x }
       val s2 = s1.constantFields(getConstants(f, s1.fields))
@@ -297,18 +315,18 @@ abstract class Translator {
       traverseDeclaredFields(s3 aggrF aggrF, f)
     }
     case Apply(Distinct(field), qs) => {
-      val s1 = evalQuerySet(s)(qs)
+      val s1 = interpretQuerySet(s, qs)
       field match {
         case None    => s1 distinct field
         case Some(f) => updateJoins(f, s1) distinct field
       }
     }
     case Apply(Filter(pred), qs) => {
-      val s1 = evalQuerySet(s)(qs) pred pred // Add predicate to state
+      val s1 = interpretQuerySet(s, qs) pred pred // Add predicate to state
       traversePredicate(s1, pred) // update joins
     }
     case Apply(Sort(spec), qs) => {
-      val s1 = traverseSortedFields(evalQuerySet(s)(qs), spec map { _._1 })
+      val s1 = traverseSortedFields(interpretQuerySet(s, qs), spec map { _._1 })
       // Finally, always sort by id to eliminate non-deterministic results.
       // Some backends (e.g., MySQL, Postgres) fetch results in an unpredictive
       // manner when the ordering is unspecified.
@@ -333,41 +351,48 @@ abstract class Translator {
       }}
     }
     case Union (qs1, qs2) =>
-      unionQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)).combinedQ // Merge queries
+      UnionState.combine(interpretQuerySet(s, qs1), interpretQuerySet(s, qs2))
     case Intersect (qs1, qs2) =>
-      intersectQueries(evalQuerySet(s)(qs1), evalQuerySet(s)(qs2)).combinedQ // Intersect queries
+      IntersectState.combine(interpretQuerySet(s, qs1), interpretQuerySet(s, qs2))
   }
 
-  def evalAggrQuery(s: State)(q: Query): State = q match {
-    case AggrRes(aggrs, qs) => evalQuerySet(s)(qs) aggr aggrs
+  def interpretAggrQuery(s: State, q: Query): State = q match {
+    case AggrRes(aggrs, qs) => interpretQuerySet(s, qs) aggr aggrs
     case _ => ??? // Unreachable case
   }
 
-  def apply(q: Query): String = {
-    val s1 = State()
-    val (s, qStr) = q match {
-      case FirstRes(qs) => {
-        val s2 = evalQuerySet(s1)(qs)
-        if (s2.orders.isEmpty)
-          throw new InvalidQuery(
-            "You have to make queryset ordered in order to perform safe comparisons")
-        (s2, constructQuery(s2, first = true))
-      }
-      case SetRes(qs) => {
-        val s2 = evalQuerySet(s1)(qs)
-        (s2, constructQuery(s2))
-      }
-      case AggrRes(f, _) => {
-        val s2 = evalAggrQuery(s1)(q)
-        (s2, constructQuery(traverseDeclaredFields(s2, f)))
-      }
-      case SubsetRes(offset, limit, qs) => {
-        val s2 = evalQuerySet(s1)(qs)
-        if (s2.orders.isEmpty)
-          throw new InvalidQuery(
-            "You have to make queryset ordered in order to perform safe comparisons")
-        (s2, constructQuery(s2, offset = offset, limit = limit))
-      }
+  def apply(q: Query): State = q match {
+    case FirstRes(qs) => {
+      val s = interpretQuerySet(State(), qs)
+      if (s.orders.isEmpty)
+        throw new InvalidQuery(
+          "You have to make queryset ordered in order to perform safe comparisons")
+      else s
+    }
+    case SubsetRes(_, _, qs) => {
+      val s = interpretQuerySet(State(), qs)
+      if (s.orders.isEmpty)
+        throw new InvalidQuery(
+          "You have to make queryset ordered in order to perform safe comparisons")
+      else s
+    }
+    case SetRes(qs) => interpretQuerySet(State(), qs)
+    case AggrRes(f, _) => traverseDeclaredFields(
+      interpretAggrQuery(State(), q), f)
+  }
+}
+
+
+abstract class Translator {
+  val preamble: String
+
+  def apply(q: Query, s: State): String = {
+    val qStr = q match {
+      case FirstRes(_)   => constructQuery(s, first = true)
+      case SetRes(_)     => constructQuery(s)
+      case AggrRes(f, _) => constructQuery(s)
+      case SubsetRes(offset, limit, _) =>
+        constructQuery(s, offset = offset, limit = limit)
     }
     val dfields = s.fields.values.filter { !FieldDecl.hidden(_) }.toSeq match {
       case Seq() => Seq("id")
@@ -380,9 +405,16 @@ abstract class Translator {
     }
   }
 
+  def constructCombinedQueries(s: State): QueryStr = s.from match {
+    case None => ??? // Unreachable case
+    case Some(UnionState(s1, s2)) => constructCombinedQuery(unionQueries(s1, s2))
+    case Some(IntersectState(s1, s2)) =>
+      constructCombinedQuery(intersectQueries(s1, s2))
+  }
+
   def constructQuery(s: State, first: Boolean = false, offset: Int = 0,
       limit: Option[Int] = None): QueryStr =
-    if (s.combined) constructCombinedQuery(s)
+    if (s.combined) constructCombinedQueries(s)
     else constructNaiveQuery(s, first, offset, limit)
 
   def constructNaiveQuery(s: State, first: Boolean , offset: Int,
@@ -431,11 +463,11 @@ object TUtils {
 
 object ORMTranslator {
 
-  def apply(q: Query, target: Target): String = target.orm match {
-    case Django(_, _, _)      => DjangoTranslator(target)(q)
-    case SQLAlchemy (_, _)    => SQLAlchemyTranslator(target)(q)
-    case Sequelize(_, _)      => SequelizeTranslator(target)(q)
-    case Peewee(_, _)         => PeeweeTranslator(target)(q)
-    case ActiveRecord(_, _)   => ActiveRecordTranslator(target)(q)
+  def apply(q: Query, s: State, target: Target): String = target.orm match {
+    case Django(_, _, _)      => DjangoTranslator(target)(q, s)
+    case SQLAlchemy (_, _)    => SQLAlchemyTranslator(target)(q, s)
+    case Sequelize(_, _)      => SequelizeTranslator(target)(q, s)
+    case Peewee(_, _)         => PeeweeTranslator(target)(q, s)
+    case ActiveRecord(_, _)   => ActiveRecordTranslator(target)(q, s)
   }
 }

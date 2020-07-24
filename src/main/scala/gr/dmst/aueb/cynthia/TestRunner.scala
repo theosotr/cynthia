@@ -13,7 +13,9 @@ import pprint.PPrinter.BlackWhite
 import spray.json._
 import DefaultJsonProtocol._
 
+import gr.dmst.aueb.cynthia.gen.SolverDataGenerator
 import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
+import gr.dmst.aueb.cynthia.translators.QueryInterpreter
 
 
 case class Target(orm: ORM, db: DB) {
@@ -301,9 +303,11 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     val stats = getQueries()
       .foldLeft(Stats()) { (acc, q) => {
         try {
+          val s = QueryInterpreter(q)
+          SolverDataGenerator(q, s, schema)
           val futures = targets map { t =>
             Future {
-              (t, QueryExecutor(q, t))
+              (t, QueryExecutor(q, s, t))
             }
           }
           val f = Future.sequence(futures) map { res =>

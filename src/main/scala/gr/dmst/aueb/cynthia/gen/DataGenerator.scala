@@ -2,7 +2,9 @@ package gr.dmst.aueb.cynthia.gen
 
 
 import gr.dmst.aueb.cynthia._
-import gr.dmst.aueb.cynthia.translators.Z3SolverTranslator
+import gr.dmst.aueb.cynthia.translators.{Z3SolverTranslator,State}
+
+import scala.sys.process._
 
 
 object NaiveDataGenerator {
@@ -31,9 +33,8 @@ object NaiveDataGenerator {
 
 
 object SolverDataGenerator {
-  def apply(q: Query, s: Schema) = {
-    val formula = Z3SolverTranslator(s)(q)
-    println(formula)
+  def apply(q: Query, state: State, s: Schema) = {
+    val formula = Z3SolverTranslator(s)(q, state)
     Utils.writeToFile("solve.py", formula)
   }
 }
