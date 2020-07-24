@@ -141,6 +141,14 @@ sealed trait FieldType {
   def isNumeric(): Boolean
   def isStr(): Boolean
 }
+case object FieldType {
+  def dataTypeToFieldType(t: DataType) = t match {
+    case Int8 | Int16 | Int32 | Int64 | Serial | Foreign(_) => IntF
+    case VarChar(_) => StringF
+    case Numeric => DoubleF
+    case Bool => BooleanF
+  }
+}
 case object StringF extends FieldType {
   override def convertType(db: DB) = db match {
     case MySQL(_, _, _) => "char"
