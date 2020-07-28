@@ -46,7 +46,7 @@ object Cynthia {
           .text("ORMs to differentially test")
           .validate(_.foldLeft (success) { (acc, x) => x match {
               case "django"  | "sqlalchemy" | "sequelize"
-              | "peewee" | "activerecord" => acc
+              | "peewee" | "activerecord" | "pony" => acc
               case _  => failure("ORM '" + x + "' is not supported")
             }
           })

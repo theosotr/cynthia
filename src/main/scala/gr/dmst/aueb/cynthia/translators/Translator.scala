@@ -469,5 +469,6 @@ object ORMTranslator {
     case Sequelize(_, _)      => SequelizeTranslator(target)(q, s)
     case Peewee(_, _)         => PeeweeTranslator(target)(q, s)
     case ActiveRecord(_, _)   => ActiveRecordTranslator(target)(q, s)
+    case Pony(_, _)           => PonyTranslator(target)(q, s)
   }
 }

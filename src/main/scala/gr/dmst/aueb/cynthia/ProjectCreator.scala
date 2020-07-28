@@ -19,6 +19,7 @@ object ProjectCreator {
     case Sequelize(_, _)     => createSequelizeProject(orm, dbs)
     case Peewee(_, _)        => createPeeweeProject(orm, dbs)
     case ActiveRecord(_, _)  => createActiveRecordProject(orm, dbs)
+    case Pony(_, _)          => createPonyProject(orm, dbs)
   }
 
   def createModels(orm: ORM, dbs: Seq[DB]) = orm match {
@@ -139,6 +140,23 @@ object ProjectCreator {
       }
       Utils.runCmd(cmd, None)
     }
+    case Pony(_, pdir) => {
+      val bcmd = "python scripts/ponywiz.py"
+      val cmd = dbs(0) match {
+        case Postgres(user, password, dbname) =>
+          s" -e postgres -u $user -H localhost $dbname -P $password"
+        case MySQL(user, password, dbname) =>
+          s" -e mysql -u $user -H localhost $dbname -P $password"
+        case SQLite(dbname) =>
+          s" -e sqlite $dbname"
+        case Cockroachdb(user, _, dbname) =>
+          s" -e cockroachdb -u $user -H localhost $dbname "
+        case MSSQL(_, _, _) =>
+          ??? // Unreachable
+      }
+      val models = Utils.runCmd(bcmd + cmd, None)
+      Utils.writeToFile(orm.getModelsPath(), models)
+    }
   }
 
   def createSequelizeProject(orm: ORM, dbs: Seq[DB]) = orm match {
@@ -162,6 +180,11 @@ object ProjectCreator {
       Utils.writeToFile(Utils.joinPaths(List(pdir, "__init__.py")), "")
     }
     case _ => ()
+  }
+
+  def createPonyProject(orm: ORM, dbs: Seq[DB]) = orm match {
+    case Pony(_, pdir) => Utils.emptyFile(pdir)
+    case _               => ()
   }
 
   def createDjangoProject(orm: ORM, dbs: Seq[DB]) = orm match {

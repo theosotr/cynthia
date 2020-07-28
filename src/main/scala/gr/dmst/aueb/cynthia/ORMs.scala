@@ -78,3 +78,16 @@ extends ORM("activerecord", name, pDir) {
   override def getDriverPath(db: DB) =
     Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".rb"))
 }
+
+case class Pony(name: String, pDir: String)
+extends ORM("pony", name, pDir) {
+  Utils.createDir(pDir)
+
+  override def getModelsPath() =
+    Utils.joinPaths(List(pDir, "models.py"))
+
+  override def getSettingsPath() = ""
+
+  override def getDriverPath(db: DB) =
+    Utils.joinPaths(List(pDir, "driver_" + db.getName() + ".py"))
+}

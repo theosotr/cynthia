@@ -21,7 +21,7 @@ import gr.dmst.aueb.cynthia.translators.QueryInterpreter
 case class Target(orm: ORM, db: DB) {
   def getTargetCommand() = orm match {
     case Django (_, _, _) | SQLAlchemy (_, _)
-    | Peewee(_, _) => "python3 " + orm.getDriverPath(db)
+    | Peewee(_, _) | Pony(_, _) => "python3 " + orm.getDriverPath(db)
     case Sequelize(_, _)    => "node " + orm.getDriverPath(db)
     case ActiveRecord(_, _) => "ruby " + orm.getDriverPath(db)
   }
@@ -61,6 +61,8 @@ object TestRunnerCreator {
                                        Utils.joinPaths(List(workdir, "sequelize")))
         case "peewee"        => Peewee(dbname,
                                        Utils.joinPaths(List(workdir, "peewee")))
+        case "pony"          => Pony(dbname,
+                                       Utils.joinPaths(List(workdir, "pony")))
         case "activerecord"  => ActiveRecord(dbname,
                                        Utils.joinPaths(List(workdir, "activerecord")))
         case _               => ???
@@ -304,7 +306,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       .foldLeft(Stats()) { (acc, q) => {
         try {
           val s = QueryInterpreter(q)
-          SolverDataGenerator(q, s, schema)
+          // SolverDataGenerator(q, s, schema)
           val futures = targets map { t =>
             Future {
               (t, QueryExecutor(q, s, t))
