@@ -42,18 +42,10 @@ object ProjectCreator {
         case _         => true
       } foreach { db => {
           val cmd = db match {
-            case Postgres(user, password, dbname) => {
-              println(user)
-              println(password)
-              println(dbname)
+            case Postgres(user, password, dbname) =>
               s" -e postgres -u $user -H localhost $dbname -P $password"
-            }
-            case MySQL(user, password, dbname) => {
-              println(user)
-              println(password)
-              println(dbname)
+            case MySQL(user, password, dbname) =>
               s" -e mysql -u $user -H localhost $dbname -P $password"
-            }
             case SQLite(dbname) =>
               s" -e sqlite $dbname"
             case Cockroachdb(user, _, dbname) =>
@@ -156,18 +148,10 @@ object ProjectCreator {
         case _         => true
       } foreach { db => {
           val cmd = db match {
-            case Postgres(user, password, dbname) => {
-              println(user)
-              println(password)
-              println(dbname)
+            case Postgres(user, password, dbname) =>
               s" -e postgres -u $user -H localhost $dbname -P $password"
-            }
-            case MySQL(user, password, dbname) => {
-              println(user)
-              println(password)
-              println(dbname)
+            case MySQL(user, password, dbname) =>
               s" -e mysql -u $user -H localhost $dbname -P $password"
-            }
             case SQLite(dbname) =>
               s" -e sqlite $dbname"
             case Cockroachdb(user, _, dbname) =>
