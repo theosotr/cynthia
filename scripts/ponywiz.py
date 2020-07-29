@@ -178,7 +178,7 @@ def get_option_parser():
     ao('-H', '--host', dest='host')
     ao('-p', '--port', dest='port', type='int')
     ao('-u', '--user', dest='user')
-    ao('-P', '--password', dest='password', action='store_true')
+    ao('-P', '--password', dest='password')
     engines = sorted(DATABASE_MAP)
     ao('-e', '--engine', dest='engine', default='postgresql', choices=engines,
        help=('Database type, e.g. sqlite, mysql, postgresql or cockroachdb. '
@@ -199,10 +199,8 @@ def get_option_parser():
     return parser
 
 def get_connect_kwargs(options):
-    ops = ('host', 'port', 'user', 'schema')
+    ops = ('host', 'port', 'user', 'schema', 'password')
     kwargs = dict((o, getattr(options, o)) for o in ops if getattr(options, o))
-    if options.password:
-        kwargs['password'] = getpass()
     return kwargs
 
 
