@@ -42,10 +42,18 @@ object ProjectCreator {
         case _         => true
       } foreach { db => {
           val cmd = db match {
-            case Postgres(user, password, dbname) =>
+            case Postgres(user, password, dbname) => {
+              println(user)
+              println(password)
+              println(dbname)
               s" -e postgres -u $user -H localhost $dbname -P $password"
-            case MySQL(user, password, dbname) =>
+            }
+            case MySQL(user, password, dbname) => {
+              println(user)
+              println(password)
+              println(dbname)
               s" -e mysql -u $user -H localhost $dbname -P $password"
+            }
             case SQLite(dbname) =>
               s" -e sqlite $dbname"
             case Cockroachdb(user, _, dbname) =>
@@ -142,20 +150,37 @@ object ProjectCreator {
     }
     case Pony(_, pdir) => {
       val bcmd = "python scripts/ponywiz.py"
-      val cmd = dbs(0) match {
-        case Postgres(user, password, dbname) =>
-          s" -e postgres -u $user -H localhost $dbname -P $password"
-        case MySQL(user, password, dbname) =>
-          s" -e mysql -u $user -H localhost $dbname -P $password"
-        case SQLite(dbname) =>
-          s" -e sqlite $dbname"
-        case Cockroachdb(user, _, dbname) =>
-          s" -e cockroachdb -u $user -H localhost $dbname "
-        case MSSQL(_, _, _) =>
-          ??? // Unreachable
+      // Generate a models.py file for each backend.
+      dbs filter {
+        case MSSQL(_, _, _) => false
+        case _         => true
+      } foreach { db => {
+          val cmd = db match {
+            case Postgres(user, password, dbname) => {
+              println(user)
+              println(password)
+              println(dbname)
+              s" -e postgres -u $user -H localhost $dbname -P $password"
+            }
+            case MySQL(user, password, dbname) => {
+              println(user)
+              println(password)
+              println(dbname)
+              s" -e mysql -u $user -H localhost $dbname -P $password"
+            }
+            case SQLite(dbname) =>
+              s" -e sqlite $dbname"
+            case Cockroachdb(user, _, dbname) =>
+              s" -e cockroachdb -u $user -H localhost $dbname "
+            case MSSQL(_, _, _) =>
+              ??? // Unreachable
+          }
+          val models = Utils.runCmd(bcmd + cmd, None)
+          Utils.writeToFile(
+            orm.getModelsPath().replace(".py", "_" + db.getName + ".py"),
+            models)
+        }
       }
-      val models = Utils.runCmd(bcmd + cmd, None)
-      Utils.writeToFile(orm.getModelsPath(), models)
     }
   }
 
