@@ -50,7 +50,7 @@ def pony_get_database_options(introspector, db_kwargs):
         options += ", database='{}'".format(introspector.get_database_name())
         options += ", sslmode='disable'"
     elif provider == 'mysql':
-        options += ", db='{}'".format(introspector.get_database_name().capitalize())
+        options += ", db='{}'".format(introspector.get_database_name())
     return provider, options
 
 
