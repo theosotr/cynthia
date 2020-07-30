@@ -69,7 +69,7 @@ def pony_get_parents(foreign_keys):
     parents_lookup = {}
     for child, parents in foreign_keys.items():
         for parent in parents:
-            if parent.dest_table not in parents:
+            if parent.dest_table not in parents_lookup:
                 parents_lookup[parent.dest_table] = [child]
             else:
                 parents_lookup[parent.dest_table].append(child)
