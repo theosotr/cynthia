@@ -8,7 +8,11 @@ object SchemaGenerator {
     "int",
     "numeric",
     "string",
+    "foreign"
   )
+
+  private val usedTables: scala.collection.mutable.Set[String] =
+    scala.collection.mutable.Set()
 
   def generateFields(schema: Schema) = {
     def _genFields(fields: Seq[Field], foreignF: Set[String],
@@ -25,8 +29,11 @@ object SchemaGenerator {
             case "string"  => Some(RUtils.word(special = false).toLowerCase, VarChar(50), foreignF)
             case "foreign" => {
               val model = RUtils.chooseFrom(schema.getModels)
-              if (foreignF.contains(model)) None
-              else Some(model.toLowerCase, Foreign(model), foreignF + model)
+              if (foreignF.contains(model) || usedTables.contains(model)) None
+              else {
+                usedTables.add(model)
+                Some(model.toLowerCase, Foreign(model), foreignF + model)
+              }
             }
           }
         res match {

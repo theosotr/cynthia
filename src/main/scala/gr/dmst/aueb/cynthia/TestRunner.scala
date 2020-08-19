@@ -307,14 +307,13 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
           val dbs = targets.map(x => x.db).toSet
           val ndbs = dbs.size
           var dataIns = ""
-          SolverDataGenerator(q, s, schema) match {
+          SolverDataGenerator(schema)(q, s) match {
             case None => // Solver didn't generate any data
               println(q)
             case Some(data) => {
-              val insStms = SchemaTranslator.dataToInsertStmts(
-                schema.models(s.source),
-                data
-              ).!
+              val insStms = (data.foldLeft(Str("")) { case (acc, (m, r)) =>
+                acc << SchemaTranslator.dataToInsertStmts(m, r)
+              }).!
               dataIns = insStms
               // FIXME: Make it parallel.
               dbs foreach { db =>
@@ -392,6 +391,10 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
           case e: TimeoutException => {
             BlackWhite.tokenize(q).mkString
             acc
+          }
+          case e: Exception => {
+            println(BlackWhite.tokenize(q).mkString)
+            throw e
           }
         }
       }
