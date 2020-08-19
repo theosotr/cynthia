@@ -35,7 +35,7 @@ object SchemaGenerator {
           case Some((n, t, f)) => _genFields(fields :+ Field(n, t), f)
         }
       }
-    _genFields(Seq(Field("id", Serial), Field("str", VarChar(50))), Set()) // Every model has an ID and a string field.
+    _genFields(Seq(Field("id", Serial), Field("simvolosira", VarChar(50))), Set()) // Every model has an ID and a string field.
   }
 
   def generateModels(schema: Schema, lowerBound: Int = 5): Schema =
