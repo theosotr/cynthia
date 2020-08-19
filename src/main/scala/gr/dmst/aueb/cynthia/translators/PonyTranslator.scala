@@ -50,7 +50,7 @@ case class PonyTranslator(target: Target) extends Translator {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
       fields map { as => {
         if (nonHiddenFieldsMap.contains(as)) {
-          if (nonHiddenFieldsMap.size > 1) {
+          if (nonHiddenFieldsMap.size >= 1) {
             val index = nonHiddenFieldsMap.keysIterator.toList.indexOf(as)
             s"${ident}dump($v[$index], '$as')"
           } else
@@ -203,9 +203,10 @@ case class PonyTranslator(target: Target) extends Translator {
 
   def constructSelectedItems(source: String) = {
     if (!nonHiddenFieldsMap.isEmpty) {
-      nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
+      val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
         acc :+ x._2
       }} mkString ","
+      items + "," + source.toLowerCase
     } else
       source.toLowerCase
   }
@@ -310,6 +311,11 @@ case class PonyTranslator(target: Target) extends Translator {
       Some(
         Seq(
           bodyQstr.ret.get.trim,
+          s.aggrs match {
+            case Seq() => ""
+            case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
+            case _ => "first()"
+          },
           constructFirst(first),
         ) filter {
           case "" => false
