@@ -97,6 +97,7 @@ object SolverDataGenerator {
         { (e1, e2) => c.mkContains(e1.asInstanceOf[SeqExpr], e2.asInstanceOf[SeqExpr]) },
         c, vars
       )
+    case Contains(_, _) => ??? // Unreachable case
     case StartsWith(k, v) =>
       constructConstraint(
         k,
@@ -198,6 +199,9 @@ object SolverDataGenerator {
       val cons = getFieldConstraints(m, ctx, vars) ++ getPredConstraints(
         state.preds, ctx, vars)
       val s = ctx.mkSolver
+      val params = ctx.mkParams
+      params.add("timeout", 2000)
+      s.setParameters(params)
       s.add(cons:_*)
       generateData(m, s, modelVars)
     }

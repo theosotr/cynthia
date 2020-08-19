@@ -4,6 +4,7 @@ import gr.dmst.aueb.cynthia._
 import gr.dmst.aueb.cynthia.gen.NaiveDataGenerator
 
 
+
 object SchemaTranslator {
 
   def convertDataType(t: DataType) = t match {
@@ -13,6 +14,18 @@ object SchemaTranslator {
     case VarChar(n) => "varchar(" + n + ")"
   }
 
+  def dataToInsertStmts(m: Model, data: Seq[Seq[Constant]]) =
+    data.foldLeft(Str("DELETE FROM ") << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << ";\n") { (acc, row) =>
+      acc << "INSERT INTO " << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << "(" <<
+        (m.fields map { x => Utils.quoteStr(Field.dbname(x), quotes = "\"") } mkString ",") <<
+        ") VALUES (" <<
+        (row map {
+          case Constant(v, Quoted)  => Utils.quoteStr(v.replace("'", "''"))
+          case Constant(v, UnQuoted) =>
+            if (v.contains("/")) v.replace("/", ".0/")
+            else v
+        } mkString ",") << ");\n"
+    }
 
   def translateModel(m: Model, numRecords: Int): QueryStr = {
     def getColumns() =
@@ -31,20 +44,12 @@ object SchemaTranslator {
       }
 
     def getInsertStms() =
-      NaiveDataGenerator(m, numRecords, limit = numRecords).foldLeft(Str("")) { (acc, row) =>
-        acc << "INSERT INTO " << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << "(" <<
-          (m.fields map { x => Utils.quoteStr(Field.dbname(x), quotes = "\"") } mkString ",") <<
-          ") VALUES (" <<
-          (row map {
-            case Constant(v, Quoted)  => Utils.quoteStr(v)
-            case Constant(v, UnQuoted) => v
-          } mkString ",") << ");\n"
-      }
-
+      dataToInsertStmts(m, NaiveDataGenerator(m, numRecords, limit = numRecords))
 
     QueryStr(None,
       Some((Str("CREATE TABLE ") << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") <<
         " (\n" << getColumns <<
+      //"PRIMARY KEY (id)" << getForeignKeys << "\n);\n" << getInsertStms).!)
       "PRIMARY KEY (id)" << getForeignKeys << "\n);\n" << getInsertStms).!)
     )
   }

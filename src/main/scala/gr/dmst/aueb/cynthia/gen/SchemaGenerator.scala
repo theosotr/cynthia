@@ -8,7 +8,6 @@ object SchemaGenerator {
     "int",
     "numeric",
     "string",
-    "foreign"
   )
 
   def generateFields(schema: Schema) = {

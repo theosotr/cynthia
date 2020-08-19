@@ -86,7 +86,7 @@ case class GenState(
     AddExpr,
     SubExpr,
     MulExpr,
-    DivExpr
+    //DivExpr
   )
 
   def ++() =
@@ -317,7 +317,10 @@ case class QueryGenerator(
     assert(s.model.isDefined)
     val fields = s.getFields(false, fType)
     val predExprs = fType match {
-      case None | Some(StrF) => predNodes
+      case None | Some(StrF) => predNodes filter {
+        case GtPred | GtePred | LtPred | LtePred => false // FIXME
+        case _ => true
+      }
       case Some(NumberF) => predNodes filter {
         case ContainsPred | StartsWithPred | EndsWithPred => false
         case _ => true }
@@ -352,10 +355,10 @@ case class QueryGenerator(
       }
       case ContainsPred => {
         val field = RUtils.chooseFrom(fields)
-        Contains(field, Constant(RUtils.subword, Quoted))
+        Contains(field, Constant(RUtils.word(), Quoted))
       }
-      case StartsWithPred => StartsWith(RUtils.chooseFrom(fields), RUtils.subword)
-      case EndsWithPred => EndsWith(RUtils.chooseFrom(fields), RUtils.subword)
+      case StartsWithPred => StartsWith(RUtils.chooseFrom(fields), RUtils.word())
+      case EndsWithPred => EndsWith(RUtils.chooseFrom(fields), RUtils.word())
       case AndPred => And(generatePredicate(s2.++, model, fType), generatePredicate(s2.++, model, fType))
       case OrPred  => Or(generatePredicate(s2.++, model, fType), generatePredicate(s2.++, model, fType))
       case NotPred => Not(generatePredicate(s2.++, model, fType))
@@ -500,10 +503,10 @@ case class QueryGenerator(
   def apply(schema: Schema): Query = {
     val qType = RUtils.chooseFrom(List(
       "set",
-      "aggr",
-      "union",
-      "first",
-      "subset"
+      //"aggr",
+      //"union",
+      //"first",
+      //"subset"
     ))
     val cands = if (noCombined) Seq(NewQS) else Seq(NewQS, UnionQS, IntersectQS)
     qType match {

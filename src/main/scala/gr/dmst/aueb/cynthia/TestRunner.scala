@@ -15,7 +15,7 @@ import DefaultJsonProtocol._
 
 import gr.dmst.aueb.cynthia.gen.SolverDataGenerator
 import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
-import gr.dmst.aueb.cynthia.translators.QueryInterpreter
+import gr.dmst.aueb.cynthia.translators.{QueryInterpreter, SchemaTranslator}
 
 
 case class Target(orm: ORM, db: DB) {
@@ -203,9 +203,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
           case Some(x) => getQueriesFromDisk(x)
           case None    => ??? // unreachable
         }
-      case Some("replay") => {
-        getQueriesFromCynthia()
-      }
+      case Some("replay") => getQueriesFromCynthia()
       case _ => ??? // unreachable
     }
   }
@@ -306,7 +304,27 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       .foldLeft(Stats()) { (acc, q) => {
         try {
           val s = QueryInterpreter(q)
-          // SolverDataGenerator(q, s, schema)
+          val dbs = targets.map(x => x.db).toSet
+          val ndbs = dbs.size
+          var dataIns = ""
+          SolverDataGenerator(q, s, schema) match {
+            case None => // Solver didn't generate any data
+              println(q)
+            case Some(data) => {
+              val insStms = SchemaTranslator.dataToInsertStmts(
+                schema.models(s.source),
+                data
+              ).!
+              dataIns = insStms
+              // FIXME: Make it parallel.
+              dbs foreach { db =>
+                val dataPath = Utils.joinPaths(
+                  List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
+                Utils.writeToFile(dataPath, insStms)
+                DBSetup.setupSchema(db, dataPath)
+              }
+            }
+          }
           val futures = targets map { t =>
             Future {
               (t, QueryExecutor(q, s, t))
@@ -334,8 +352,6 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
                     }
                   }
                 }}
-              // Get the number of backends
-              val ndbs = targets.map(x => x.db).toSet.size
               val okDbs = oks.keys.map { case (k, _) => k }.toSet
               if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
                   oks.size > ndbs) {
@@ -351,6 +367,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
                   |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
                   """.stripMargin
                 storeResults(q, oks ++ failed, reportDir)
+                Utils.writeToFile(Utils.joinPaths(List(reportDir, "data.sql")), dataIns)
                 println(msg)
                 acc ++ (mism = true)
               } else if (failed.size == 0 && oks.size == 0) {
@@ -363,6 +380,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
                 if (options.storeMatches) {
                   val qid = matchesEnumerator.next()
                   val reportDir = getMatchesDir(qid)
+                  new File(reportDir).mkdirs
+                  Utils.writeToFile(Utils.joinPaths(List(reportDir, "data.sql")), dataIns)
                   storeResults(q, oks ++ failed, reportDir)
                 }
                 acc.++()
