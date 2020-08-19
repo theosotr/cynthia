@@ -90,17 +90,23 @@ case class PonyTranslator(target: Target) extends Translator {
     }
   }
 
+  def isConstant(field: FieldExpr) = field match {
+    case Constant(_, _) => true
+    case _              => false
+  }
+
   def constructPrimAggr(fexpr: FieldExpr) = {
-    val (field, op) = fexpr match {
-      case Count(None)        => ("", "count")
-      case Count(Some(field)) => (constructFieldExpr(field), "count")
-      case Sum(field)         => (constructFieldExpr(field), "sum")
-      case Avg(field)         => (constructFieldExpr(field), "avg")
-      case Min(field)         => (constructFieldExpr(field), "min")
-      case Max(field)         => (constructFieldExpr(field), "max")
+    val (field, op, isConstantField) = fexpr match {
+      case Count(None)        => ("", "count", false)
+      case Count(Some(field)) => (constructFieldExpr(field), "count", isConstant(field))
+      case Sum(field)         => (constructFieldExpr(field), "sum", isConstant(field))
+      case Avg(field)         => (constructFieldExpr(field), "avg", isConstant(field))
+      case Min(field)         => (constructFieldExpr(field), "min", isConstant(field))
+      case Max(field)         => (constructFieldExpr(field), "max", isConstant(field))
       case _                  => ??? // Unreachable case
     }
-    op + "(" + field + ")"
+    val fieldString = if (isConstantField) "[" + field + "]" else field
+    op + "(" + fieldString + ")"
   }
 
   def constructCompoundAggr(fexpr: FieldExpr) = {
@@ -152,26 +158,22 @@ case class PonyTranslator(target: Target) extends Translator {
   // The following functions until extractFields are used to create a map for
   // field declarations to their expressions.
   def constructPrimField(acc: ListMap[String, String], fexpr: FieldExpr) = {
-    def _isConstant(field: FieldExpr) = field match {
-      case Constant(_, _) => true
-      case _              => false
-    }
-    val (field, op, isConstant) = fexpr match {
+    val (field, op, isConstantField) = fexpr match {
       case Count(None)        =>
         ("", "count", false)
       case Count(Some(field)) =>
-        (constructField(acc, field), "count", _isConstant(field))
+        (constructField(acc, field), "count", isConstant(field))
       case Sum(field)         =>
-        (constructField(acc, field), "sum", _isConstant(field))
+        (constructField(acc, field), "sum", isConstant(field))
       case Avg(field)         =>
-        (constructField(acc, field), "avg", _isConstant(field))
+        (constructField(acc, field), "avg", isConstant(field))
       case Min(field)         =>
-        (constructField(acc, field), "min", _isConstant(field))
+        (constructField(acc, field), "min", isConstant(field))
       case Max(field)         =>
-        (constructField(acc, field), "max", _isConstant(field))
+        (constructField(acc, field), "max", isConstant(field))
       case _                  => ??? // Unreachable case
     }
-    val fieldString = if (isConstant) "[" + field + "]" else field
+    val fieldString = if (isConstantField) "[" + field + "]" else field
     op + "(" + fieldString + ")"
   }
 
