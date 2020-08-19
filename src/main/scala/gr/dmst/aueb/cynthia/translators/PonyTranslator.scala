@@ -203,10 +203,9 @@ case class PonyTranslator(target: Target) extends Translator {
 
   def constructSelectedItems(source: String) = {
     if (!nonHiddenFieldsMap.isEmpty) {
-      val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
+      nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
         acc :+ x._2
       }} mkString ","
-      items + "," + source.toLowerCase
     } else
       source.toLowerCase
   }
