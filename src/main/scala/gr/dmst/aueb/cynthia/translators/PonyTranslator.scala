@@ -230,15 +230,22 @@ case class PonyTranslator(target: Target) extends Translator {
 
   // select, join, filter
   def constructQueryPrefix(s: State, selectedItems: String, joins: String,
-    filter: String) =  s.query match {
-    case None    => {
-      val qstr = s"select((${selectedItems}) for ${s.source.toLowerCase} in ${s.source} ${joins} ${filter})"
-      QueryStr(
-        Some("    ret" + s.numGen.next().toString),
-        Some(qstr)
-      )
-    }
-    case Some(q) => q
+    filter: String) = {
+      val (prefix, without) = s.distinct match {
+        case Some("") => ("distinct", "")
+        case Some(x)  => throw UnsupportedException("Distinct on is not supported by Pony")
+        case _        => ("select", ".without_distinct()")
+      }
+      s.query match {
+        case None    => {
+          val qstr = s"${prefix}((${selectedItems}) for ${s.source.toLowerCase} in ${s.source} ${joins} ${filter})${without}"
+          QueryStr(
+            Some("    ret" + s.numGen.next().toString),
+            Some(qstr)
+          )
+        }
+        case Some(q) => q
+      }
   }
 
   def constructOrderBy(s: State, selectedItems: String) = {
@@ -266,15 +273,6 @@ case class PonyTranslator(target: Target) extends Translator {
   def constructFirst(first: Boolean) =
     if (first) "first()"
     else ""
-
-  def constructDistinct(s: State, bodyQstr: QueryStr) =
-    QueryStr(Some("    ret" + s.numGen.next().toString),
-      s.distinct match {
-        case Some("") => Some(Seq("distinct(", bodyQstr.ret.get.trim, ")") mkString(""))
-        case Some(x)  => throw UnsupportedException("Distinct on is not supported by Pony")
-        case _        => Some(Seq(bodyQstr.ret.get.trim, "without_distinct()") mkString("."))
-      }
-    )
 
   override def constructCombinedQuery(s: State) =
     throw new UnsupportedException("unions are not supported in Pony")
@@ -307,11 +305,10 @@ case class PonyTranslator(target: Target) extends Translator {
         }  mkString(".")
       )
     )
-    val distinctQstr = constructDistinct(s, bodyQstr)
     val lastQstr = QueryStr(Some("    ret" + s.numGen.next().toString),
       Some(
         Seq(
-          distinctQstr.ret.get.trim,
+          bodyQstr.ret.get.trim,
           constructFirst(first),
         ) filter {
           case "" => false
@@ -319,7 +316,7 @@ case class PonyTranslator(target: Target) extends Translator {
         }  mkString(".")
       )
     )
-    mainQstr >> bodyQstr >> distinctQstr >> lastQstr
+    mainQstr >> bodyQstr >> lastQstr
   }
 
   override def unionQueries(s1: State, s2: State) =
