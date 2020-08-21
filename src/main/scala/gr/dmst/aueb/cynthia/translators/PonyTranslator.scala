@@ -150,9 +150,9 @@ case class PonyTranslator(target: Target) extends Translator {
     case Contains(k, e) =>
       (Str(constructFieldExpr(e)) << " in " << getPonyFieldName(k)).!
     case StartsWith(k, v) =>
-      (Str(getPonyFieldName(k)) << ".startswith(" << Utils.quoteStr(Utils.escapeStr(v)) << ")").!
+      (Str(getPonyFieldName(k)) << ".startswith(" << Utils.quoteStr(Utils.escapeStr(v), "\"") << ")").!
     case EndsWith(k, v) =>
-      (Str(getPonyFieldName(k)) << ".endswith(" << Utils.quoteStr(Utils.escapeStr(v)) << ")").!
+      (Str(getPonyFieldName(k)) << ".endswith(" << Utils.quoteStr(Utils.escapeStr(v), "\"") << ")").!
     case Not(pred) =>
       (Str("not (") << translatePred(pred) << ")").!
     case Or(p1, p2) =>
@@ -189,7 +189,7 @@ case class PonyTranslator(target: Target) extends Translator {
       case Some(s)  => s
     }
     case Constant(v, UnQuoted) => v
-    case Constant(v, Quoted)   => Utils.quoteStr(v)
+    case Constant(v, Quoted)   => Utils.quoteStr(v, "\"")
     case Add(e1, e2) => "(" + constructField(acc, e1) + "+" + constructField(acc, e2) + ")"
     case Sub(e1, e2) => "(" + constructField(acc, e1) + "-" + constructField(acc, e2) + ")"
     case Mul(e1, e2) => "(" + constructField(acc, e1) + "*" + constructField(acc, e2) + ")"
@@ -279,21 +279,24 @@ case class PonyTranslator(target: Target) extends Translator {
   }
 
   def constructAggrs(s: State, bodyQstr: QueryStr) = {
-    val selectedItems =
-      if (!nonHiddenFieldsMap.isEmpty) {
-        val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
-          acc :+ x._1
-        }} mkString ","
-        items + "," + s.source.toLowerCase
-      } else
-        s.source.toLowerCase
     val ret = bodyQstr.ret.get.trim
-    val aggrFields = s.aggrs.foldLeft(Map[String, FieldDecl]())  {
-      (acc,f) => acc + (f.as -> f)
-    }
-    val aggrItems = extractFields(aggrFields) map (_._2) mkString ","
-    QueryStr(Some("    ret" + s.numGen.next().toString),
-      Some(s"select(($aggrItems) for $selectedItems in $ret)"))
+    if (s.aggrs.nonEmpty) {
+      val selectedItems =
+        if (!nonHiddenFieldsMap.isEmpty) {
+          val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
+            acc :+ x._1
+          }} mkString ","
+          items + "," + s.source.toLowerCase
+        } else
+          s.source.toLowerCase
+      val aggrFields = s.aggrs.foldLeft(Map[String, FieldDecl]())  {
+        (acc,f) => acc + (f.as -> f)
+      }
+      val aggrItems = extractFields(aggrFields) map (_._2) mkString ","
+      QueryStr(Some("    ret" + s.numGen.next().toString),
+        Some(s"select(($aggrItems) for $selectedItems in $ret)"))
+    } else
+      QueryStr(Some("    ret" + s.numGen.next().toString), Some(ret))
   }
 
   def constructFirst(first: Boolean) =
