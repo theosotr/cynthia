@@ -47,19 +47,25 @@ case class PonyTranslator(target: Target) extends Translator {
     }
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
-    def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
-      fields map { as => {
-        if (nonHiddenFieldsMap.contains(as)) {
-          if (nonHiddenFieldsMap.size >= 1) {
-            val index = nonHiddenFieldsMap.keysIterator.toList.indexOf(as)
+    def _dumpField(v: String, fields: Iterable[String], ident: String = "",
+      isAggr: Boolean = false) = {
+        val counter: Iterator[Int] = LazyList.from(0).iterator
+        fields map { as => {
+          if (isAggr) {
+            val index = counter.next().toString
             s"${ident}dump($v[$index], '$as')"
-          } else
-            s"${ident}dump($v, '$as')"
-        } else {
-          s"${ident}dump(getattr($v, '$as', getattr($v[0], '$as', None) if isinstance($v, tuple) else None), '$as')"
+          } else if (nonHiddenFieldsMap.contains(as)) {
+            if (nonHiddenFieldsMap.size >= 1) {
+              val index = nonHiddenFieldsMap.keysIterator.toList.indexOf(as)
+              s"${ident}dump($v[$index], '$as')"
+            } else
+              s"${ident}dump($v, '$as')"
+          } else {
+            s"${ident}dump(getattr($v, '$as', getattr($v[0], '$as', None) if isinstance($v, tuple) else None), '$as')"
+          }
         }
+        } mkString "\n"
       }
-      } mkString "\n"
 
     q match {
       case SetRes(_)  => {
@@ -78,12 +84,12 @@ case class PonyTranslator(target: Target) extends Translator {
       case FirstRes(_) => _dumpField(ret, dFields, ident = " " * 4)
       case AggrRes (aggrs, _) => {
         val trimmedRet = ret.trim
+        val counter: Iterator[Int] = LazyList.from(-1).iterator
         aggrs match {
           case Seq(FieldDecl(Count(None), _, _, _)) => s"    dump($ret, 'count')"
           case _ => {
-            // FIXME
             val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
-            _dumpField(ret, aggrF, ident = " " * 4)
+            _dumpField(ret.trim, aggrF, ident = " " * 4, true)
           }
         }
       }
@@ -272,6 +278,24 @@ case class PonyTranslator(target: Target) extends Translator {
     }
   }
 
+  def constructAggrs(s: State, bodyQstr: QueryStr) = {
+    val selectedItems =
+      if (!nonHiddenFieldsMap.isEmpty) {
+        val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
+          acc :+ x._1
+        }} mkString ","
+        items + "," + s.source.toLowerCase
+      } else
+        s.source.toLowerCase
+    val ret = bodyQstr.ret.get.trim
+    val aggrFields = s.aggrs.foldLeft(Map[String, FieldDecl]())  {
+      (acc,f) => acc + (f.as -> f)
+    }
+    val aggrItems = extractFields(aggrFields) map (_._2) mkString ","
+    QueryStr(Some("    ret" + s.numGen.next().toString),
+      Some(s"select(($aggrItems) for $selectedItems in $ret)"))
+  }
+
   def constructFirst(first: Boolean) =
     if (first) "first()"
     else ""
@@ -307,10 +331,11 @@ case class PonyTranslator(target: Target) extends Translator {
         }  mkString(".")
       )
     )
+    val aggrsQstr = constructAggrs(s, bodyQstr)
     val lastQstr = QueryStr(Some("    ret" + s.numGen.next().toString),
       Some(
         Seq(
-          bodyQstr.ret.get.trim,
+          aggrsQstr.ret.get.trim,
           s.aggrs match {
             case Seq() => ""
             case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
@@ -323,7 +348,7 @@ case class PonyTranslator(target: Target) extends Translator {
         }  mkString(".")
       )
     )
-    mainQstr >> bodyQstr >> lastQstr
+    mainQstr >> bodyQstr >> aggrsQstr >> lastQstr
   }
 
   override def unionQueries(s1: State, s2: State) =
