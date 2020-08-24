@@ -80,9 +80,32 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
     }
   }
 
+  def escapeActiveRecordStr(s: String, like: Boolean = false) = {
+    target.db match {
+    case MySQL(_, _, _) =>
+      if (like)
+        s.replace("\\", "\\\\\\\\")
+      else
+        s.replace("\\", "\\\\\\\\").replace("'", "''")
+    case _              =>
+      if (like)
+        s.replace("\\", "\\\\")
+      else
+        s.replace("\\", "\\\\").replace("'", "''")
+  }
+  }
+
   def getActiveRecordFieldName(field: String) =
-    if (field.contains(".")) field.split('.').array(field.count(_ == '.')) else
+    if (field.contains(".")) {
+      target.db match {
+        case MySQL(_, _, _) => field.split('.').takeRight(2).map(
+          s => s.substring(0, 1).toLowerCase() + s.substring(1)
+        ).mkString(".")
+        case _              => field.split('.').takeRight(2).mkString(".")
+      }
+    } else {
       field
+    }
 
   def getSelectFieldName(field: String) = {
     val fieldElems = field.split('.')
@@ -163,16 +186,16 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
   }
 
   def translatePred(pred: Predicate, fields: Map[String, String]): (String, String) = {
-    def handlePredicate(k: String, e: FieldExpr, symbol: String, unquoted: Boolean = false): (String, String) = {
+    def handlePredicate(k: String, e: FieldExpr, symbol: String): (String, String) = {
       if (!e.isConstant) throw new UnsupportedException("complex where clauses are not supported")
       val key = fields.get(k) match {
           case None     => k.split('.').takeRight(2).mkString(".").toLowerCase()
           case Some(s)  => s
       }
       if (symbol.equals("LIKE"))
-        (key + s" $symbol ?", s""", "%#${constructFieldExpr(e, fields, unquoted)}%"""")
+        (key + s" $symbol ?", s""", "%#{${constructFieldExpr(e, fields, true)}}%"""")
       else
-        (key + s" $symbol ?", ", " + constructFieldExpr(e, fields, unquoted))
+        (key + s" $symbol ?", ", " + constructFieldExpr(e, fields))
     }
     def handleWithPredicate(k: String, e: String, symbol: String): (String, String) = {
       val key = fields.get(k) match {
@@ -180,9 +203,9 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
           case Some(s)  => s
       }
       if (symbol.equals("StartsWith"))
-        (key + s" LIKE ?", s""", "#${Utils.escapeSQLStr(e)}%"""")
-      else (symbol.equals("EndsWith"))
-        (key + s" LIKE ?", s""", "%#${Utils.escapeSQLStr(e)}"""")
+        (key + s" LIKE ?", s""", "#{${Utils.quoteStr(escapeActiveRecordStr(e, true), "\"")}}%"""")
+      else
+        (key + s" LIKE ?", s""", "%#{${Utils.quoteStr(escapeActiveRecordStr(e, true), "\"")}}"""")
     }
     pred match {
       case Eq(k, e)         => handlePredicate(k, e, "=")
@@ -190,18 +213,18 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
       case Gte(k, e)        => handlePredicate(k, e, ">=")
       case Lt(k, e)         => handlePredicate(k, e, "<")
       case Lte(k, e)        => handlePredicate(k, e, "<=")
-      case Contains(k, e)   => handlePredicate(k, e, "LIKE", true)
+      case Contains(k, e)   => handlePredicate(k, e, "LIKE")
       case StartsWith(k, e) => handleWithPredicate(k, e, "StartsWith")
       case EndsWith(k, e)   => handleWithPredicate(k, e, "EndsWith")
       case Or(p1, p2)       => {
         val res1 = translatePred(p1, fields)
         val res2 = translatePred(p2, fields)
-        (res1._1 + " OR " + res2._1, res1._2 + res2._2)
+        ("((" + res1._1 + ") OR (" + res2._1 + "))", res1._2 + res2._2)
       }
       case And(p1, p2)      => {
         val res1 = translatePred(p1, fields)
         val res2 = translatePred(p2, fields)
-        (res1._1 + " AND " + res2._1, res1._2 + res2._2)
+        ("((" + res1._1 + ") AND (" + res2._1 + "))", res1._2 + res2._2)
       }
       case Not(p)           => {
         val res = translatePred(p, fields)
@@ -250,13 +273,13 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
       else s"limit($limit)"
   }
 
-  def constructFieldExpr(fexpr: FieldExpr, fields: Map[String, String], unquoted: Boolean = false): String = fexpr match {
+  def constructFieldExpr(fexpr: FieldExpr, fields: Map[String, String], like: Boolean = false): String = fexpr match {
     case F(f) => fields.get(f) match {
       case None     => f.split('.').takeRight(2).mkString(".").toLowerCase()
       case Some(s)  => s
     }
     case Constant(v, UnQuoted) => v
-    case Constant(v, Quoted)   => if (unquoted) Utils.escapeSQLStr(v) else Utils.quoteStr(Utils.escapeSQLStr(v)) // LIKE case
+    case Constant(v, Quoted)   => Utils.quoteStr(escapeActiveRecordStr(v, like))
     case Add(e1, e2) => "(" + constructFieldExpr(e1, fields) + "+" + constructFieldExpr(e2, fields) + ")"
     case Sub(e1, e2) => "(" + constructFieldExpr(e1, fields) + "-" + constructFieldExpr(e2, fields) + ")"
     case Mul(e1, e2) => "(" + constructFieldExpr(e1, fields) + "*" + constructFieldExpr(e2, fields) + ")"
@@ -295,7 +318,7 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
       case Some(s)  => s
     }
     case Constant(v, UnQuoted) => v
-    case Constant(v, Quoted)   => Utils.quoteStr(Utils.escapeSQLStr(v))
+    case Constant(v, Quoted)   => Utils.quoteStr(escapeActiveRecordStr(v))
     case Add(e1, e2) => "(" + constructField(acc, e1) + "+" + constructField(acc, e2) + ")"
     case Sub(e1, e2) => "(" + constructField(acc, e1) + "-" + constructField(acc, e2) + ")"
     case Mul(e1, e2) => "(" + constructField(acc, e1) + "*" + constructField(acc, e2) + ")"
@@ -319,13 +342,13 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
   def constructSelects(fields: Map[String, String]) =
     fields.foldLeft(List[String]()) { (acc, x) => {
       val (name, expr) = x match { case (k, v) => (k, v) }
-      acc :+ "select(" + Utils.quoteStr(s"${Utils.escapeStr(expr)} as ${getDBAliasName(name)}", "\"") + ")"
+      acc :+ "select(" + Utils.quoteStr(s"${expr} as ${getDBAliasName(name)}", "\"") + ")"
     }} mkString(".")
 
   def constructGroupBy(groupBy: Set[String]) =
     if (groupBy.isEmpty)
       ""
-    else
+    else {
       "group(" + (
         groupBy map { case x => {
           fieldsMap.get(x) match {
@@ -333,6 +356,7 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
             case Some(s)  => Utils.quoteStr(s, "\"")
           }
         }} mkString ", ") + ")"
+    }
 
   def constructDistinct(distinct: Option[String]) = distinct match {
     case Some("") => "distinct"
