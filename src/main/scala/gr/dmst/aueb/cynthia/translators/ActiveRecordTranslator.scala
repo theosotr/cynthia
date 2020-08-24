@@ -169,29 +169,41 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
           case None     => k.split('.').takeRight(2).mkString(".").toLowerCase()
           case Some(s)  => s
       }
-      if (symbol == "LIKE")
+      if (symbol.equals("LIKE"))
         (key + s" $symbol ?", s""", "%#${constructFieldExpr(e, fields, unquoted)}%"""")
       else
         (key + s" $symbol ?", ", " + constructFieldExpr(e, fields, unquoted))
     }
+    def handleWithPredicate(k: String, e: String, symbol: String): (String, String) = {
+      val key = fields.get(k) match {
+          case None     => k.split('.').takeRight(2).mkString(".").toLowerCase()
+          case Some(s)  => s
+      }
+      if (symbol.equals("StartsWith"))
+        (key + s" LIKE ?", s""", "#${Utils.escapeSQLStr(e)}%"""")
+      else (symbol.equals("EndsWith"))
+        (key + s" LIKE ?", s""", "%#${Utils.escapeSQLStr(e)}"""")
+    }
     pred match {
-      case Eq(k, e)       => handlePredicate(k, e, "=")
-      case Gt(k, e)       => handlePredicate(k, e, ">")
-      case Gte(k, e)      => handlePredicate(k, e, ">=")
-      case Lt(k, e)       => handlePredicate(k, e, "<")
-      case Lte(k, e)      => handlePredicate(k, e, "<=")
-      case Contains(k, e) => handlePredicate(k, e, "LIKE", true)
-      case Or(p1, p2)     => {
+      case Eq(k, e)         => handlePredicate(k, e, "=")
+      case Gt(k, e)         => handlePredicate(k, e, ">")
+      case Gte(k, e)        => handlePredicate(k, e, ">=")
+      case Lt(k, e)         => handlePredicate(k, e, "<")
+      case Lte(k, e)        => handlePredicate(k, e, "<=")
+      case Contains(k, e)   => handlePredicate(k, e, "LIKE", true)
+      case StartsWith(k, e) => handleWithPredicate(k, e, "StartsWith")
+      case EndsWith(k, e)   => handleWithPredicate(k, e, "EndsWith")
+      case Or(p1, p2)       => {
         val res1 = translatePred(p1, fields)
         val res2 = translatePred(p2, fields)
         (res1._1 + " OR " + res2._1, res1._2 + res2._2)
       }
-      case And(p1, p2)    => {
+      case And(p1, p2)      => {
         val res1 = translatePred(p1, fields)
         val res2 = translatePred(p2, fields)
         (res1._1 + " AND " + res2._1, res1._2 + res2._2)
       }
-      case Not(p)        => {
+      case Not(p)           => {
         val res = translatePred(p, fields)
         ("NOT " + res._1, res._2)
       }
@@ -244,7 +256,7 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
       case Some(s)  => s
     }
     case Constant(v, UnQuoted) => v
-    case Constant(v, Quoted)   => if (unquoted) v else Utils.quoteStr(v) // LIKE case
+    case Constant(v, Quoted)   => if (unquoted) Utils.escapeSQLStr(v) else Utils.quoteStr(Utils.escapeSQLStr(v)) // LIKE case
     case Add(e1, e2) => "(" + constructFieldExpr(e1, fields) + "+" + constructFieldExpr(e2, fields) + ")"
     case Sub(e1, e2) => "(" + constructFieldExpr(e1, fields) + "-" + constructFieldExpr(e2, fields) + ")"
     case Mul(e1, e2) => "(" + constructFieldExpr(e1, fields) + "*" + constructFieldExpr(e2, fields) + ")"
@@ -283,7 +295,7 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
       case Some(s)  => s
     }
     case Constant(v, UnQuoted) => v
-    case Constant(v, Quoted)   => Utils.quoteStr(v)
+    case Constant(v, Quoted)   => Utils.quoteStr(Utils.escapeSQLStr(v))
     case Add(e1, e2) => "(" + constructField(acc, e1) + "+" + constructField(acc, e2) + ")"
     case Sub(e1, e2) => "(" + constructField(acc, e1) + "-" + constructField(acc, e2) + ")"
     case Mul(e1, e2) => "(" + constructField(acc, e1) + "*" + constructField(acc, e2) + ")"
@@ -307,7 +319,7 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
   def constructSelects(fields: Map[String, String]) =
     fields.foldLeft(List[String]()) { (acc, x) => {
       val (name, expr) = x match { case (k, v) => (k, v) }
-      acc :+ "select(" + Utils.quoteStr(s"$expr as ${getDBAliasName(name)}", "\"") + ")"
+      acc :+ "select(" + Utils.quoteStr(s"${Utils.escapeStr(expr)} as ${getDBAliasName(name)}", "\"") + ")"
     }} mkString(".")
 
   def constructGroupBy(groupBy: Set[String]) =
