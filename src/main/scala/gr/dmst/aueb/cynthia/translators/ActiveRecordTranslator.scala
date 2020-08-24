@@ -64,7 +64,7 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
-      fields map { as => s"${ident}dump($v.$as, '$as')" } mkString "\n"
+      fields map { as => s"${ident}begin\n${ident*2}dump($v.$as, '$as')\n${ident}rescue\n${ident*2}dump($v, '$as')\n${ident}end" } mkString "\n"
     q match {
       case FirstRes(_) => _dumpField(ret, dFields)
       case SetRes(_) | SubsetRes(_, _, _) =>
