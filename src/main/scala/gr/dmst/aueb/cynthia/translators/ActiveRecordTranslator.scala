@@ -82,17 +82,22 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
 
   def escapeActiveRecordStr(s: String, like: Boolean = false) = {
     target.db match {
-    case MySQL(_, _, _) =>
-      if (like)
-        s.replace("\\", "\\\\\\\\")
-      else
-        s.replace("\\", "\\\\\\\\").replace("'", "''")
-    case _              =>
-      if (like)
-        s.replace("\\", "\\\\")
-      else
-        s.replace("\\", "\\\\").replace("'", "''")
-  }
+      case MySQL(_, _, _) =>
+        if (like)
+          s.replace("\\", "\\\\\\\\").replace("%", "\\%")
+        else
+          s.replace("\\", "\\\\\\\\").replace("'", "''")
+      case SQLite(_) =>
+        if (like)
+          s.replace("\\", "\\\\").replace("%", "\\%")
+        else
+          s.replace("\\", "\\\\").replace("'", "''")
+      case _              =>
+        if (like)
+          s.replace("\\", "\\\\")
+        else
+          s.replace("\\", "\\\\").replace("'", "''")
+    }
   }
 
   def getActiveRecordFieldName(field: String) =
