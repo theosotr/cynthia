@@ -56,7 +56,7 @@ setup()
   npm install --save pg pg-hstore
   npm install --save mysql2
 
-  sudo apt install ruby-full rudy-dev
+  sudo apt install ruby-full ruby-dev
   sudo gem install sqlite3 mysql2 postgres activerecord pg \
     activerecord-cockroachdb-adapter ruby-odbc sqlserver
   git clone https://github.com/theosotr/rmre
