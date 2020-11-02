@@ -49,8 +49,7 @@ object SchemaTranslator {
     QueryStr(None,
       Some((Str("CREATE TABLE ") << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") <<
         " (\n" << getColumns <<
-      //"PRIMARY KEY (id)" << getForeignKeys << "\n);\n" << getInsertStms).!)
-      "PRIMARY KEY (id)" << getForeignKeys << "\n);\n" << getInsertStms).!)
+      "PRIMARY KEY (id)" << getForeignKeys << "\n);\n").!)
     )
   }
 

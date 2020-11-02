@@ -44,6 +44,8 @@ case class SolverDataGenerator(schema: Schema) {
 
   private var solver: Solver = null
 
+  private var qState: State = null
+
   def getVariable(field: String, i: Int) =
     vars get field match {
       case None => throw new Exception(s"Variable of field $field not found.")
@@ -177,20 +179,8 @@ case class SolverDataGenerator(schema: Schema) {
   def getPredConstraints(preds: Set[Predicate], c: Context) =
     preds map { p => predToFormula(p, c) }
 
-  def getFieldConstraints(m: Model, ctx: Context, prefix: String = "") = m.fields map {
-    case Field("id", _) => {
-      val modelName =
-        if(prefix.equals("")) m.name
-        else prefix + "." + m.name.toLowerCase
-      val cons = List.range(0, 5) map { i =>
-        ctx.mkEq(
-          getVariable(modelName + ".id", i).asInstanceOf[IntExpr],
-          ctx.mkInt((i + 1).toString)
-        )
-      }
-      ctx.mkAnd(cons:_*)
-    }
-    case Field(f, t) => {
+  def getFieldConstraints(m: Model, ctx: Context, prefix: String = "") = m.fields.foldLeft(Seq[BoolExpr]()) {
+    case (acc, Field(f, t)) => {
       val modelName =
         if(prefix.equals("")) m.name
         else prefix + "." + m.name.toLowerCase
@@ -198,16 +188,18 @@ case class SolverDataGenerator(schema: Schema) {
         case Foreign(_) => modelName + "." + f + "_id"
         case _          => modelName + "." + f
       }
-      val cons = List.range(0, 5).foldLeft(List[BoolExpr]()) { case (acc, i) =>
-        List.range(i, 5).foldLeft(acc) { case (acc, j) =>
-          if (i != j) {
-            val con = ctx.mkNot(
-              ctx.mkEq(getVariable(varName, i), getVariable(varName, j)))
-            con :: acc
-          } else acc
-        }
-      }
-      ctx.mkAnd(cons:_*)
+      if (!qState.getNonConstantGroupingFields.contains(varName) || f.equals("id")) {
+		val cons = List.range(0, 5).foldLeft(List[BoolExpr]()) { case (acc, i) =>
+		  List.range(i, 5).foldLeft(acc) { case (acc, j) =>
+			if (i != j) {
+			  val con = ctx.mkNot(
+				ctx.mkEq(getVariable(varName, i), getVariable(varName, j)))
+			  con :: acc
+			} else acc
+		  }
+		}
+		acc :+ ctx.mkAnd(cons:_*)
+      } else acc
     }
   }
 
@@ -269,8 +261,8 @@ case class SolverDataGenerator(schema: Schema) {
             case Field(n, _)          => n
            } map { f => getModelVariables(model, f) } map {
             case (_, (exprs, StringF)) =>
-              Constant(m.eval(exprs(i), false).toString.replace("\"", ""), Quoted)
-            case (_, (exprs, _)) => Constant(m.eval(exprs(i), false).toString, UnQuoted)
+              Constant(m.eval(exprs(i), true).toString.replace("\"", ""), Quoted)
+            case (_, (exprs, _)) => Constant(m.eval(exprs(i), true).toString, UnQuoted)
           }).toSeq
         }
         acc + (model -> records)
@@ -285,8 +277,9 @@ case class SolverDataGenerator(schema: Schema) {
     case Some(m) => {
       val ctx = new Context
       solver = ctx.mkSolver
+      qState = state
       val params = ctx.mkParams
-      params.add("timeout", 2000)
+      params.add("timeout", 5000)
       solver.setParameters(params)
       vars ++= constructModelVariables(m, ctx)
       constructCompoundVariables(state, ctx) 

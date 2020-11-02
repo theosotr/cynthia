@@ -26,7 +26,8 @@ case class Options (
   dbUser: String = "orm_testing",
   dbPass: String = "orm_testing",
   timeout: Option[Int] = None,
-  onlyWorkDir: Boolean = false
+  onlyWorkDir: Boolean = false,
+  solver_gen: Boolean = false
 )
 
 
@@ -102,6 +103,11 @@ object Cynthia {
           .action((_, c) => c.copy(wellTyped = true))
           .text("Generate well-typed queries")
 
+      def solverOption() =
+        opt[Unit]("solver")
+          .action((_, c) => c.copy(solver_gen = true))
+          .text("Generate database records through a solver-based approach")
+
       note("\n")
 
       // Sub-commands
@@ -134,7 +140,8 @@ object Cynthia {
         recordsOption,
         minDepthOption,
         maxDepthOption,
-        wellTypedOption
+        wellTypedOption,
+        solverOption
       )
       cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
         opt[Int]('n', "queries")
@@ -176,7 +183,9 @@ object Cynthia {
           }),
         ormsOption,
         backendsOption,
-        storeMatchesOption
+        storeMatchesOption,
+        recordsOption,
+        solverOption
       )
       cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")

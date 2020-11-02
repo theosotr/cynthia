@@ -13,7 +13,7 @@ import pprint.PPrinter.BlackWhite
 import spray.json._
 import DefaultJsonProtocol._
 
-import gr.dmst.aueb.cynthia.gen.SolverDataGenerator
+import gr.dmst.aueb.cynthia.gen.{SolverDataGenerator, NaiveDataGenerator}
 import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
 import gr.dmst.aueb.cynthia.translators.{QueryInterpreter, SchemaTranslator}
 
@@ -298,29 +298,57 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     }
   }
 
+  def populateSchema(dbs: Set[DB]) = {
+    val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) {
+      case (acc, (k, v)) => {
+        val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
+        (v.fields filter Field.isForeign).foldLeft(acc2) { case (acc, Field(_, Foreign(n))) => {
+          acc get k match {
+            case None    => acc + (k -> Set(n))
+            case Some(e) => acc + (k -> (e + n))
+          }
+        }}
+    }}
+    val topSort = Utils.topologicalSort(modelMap)
+    val insStms = topSort.foldLeft(Str("")) { case (acc, m) =>
+      acc << SchemaTranslator.dataToInsertStmts(
+        schema.models(m),
+        NaiveDataGenerator(schema.models(m), options.records, limit = options.records))
+    }.toString
+    dbs foreach { db =>
+      val dataPath = Utils.joinPaths(
+        List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
+      Utils.writeToFile(dataPath, insStms)
+      DBSetup.setupSchema(db, dataPath)
+    }
+  }
+
   def start() = {
-    println(s"Starting testing session for ${schema.name}...")
+    val dbs = targets.map(x => x.db).toSet
+    val ndbs = dbs.size
+    if (!options.solver_gen)
+      populateSchema(dbs)
     val stats = getQueries()
       .foldLeft(Stats()) { (acc, q) => {
         try {
           val s = QueryInterpreter(q)
-          val dbs = targets.map(x => x.db).toSet
-          val ndbs = dbs.size
           var dataIns = ""
-          SolverDataGenerator(schema)(q, s) match {
-            case None => // Solver didn't generate any data
-              println(q)
-            case Some(data) => {
-              val insStms = (data.foldLeft(Str("")) { case (acc, (m, r)) =>
-                acc << SchemaTranslator.dataToInsertStmts(m, r)
-              }).!
-              dataIns = insStms
-              // FIXME: Make it parallel.
-              dbs foreach { db =>
-                val dataPath = Utils.joinPaths(
-                  List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
-                Utils.writeToFile(dataPath, insStms)
-                DBSetup.setupSchema(db, dataPath)
+          if (options.solver_gen) {
+            SolverDataGenerator(schema)(q, s) match {
+              case None => // Solver didn't generate any data
+                println(q)
+              case Some(data) => {
+                val insStms = (data.foldLeft(Str("")) { case (acc, (m, r)) =>
+                  acc << SchemaTranslator.dataToInsertStmts(m, r)
+                }).!
+                dataIns = insStms
+                // FIXME: Make it parallel.
+                dbs foreach { db =>
+                  val dataPath = Utils.joinPaths(
+                    List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
+                  Utils.writeToFile(dataPath, insStms)
+                  DBSetup.setupSchema(db, dataPath)
+                }
               }
             }
           }
