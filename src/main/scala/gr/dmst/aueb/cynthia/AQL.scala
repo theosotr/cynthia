@@ -216,10 +216,12 @@ object FieldDecl {
 sealed trait QuerySet {
   def ordered(): Boolean
   def combined(): Boolean
+  def filtered(): Boolean
 }
 case class New(model: String, fields: Seq[FieldDecl]) extends QuerySet {
   def ordered() = false
   def combined() = false
+  def filtered() = false
 }
 case class Apply(op: Operation, q: QuerySet) extends QuerySet {
   def ordered() = op match {
@@ -227,15 +229,22 @@ case class Apply(op: Operation, q: QuerySet) extends QuerySet {
     case _       => q.ordered
   }
 
+  def filtered() = op match {
+    case Filter(_) => true
+    case _         => q.filtered
+  }
+
   def combined() =
     q.combined
 }
 case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet {
   def ordered() = q1.ordered && q2.ordered
+  def filtered() = q1.filtered || q2.filtered
   def combined() = true
 }
 case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet {
   def ordered() = q1.ordered && q2.ordered
+  def filtered() = q1.filtered || q2.filtered
   def combined() = true
 }
 
