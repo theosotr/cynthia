@@ -35,16 +35,23 @@ object NaiveDataGenerator {
 }
 
 
-case class SolverDataGenerator(schema: Schema) {
+case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
+
+  // This set holds the name of models related to the given query. This
+  // also holds the name of models joined with the initial one.
   private val declModels: scala.collection.mutable.Set[String] =
     scala.collection.mutable.Set()
 
-  private val vars: scala.collection.mutable.ListMap[String, (Seq[Expr], FieldType)] =
-    scala.collection.mutable.ListMap()
+  // This map is used for holding all Z3 variables that model the fields of
+  // the given query. Recall that each query field is modeled through a sequence
+  // of Z3 variables (i.e., one for every database record).
+  private var vars: ListMap[String, (Seq[Expr], FieldType)] = ListMap()
 
-  private var solver: Solver = null
+  // This is the Z3 context object.
+  private val ctx: Context = new Context
 
-  private var qState: State = null
+  // This is the Z3 Solver object taken from context.
+  private val solver: Solver = ctx.mkSolver
 
   def getVariable(field: String, i: Int) =
     vars get field match {
@@ -52,7 +59,7 @@ case class SolverDataGenerator(schema: Schema) {
       case Some((expr, _)) => expr(i)
     }
 
-  def constructJoinVars(models: Seq[String], c: Context) = {
+  def constructJoinVars(models: Seq[String]) = {
     def addPrev(x: String, prev: Seq[String]) =
       if (prev.isEmpty) prev :+ x
       else prev :+ x.toLowerCase
@@ -66,17 +73,17 @@ case class SolverDataGenerator(schema: Schema) {
           case Some(m) => {
             val prev2 = addPrev(s, prev)
             declModels.add(m.name)
-            vars ++= constructModelVariables(m, c, prefix = prev2 mkString ".")
+            vars ++= constructModelVariables(m, prefix = prev2 mkString ".")
             List.range(0, 5) foreach { i => {
               val source = prev2 mkString "."
-              val con = c.mkEq(
+              val con = ctx.mkEq(
                 getVariable(source + "." + t.toLowerCase + "_id", i),
                 getVariable(source + "." + t.toLowerCase + ".id", i)
               )
               solver.add(con)
             }}
             solver.add(
-              getFieldConstraints(m, c, prefix = prev2 mkString "."):_*)
+              getFieldConstraints(m, prefix = prev2 mkString "."):_*)
             prev2
           }
         }
@@ -84,102 +91,98 @@ case class SolverDataGenerator(schema: Schema) {
     }
   }
 
-  def constructOrderJoins(state: State, c: Context) =
-    state.orders map { case (x, _) => x } foreach { x =>
+  def constructOrderJoins() =
+    queryState.orders map { case (x, _) => x } foreach { x =>
       x split '.' match {
         case Array() | Array(_) | Array(_, _) => ()
         case arr =>
-          constructJoinVars(arr.dropRight(1).toSeq map { _.capitalize }, c)
+          constructJoinVars(arr.dropRight(1).toSeq map { _.capitalize })
       }
     }
 
-  def getVariableJ(field:String, i: Int, c: Context) = field split '.' match {
+  def getVariableJ(field:String, i: Int) = field split '.' match {
     case Array(_) | Array(_, _) => getVariable(field, i)
     case arr => {
       val models = arr.dropRight(1).toSeq map { _.capitalize }
-      constructJoinVars(models, c)
+      constructJoinVars(models)
       getVariable(field, i)
     }
   }
 
-  def constructExpr(e: FieldExpr, i: Int, c: Context): Expr = e match {
-    case Constant(v, UnQuoted) => c.mkInt(v)
-    case Constant(v, Quoted)   => c.mkString(v)
-    case F(f)                  => getVariableJ(f, i, c)
-    case Count(_)              => c.mkInt("1") // It's the number of records included in each group.
-    case Sum(e)                => constructExpr(e, i, c)
-    case Avg(e)                => constructExpr(e, i, c)
-    case Max(e)                => constructExpr(e, i, c)
-    case Min(e)                => constructExpr(e, i, c)
+  def constructExpr(e: FieldExpr, i: Int): Expr = e match {
+    case Constant(v, UnQuoted) => ctx.mkInt(v)
+    case Constant(v, Quoted)   => ctx.mkString(v)
+    case F(f)                  => getVariableJ(f, i)
+    case Count(_)              => ctx.mkInt("1") // It's the number of records included in each group.
+    case Sum(e)                => constructExpr(e, i)
+    case Avg(e)                => constructExpr(e, i)
+    case Max(e)                => constructExpr(e, i)
+    case Min(e)                => constructExpr(e, i)
     case Add(e1, e2)           =>
-      c.mkAdd(
-        constructExpr(e1, i, c).asInstanceOf[ArithExpr],
-        constructExpr(e2, i, c).asInstanceOf[ArithExpr]
+      ctx.mkAdd(
+        constructExpr(e1, i).asInstanceOf[ArithExpr],
+        constructExpr(e2, i).asInstanceOf[ArithExpr]
       )
     case Sub(e1, e2)           =>
-      c.mkSub(
-        constructExpr(e1, i, c).asInstanceOf[ArithExpr],
-        constructExpr(e2, i, c).asInstanceOf[ArithExpr]
+      ctx.mkSub(
+        constructExpr(e1, i).asInstanceOf[ArithExpr],
+        constructExpr(e2, i).asInstanceOf[ArithExpr]
       )
     case Mul(e1, e2)           =>
-      c.mkMul(
-        constructExpr(e1, i, c).asInstanceOf[ArithExpr],
-        constructExpr(e2, i, c).asInstanceOf[ArithExpr]
+      ctx.mkMul(
+        constructExpr(e1, i).asInstanceOf[ArithExpr],
+        constructExpr(e2, i).asInstanceOf[ArithExpr]
       )
     case Div(e1, e2)           =>
-      c.mkDiv(
-        constructExpr(e1, i, c).asInstanceOf[ArithExpr],
-        constructExpr(e2, i, c).asInstanceOf[ArithExpr]
+      ctx.mkDiv(
+        constructExpr(e1, i).asInstanceOf[ArithExpr],
+        constructExpr(e2, i).asInstanceOf[ArithExpr]
       )
   }
 
-  def constructConstraint(k: String, e: FieldExpr, op: (Expr, Expr) => BoolExpr,
-      c: Context) = {
+  def constructConstraint(k: String, e: FieldExpr, op: (Expr, Expr) => BoolExpr) = {
     val cons = List.range(0, 5) map { i =>
-      op(getVariableJ(k, i, c), constructExpr(e, i, c))
+      op(getVariableJ(k, i), constructExpr(e, i))
     }
-    c.mkOr(cons:_*)
+    ctx.mkOr(cons:_*)
   }
 
-  def predToFormula(pred: Predicate, c: Context): BoolExpr = pred match {
-    case Eq(k, e)       => constructConstraint(k, e, c.mkEq, c)
-    case Lt(k, e)       => constructConstraint(k, e, { (e1, e2) => c.mkLt(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) }, c)
-    case Lte(k, e)      => constructConstraint(k, e, { (e1, e2) => c.mkLe(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) }, c)
-    case Gt(k, e)       => constructConstraint(k, e, { (e1, e2) => c.mkGt(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) }, c)
-    case Gte(k, e)      => constructConstraint(k, e, { (e1, e2) => c.mkGe(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) }, c)
+  def predToFormula(pred: Predicate): BoolExpr = pred match {
+    case Eq(k, e)       => constructConstraint(k, e, ctx.mkEq)
+    case Lt(k, e)       => constructConstraint(k, e, { (e1, e2) => ctx.mkLt(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) })
+    case Lte(k, e)      => constructConstraint(k, e, { (e1, e2) => ctx.mkLe(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) })
+    case Gt(k, e)       => constructConstraint(k, e, { (e1, e2) => ctx.mkGt(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) })
+    case Gte(k, e)      => constructConstraint(k, e, { (e1, e2) => ctx.mkGe(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) })
     case Contains(k, Constant(v, _)) =>
       constructConstraint(
         k,
         Constant(v, Quoted),
-        { (e1, e2) => c.mkContains(e1.asInstanceOf[SeqExpr], e2.asInstanceOf[SeqExpr]) },
-        c
+        { (e1, e2) => ctx.mkContains(e1.asInstanceOf[SeqExpr], e2.asInstanceOf[SeqExpr]) }
       )
     case Contains(_, _) => ??? // Unreachable case
     case StartsWith(k, v) =>
       constructConstraint(
         k,
         Constant(v, Quoted),
-        { (e1, e2) => c.mkPrefixOf(e2.asInstanceOf[SeqExpr], e1.asInstanceOf[SeqExpr]) },
-        c
+        { (e1, e2) => ctx.mkPrefixOf(e2.asInstanceOf[SeqExpr], e1.asInstanceOf[SeqExpr]) }
       )
     case EndsWith(k, v) =>
       constructConstraint(
         k,
         Constant(v, Quoted),
-        { (e1, e2) => c.mkSuffixOf(e2.asInstanceOf[SeqExpr], e1.asInstanceOf[SeqExpr]) },
-        c
+        { (e1, e2) => ctx.mkSuffixOf(e2.asInstanceOf[SeqExpr], e1.asInstanceOf[SeqExpr]) }
       )
-    case Not(p) => c.mkNot(predToFormula(p, c))
+    case Not(p) => ctx.mkNot(predToFormula(p))
     case Or(p1, p2) =>
-      c.mkOr(predToFormula(p1, c), predToFormula(p2, c))
+      ctx.mkOr(predToFormula(p1), predToFormula(p2))
     case And(p1, p2) => 
-      c.mkAnd(predToFormula(p1, c), predToFormula(p2, c))
+      ctx.mkAnd(predToFormula(p1), predToFormula(p2))
   }
 
-  def getPredConstraints(preds: Set[Predicate], c: Context) =
-    preds map { p => predToFormula(p, c) }
+  def getPredConstraints(preds: Set[Predicate]) =
+    preds map { p => predToFormula(p) }
 
-  def getFieldConstraints(m: Model, ctx: Context, prefix: String = "") = m.fields.foldLeft(Seq[BoolExpr]()) {
+  def getFieldConstraints(m: Model, prefix: String = "") = m.fields.foldLeft(Seq[BoolExpr]()) {
     case (acc, Field(f, t)) => {
       val modelName =
         if(prefix.equals("")) m.name
@@ -188,7 +191,9 @@ case class SolverDataGenerator(schema: Schema) {
         case Foreign(_) => modelName + "." + f + "_id"
         case _          => modelName + "." + f
       }
-      if (!qState.getNonConstantGroupingFields.contains(varName) || f.equals("id")) {
+      // Checks whether the variable name corresponds to a grouping field
+      // or the primary key of the table.
+      if (!queryState.getNonConstantGroupingFields.contains(varName) || f.equals("id")) {
 		val cons = List.range(0, 5).foldLeft(List[BoolExpr]()) { case (acc, i) =>
 		  List.range(i, 5).foldLeft(acc) { case (acc, j) =>
 			if (i != j) {
@@ -203,14 +208,14 @@ case class SolverDataGenerator(schema: Schema) {
     }
   }
 
-  def getVarSort(t: DataType, ctx: Context) = t match {
+  def getVarSort(t: DataType) = t match {
     case Int8 | Int16 | Int32 | Int64 | Foreign(_) | Serial => ctx.getIntSort
     case Numeric => ctx.getRealSort
     case VarChar(_) => ctx.mkStringSort
     case Bool => ctx.mkBoolSort
   }
 
-  def constructModelVariables(m: Model, c: Context, prefix: String = "") = {
+  def constructModelVariables(m: Model, prefix: String = "") = {
     declModels.add(m.name)
     m.fields.foldLeft(ListMap[String, (Seq[Expr], FieldType)]()) { case (acc, Field(n, t)) => {
       val fName = t match {
@@ -221,17 +226,15 @@ case class SolverDataGenerator(schema: Schema) {
         if (!prefix.equals("")) prefix + "." + m.name.toLowerCase + "." + fName
         else m.name + "." + fName
       val vars = List.range(0, 5) map { i =>
-        c.mkConst(varName + "_" + i.toString, getVarSort(t, c))
+        ctx.mkConst(varName + "_" + i.toString, getVarSort(t))
       }
       acc + (varName -> (vars, FieldType.dataTypeToFieldType(t))) }
     }
   }
 
-  def constructCompoundVariables(s: State, c: Context) =
-    s.fields.values foreach { case FieldDecl(e, as, t, _) =>
-      val exprs = List.range(0, 5) map { i =>
-        constructExpr(e, i, c)
-      }
+  def constructCompoundVariables() =
+    queryState.fields.values foreach { case FieldDecl(e, as, t, _) =>
+      val exprs = List.range(0, 5) map { i => constructExpr(e, i) }
       vars += (as -> (exprs, t))
     }
 
@@ -239,9 +242,9 @@ case class SolverDataGenerator(schema: Schema) {
     x.contains(m.name + "." + f) || x.contains(m.name.toLowerCase + "." + f)
   }).head
 
-  def generateData(s: Solver) = s.check match {
+  def generateData() = solver.check match {
     case Status.SATISFIABLE => {
-      val m = s.getModel
+      val m = solver.getModel
       val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) { case (acc, (k, v)) => {
         val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
         (v.fields filter Field.isForeign).foldLeft(acc2) { case (acc, Field(_, Foreign(n))) => {
@@ -271,23 +274,19 @@ case class SolverDataGenerator(schema: Schema) {
     case _ => None
   }
 
-  def apply(q: Query, state: State) = schema.models get state.source match {
+  def apply() = schema.models get queryState.source match {
     case None => throw new Exception(
-      s"Model '${state.source}' not found in schema '${schema.name}'")
+      s"Model '${queryState.source}' not found in schema '${schema.name}'")
     case Some(m) => {
-      val ctx = new Context
-      solver = ctx.mkSolver
-      qState = state
       val params = ctx.mkParams
       params.add("timeout", 5000)
       solver.setParameters(params)
-      vars ++= constructModelVariables(m, ctx)
-      constructCompoundVariables(state, ctx) 
-      constructOrderJoins(state, ctx)
-      val cons = getFieldConstraints(m, ctx) ++ getPredConstraints(
-        state.preds, ctx)
+      vars ++= constructModelVariables(m)
+      constructCompoundVariables
+      constructOrderJoins
+      val cons = getFieldConstraints(m) ++ getPredConstraints(queryState.preds)
       solver.add(cons:_*)
-      generateData(solver)
+      generateData
     }
   }
 }

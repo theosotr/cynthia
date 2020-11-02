@@ -334,7 +334,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
           val s = QueryInterpreter(q)
           var dataIns = ""
           if (options.solver_gen) {
-            SolverDataGenerator(schema)(q, s) match {
+            SolverDataGenerator(schema, q, s)() match {
               case None => // Solver didn't generate any data
                 println(q)
               case Some(data) => {
