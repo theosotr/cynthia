@@ -27,7 +27,8 @@ case class Options (
   dbPass: String = "orm_testing",
   timeout: Option[Int] = None,
   onlyWorkDir: Boolean = false,
-  solver_gen: Boolean = false
+  solverGen: Boolean = false,
+  solverTimeout: Int = 5000
 )
 
 
@@ -105,8 +106,16 @@ object Cynthia {
 
       def solverOption() =
         opt[Unit]("solver")
-          .action((_, c) => c.copy(solver_gen = true))
+          .action((_, c) => c.copy(solverGen = true))
           .text("Generate database records through a solver-based approach")
+
+      def solverTimeoutOption() =
+        opt[Int]("solver-timeout")
+          .action((x, o) => o.copy(solverTimeout = x))
+          .text("Solver timeout for each query")
+          .validate(x =>
+              if (x <= 0) failure("Solver timeout must be greater than zero")
+              else success)
 
       note("\n")
 
@@ -141,7 +150,8 @@ object Cynthia {
         minDepthOption,
         maxDepthOption,
         wellTypedOption,
-        solverOption
+        solverOption,
+        solverTimeoutOption
       )
       cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
         opt[Int]('n', "queries")
@@ -185,7 +195,8 @@ object Cynthia {
         backendsOption,
         storeMatchesOption,
         recordsOption,
-        solverOption
+        solverOption,
+        solverTimeoutOption
       )
       cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")

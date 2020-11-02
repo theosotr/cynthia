@@ -15,7 +15,7 @@ import DefaultJsonProtocol._
 
 import gr.dmst.aueb.cynthia.gen.{SolverDataGenerator, NaiveDataGenerator}
 import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
-import gr.dmst.aueb.cynthia.translators.{QueryInterpreter, SchemaTranslator}
+import gr.dmst.aueb.cynthia.translators.{QueryInterpreter, SchemaTranslator, State}
 
 
 case class Target(orm: ORM, db: DB) {
@@ -113,24 +113,30 @@ case class Stats(totalQ: Int = 0, mismatches: Int = 0, invalid: Int = 0) {
 }
 
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
-  def _GetMaxId(path: String) =
-    new File(path).listFiles.map(_.getPath).map(_.split('/').last).map(_.toInt).max + 1
-  val mismatchEnumerator =
+
+  private val mismatchEnumerator =
     if (options.mismatches.nonEmpty)
       options.mismatches.iterator
     else if (options.mode.contains("run") && Files.exists(Paths.get(getMismatchDir)))
         LazyList.from(_GetMaxId(getMismatchDir)).iterator
     else
       LazyList.from(1).iterator
-  val matchesEnumerator =
+
+  private val matchesEnumerator =
     if (options.mode.contains("run") && Files.exists(Paths.get(getMatchDir)))
         LazyList.from(_GetMaxId(getMatchDir)).iterator
     else
       LazyList.from(1).iterator
-  val genEnumerator = LazyList.from(1).iterator
+
+  private val genEnumerator = LazyList.from(1).iterator
+
+  private val dbs = targets.map(x => x.db).toSet
 
   val qGen = QueryGenerator(
     options.minDepth, options.maxDepth, options.noCombined, options.wellTyped)
+
+  def _GetMaxId(path: String) =
+    new File(path).listFiles.map(_.getPath).map(_.split('/').last).map(_.toInt).max + 1
 
   // test and generate modes
   def genQuery(schema: Schema, limit: Int = 10) = {
@@ -321,104 +327,117 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       Utils.writeToFile(dataPath, insStms)
       DBSetup.setupSchema(db, dataPath)
     }
+    insStms
+  }
+
+  def storeDataSQL(reportDir: String, insertStmts: String) = insertStmts match {
+    case ""            => () // Empty insert statements.
+    case insertStmts   =>
+      Utils.writeToFile(Utils.joinPaths(List(reportDir, "data.sql")), insertStmts)
+  }
+
+  def prepareFuture(stats: Stats, q: Query, s: State,
+                    insertStmts: String): Future[Stats] = {
+    val futures = targets map { t =>
+      Future {
+        (t, QueryExecutor(q, s, t))
+      }
+    }
+    Future.sequence(futures) map { res =>
+      val results = (
+        Map[(String, String), Seq[Target]](),
+        Map[(String, String), Seq[Target]]()
+      )
+      val (oks, failed) =
+        res.foldLeft(results) { case ((oks, failed), x) => {
+          x match {
+            case (target, Unsupported(_)) => (oks, failed)
+            case (_, Invalid(_)) => (oks, failed)
+            case (target, Ok(res)) => {
+              val k = (target.db.getName(), res)
+              val targets = oks getOrElse(k, Seq())
+              (oks + (k -> (targets :+ target)), failed)
+            }
+            case (target, Fail(err)) => {
+              val k = (target.db.getName(), err)
+              val targets = failed getOrElse(k, Seq())
+              (oks, failed + (k -> (targets :+ target)))
+            }
+          }
+        }}
+      val okDbs = oks.keys.map { case (k, _) => k }.toSet
+      if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
+          oks.size > dbs.size) {
+        val qid = mismatchEnumerator.next()
+        val reportDir = getMismatchesDir(qid)
+        val msg =
+          s"""${Console.GREEN}[INFO]: Mismatch found in schema '${schema.name}':${Console.RESET}
+          |  - Query ID: $qid
+          |  - Report Directory: $reportDir
+          |  - OK Target Groups:\n${oks.map { case (_, v) =>
+              "    * " + (v.map {_.toString} mkString ", ")
+            } mkString "\n"}
+          |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
+          """.stripMargin
+        storeResults(q, oks ++ failed, reportDir)
+        storeDataSQL(reportDir, insertStmts)
+        println(msg)
+        stats ++ (mism = true)
+      } else if (failed.size == 0 && oks.size == 0) {
+        val qid = mismatchEnumerator.next()
+        storeInvalid(q, qid)
+        stats ++ (invd = true)
+      } else {
+        if (options.mismatches.nonEmpty)
+          mismatchEnumerator.next()
+        if (options.storeMatches) {
+          val qid = matchesEnumerator.next()
+          val reportDir = getMatchesDir(qid)
+          new File(reportDir).mkdirs
+          storeDataSQL(reportDir, insertStmts)
+          storeResults(q, oks ++ failed, reportDir)
+        }
+        stats.++()
+      }
+    }
   }
 
   def start() = {
-    val dbs = targets.map(x => x.db).toSet
     val ndbs = dbs.size
-    if (!options.solver_gen)
-      populateSchema(dbs)
+    val insertStmts = new StringBuilder
+    if (!options.solverGen)
+      insertStmts.append(populateSchema(dbs))
     val stats = getQueries()
-      .foldLeft(Stats()) { (acc, q) => {
+      .foldLeft(Stats()) { (stats, q) => {
         try {
           val s = QueryInterpreter(q)
-          var dataIns = ""
-          if (options.solver_gen) {
-            SolverDataGenerator(schema, q, s)() match {
+          if (options.solverGen) {
+            SolverDataGenerator(
+                schema, q, s, options.records, options.solverTimeout)() match {
               case None => // Solver didn't generate any data
                 println(q)
               case Some(data) => {
-                val insStms = (data.foldLeft(Str("")) { case (acc, (m, r)) =>
+                val solverInsStmts = (data.foldLeft(Str("")) { case (acc, (m, r)) =>
                   acc << SchemaTranslator.dataToInsertStmts(m, r)
                 }).!
-                dataIns = insStms
+                // Add insert statements generated by the solver to the existing
+                // buffer of insert statements.
+                insertStmts.append(solverInsStmts)
                 // FIXME: Make it parallel.
                 dbs foreach { db =>
                   val dataPath = Utils.joinPaths(
                     List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
-                  Utils.writeToFile(dataPath, insStms)
+                  Utils.writeToFile(dataPath, solverInsStmts)
                   DBSetup.setupSchema(db, dataPath)
                 }
               }
             }
           }
-          val futures = targets map { t =>
-            Future {
-              (t, QueryExecutor(q, s, t))
-            }
-          }
-          val f = Future.sequence(futures) map { res =>
-              val results = (
-                Map[(String, String), Seq[Target]](),
-                Map[(String, String), Seq[Target]]()
-              )
-              val (oks, failed) =
-                res.foldLeft(results) { case ((oks, failed), x) => {
-                  x match {
-                    case (target, Unsupported(_)) => (oks, failed)
-                    case (_, Invalid(_)) => (oks, failed)
-                    case (target, Ok(res)) => {
-                      val k = (target.db.getName(), res)
-                      val targets = oks getOrElse(k, Seq())
-                      (oks + (k -> (targets :+ target)), failed)
-                    }
-                    case (target, Fail(err)) => {
-                      val k = (target.db.getName(), err)
-                      val targets = failed getOrElse(k, Seq())
-                      (oks, failed + (k -> (targets :+ target)))
-                    }
-                  }
-                }}
-              val okDbs = oks.keys.map { case (k, _) => k }.toSet
-              if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
-                  oks.size > ndbs) {
-                val qid = mismatchEnumerator.next()
-                val reportDir = getMismatchesDir(qid)
-                val msg =
-                  s"""${Console.GREEN}[INFO]: Mismatch found in schema '${schema.name}':${Console.RESET}
-                  |  - Query ID: $qid
-                  |  - Report Directory: $reportDir
-                  |  - OK Target Groups:\n${oks.map { case (_, v) =>
-                      "    * " + (v.map {_.toString} mkString ", ")
-                    } mkString "\n"}
-                  |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
-                  """.stripMargin
-                storeResults(q, oks ++ failed, reportDir)
-                Utils.writeToFile(Utils.joinPaths(List(reportDir, "data.sql")), dataIns)
-                println(msg)
-                acc ++ (mism = true)
-              } else if (failed.size == 0 && oks.size == 0) {
-                val qid = mismatchEnumerator.next()
-                storeInvalid(q, qid)
-                acc ++ (invd = true)
-              } else {
-                if (options.mismatches.nonEmpty)
-                  mismatchEnumerator.next()
-                if (options.storeMatches) {
-                  val qid = matchesEnumerator.next()
-                  val reportDir = getMatchesDir(qid)
-                  new File(reportDir).mkdirs
-                  Utils.writeToFile(Utils.joinPaths(List(reportDir, "data.sql")), dataIns)
-                  storeResults(q, oks ++ failed, reportDir)
-                }
-                acc.++()
-              }
-          }
-          Await.result(f, 10 seconds)
+          Await.result(prepareFuture(stats, q, s, insertStmts.toString), 10 seconds)
         } catch {
           case e: TimeoutException => {
             BlackWhite.tokenize(q).mkString
-            acc
+            stats
           }
           case e: Exception => {
             println(BlackWhite.tokenize(q).mkString)

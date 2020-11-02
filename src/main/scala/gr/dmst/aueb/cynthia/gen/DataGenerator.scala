@@ -35,7 +35,12 @@ object NaiveDataGenerator {
 }
 
 
-case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
+case class SolverDataGenerator(
+    schema: Schema,
+    q: Query,
+    queryState: State,
+    nuRecords: Int,
+    timeout: Int) {
 
   // This set holds the name of models related to the given query. This
   // also holds the name of models joined with the initial one.
@@ -74,7 +79,7 @@ case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
             val prev2 = addPrev(s, prev)
             declModels.add(m.name)
             vars ++= constructModelVariables(m, prefix = prev2 mkString ".")
-            List.range(0, 5) foreach { i => {
+            List.range(0, nuRecords) foreach { i => {
               val source = prev2 mkString "."
               val con = ctx.mkEq(
                 getVariable(source + "." + t.toLowerCase + "_id", i),
@@ -141,7 +146,7 @@ case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
   }
 
   def constructConstraint(k: String, e: FieldExpr, op: (Expr, Expr) => BoolExpr) = {
-    val cons = List.range(0, 5) map { i =>
+    val cons = List.range(0, nuRecords) map { i =>
       op(getVariableJ(k, i), constructExpr(e, i))
     }
     ctx.mkOr(cons:_*)
@@ -194,8 +199,8 @@ case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
       // Checks whether the variable name corresponds to a grouping field
       // or the primary key of the table.
       if (!queryState.getNonConstantGroupingFields.contains(varName) || f.equals("id")) {
-		val cons = List.range(0, 5).foldLeft(List[BoolExpr]()) { case (acc, i) =>
-		  List.range(i, 5).foldLeft(acc) { case (acc, j) =>
+		val cons = List.range(0, nuRecords).foldLeft(List[BoolExpr]()) { case (acc, i) =>
+		  List.range(i, nuRecords).foldLeft(acc) { case (acc, j) =>
 			if (i != j) {
 			  val con = ctx.mkNot(
 				ctx.mkEq(getVariable(varName, i), getVariable(varName, j)))
@@ -225,7 +230,7 @@ case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
       val varName =
         if (!prefix.equals("")) prefix + "." + m.name.toLowerCase + "." + fName
         else m.name + "." + fName
-      val vars = List.range(0, 5) map { i =>
+      val vars = List.range(0, nuRecords) map { i =>
         ctx.mkConst(varName + "_" + i.toString, getVarSort(t))
       }
       acc + (varName -> (vars, FieldType.dataTypeToFieldType(t))) }
@@ -234,7 +239,7 @@ case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
 
   def constructCompoundVariables() =
     queryState.fields.values foreach { case FieldDecl(e, as, t, _) =>
-      val exprs = List.range(0, 5) map { i => constructExpr(e, i) }
+      val exprs = List.range(0, nuRecords) map { i => constructExpr(e, i) }
       vars += (as -> (exprs, t))
     }
 
@@ -258,7 +263,7 @@ case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
         declModels.contains(x) }
       Some(models.foldLeft(Map[Model, Seq[Seq[Constant]]]()) { case (acc, x) => {
         val model = schema.models(x)
-        val records = List.range(0, 5) map { i =>
+        val records = List.range(0, nuRecords) map { i =>
           (model.fields map {
             case Field(n, Foreign(_)) => n + "_id"
             case Field(n, _)          => n
@@ -279,7 +284,7 @@ case class SolverDataGenerator(schema: Schema, q: Query, queryState: State) {
       s"Model '${queryState.source}' not found in schema '${schema.name}'")
     case Some(m) => {
       val params = ctx.mkParams
-      params.add("timeout", 5000)
+      params.add("timeout", timeout)
       solver.setParameters(params)
       vars ++= constructModelVariables(m)
       constructCompoundVariables
