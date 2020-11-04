@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
 import scala.language.postfixOps
+import scala.io.Source
 import scala.sys.process._
 
 import pprint.PPrinter.BlackWhite
@@ -170,7 +171,9 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     // Revisit We want to return a LazyList
     val dirs =
       if (options.all)
-        Utils.getListOfDirs(getMismatchDir) ++ Utils.getListOfDirs(getMatchDir()) ++ Utils.getListOfDirs(getQDir())
+        Utils.getListOfDirs(getMismatchDir) ++
+          Utils.getListOfDirs(getMatchDir) ++
+          Utils.getListOfDirs(getQDir)
       // We cannot have options.all and options.mismatches
       else
         Utils.getListOfDirs(getMismatchDir) filter { x =>
@@ -217,7 +220,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
           case Some(x) => getQueriesFromDisk(x)
           case None    => ??? // unreachable
         }
-      case Some("replay") => getQueriesFromCynthia()
+      case Some("replay") => getQueriesFromCynthia
       case _ => ??? // unreachable
     }
   }
@@ -274,6 +277,13 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       i.toString)
     )
 
+  def getInitialDataFile() =
+    Utils.joinPaths(List(Utils.getSchemaDir, s"data_${schema.name}.sql"))
+
+  def getSQLQueryData() =
+    Utils.joinPaths(
+      List(Utils.getReportDir, schema.name, "data.sql"))
+
   def storeInvalid(q: Query, i: Int) = {
     val invDir = getInvalidQDir()
     new File(invDir).mkdirs
@@ -312,7 +322,14 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     }
   }
 
-  def populateSchema(dbs: Set[DB]) = {
+  def loadInitialData() =
+    Source.fromFile(getInitialDataFile).mkString
+
+  def generateSolverData(q: Query, s: State) =
+      SolverDataGenerator(schema, q, s, options.records,
+                          options.solverTimeout)()
+
+  def generateNaiveData() = {
     val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) {
       case (acc, (k, v)) => {
         val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
@@ -324,19 +341,29 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         }}
     }}
     val topSort = Utils.topologicalSort(modelMap)
-    val insStms = topSort.foldLeft(Str("")) { case (acc, m) =>
-      acc << SchemaTranslator.dataToInsertStmts(
-        schema.models(m),
-        NaiveDataGenerator(schema.models(m), options.records, limit = options.records))
-    }.toString
-    dbs foreach { db =>
-      val dataPath = Utils.joinPaths(
-        List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
-      Utils.writeToFile(dataPath, insStms)
-      DBSetup.setupSchema(db, dataPath)
-    }
-    insStms
+    topSort map (m => {
+      val model = schema.models(m)
+      (model, NaiveDataGenerator(model, options.records, limit = options.records))
+    })
   }
+
+  def populateSchema(dbs: Set[DB]) =
+    if (Utils.exists(getInitialDataFile)) {
+      dbs.foreach { db => DBSetup.setupSchema(db, getInitialDataFile) }
+      None
+    } else {
+      val insStms =
+        generateNaiveData.foldLeft(Str("")) { case (acc, (model, data)) =>
+          acc << SchemaTranslator.dataToInsertStmts(model, data)
+        }.toString
+      dbs foreach { db =>
+        val dataPath = Utils.joinPaths(
+          List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
+        Utils.writeToFile(dataPath, insStms)
+        DBSetup.setupSchema(db, dataPath)
+      }
+      Some(insStms)
+    }
 
   def storeDataSQL(reportDir: String, insertStmts: String) = insertStmts match {
     case ""            => () // Empty insert statements.
@@ -411,10 +438,16 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   }
 
   def start() = {
-    val ndbs = dbs.size
     val insertStmts = new StringBuilder
-    if (!options.solverGen)
-      insertStmts.append(populateSchema(dbs))
+    if (!options.solverGen) {
+      populateSchema(dbs) match {
+        case None => ()
+        case Some(stmts) => {
+          insertStmts.append(stmts)
+          Utils.writeToFile(getInitialDataFile, insertStmts.toString)
+        }
+      }
+    }
     val stats = getQueries()
       .foldLeft(Stats()) { (stats, q) => {
         try {

@@ -63,7 +63,8 @@ object Controller {
 
             }
             Utils.getListOfFiles(
-              Utils.joinPaths(List(options.dotCynthia, Utils.schemaDir))) map (_.split('/').last) map { s =>
+              Utils.joinPaths(List(options.dotCynthia, Utils.schemaDir))
+            ) filter (!_.endsWith(".sql")) map (_.split('/').last) map { s =>
                 Future {
                   val schema = Schema(s, Map())
                   _run(options, schema, {_.start})
