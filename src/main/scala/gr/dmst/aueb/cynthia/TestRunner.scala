@@ -117,42 +117,37 @@ case class Stats(
     else
       if (invd) Stats(totalQ + 1, mismatches, invalid + 1, solverTimeouts)
       else
-        if (timedout) Stats(totalQ + 1, mismatches, invalid, solverTimeouts + 1)
+        if (timedout) Stats(totalQ, mismatches, invalid, solverTimeouts + 1)
         else Stats(totalQ + 1, mismatches, invalid, solverTimeouts)
 }
 
+sealed trait DataGenRes
+case object DataExists extends DataGenRes
+case object DataGenFailed extends DataGenRes
+case class  DataGenSucc(data: String) extends DataGenRes
+
+
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
-
-  private val mismatchEnumerator =
-    if (options.mismatches.nonEmpty)
-      options.mismatches.iterator
-    else if (options.mode.contains("run") && Files.exists(Paths.get(getMismatchDir)))
-        LazyList.from(_GetMaxId(getMismatchDir)).iterator
-    else
-      LazyList.from(1).iterator
-
-  private val matchesEnumerator =
-    if (options.mode.contains("run") && Files.exists(Paths.get(getMatchDir)))
-        LazyList.from(_GetMaxId(getMatchDir)).iterator
-    else
-      LazyList.from(1).iterator
 
   private val genEnumerator = LazyList.from(1).iterator
 
   private val dbs = targets.map(x => x.db).toSet
 
+  private val mismatchTxt = "MISMATCH"
+
+  private val matchTxt = "MATCH"
+
+  private val invalidTxt = "INVALID"
+
   val qGen = QueryGenerator(
     options.minDepth, options.maxDepth, options.noCombined, options.wellTyped)
 
-  def _GetMaxId(path: String) =
-    new File(path).listFiles.map(_.getPath).map(_.split('/').last).map(_.toInt).max + 1
-
   // test and generate modes
   def genQuery(schema: Schema, limit: Int = 10) = {
-    def _genQuery(i: Int): LazyList[Query] = {
+    def _genQuery(i: Int): LazyList[(Int, Query)] = {
       val q = qGen(schema)
-      if (i >= limit) q #:: LazyList.empty
-      else q #:: _genQuery(i + 1)
+      if (i >= limit) (i, q) #:: LazyList.empty
+      else (i, q) #:: _genQuery(i + 1)
     }
     _genQuery(1)
   }
@@ -161,55 +156,40 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   def getQueriesFromDisk(path: String) = {
     if (Files.isDirectory(Paths.get(path)))
       // Revisit We want to return a LazyList
-      Utils.getListOfFiles(path).map(Utils.loadQuery(_))
+      (Utils.getListOfFiles(path).foldLeft((1, List[(Int, Query)]())) {
+        case ((c, l), p) => (c + 1, (c, Utils.loadQuery(p)) :: l)
+      })._2
     else
-      LazyList(Utils.loadQuery(path))
+      LazyList((1, Utils.loadQuery(path)))
   }
 
   // replay mode
   def getQueriesFromCynthia() = {
     // Revisit We want to return a LazyList
     val dirs =
-      if (options.all)
-        Utils.getListOfDirs(getMismatchDir) ++
-          Utils.getListOfDirs(getMatchDir) ++
-          Utils.getListOfDirs(getQDir)
+      if (options.all) Utils.getListOfDirs(getQueriesDir)
       // We cannot have options.all and options.mismatches
       else
-        Utils.getListOfDirs(getMismatchDir) filter { x =>
-          if (options.mismatches.isEmpty) true
-          else options.mismatches.contains(x.split('/').last.toInt)
-        }
-    // Get invalid queries
-    val invalidQueries: Seq[Query] =
-      if (options.all) {
-        val invalidQDir = getInvalidQDir
-        Utils.listFiles(invalidQDir, ".aql") match {
-          case Some(x) => x.toIndexedSeq.map(q => {
-            val queryJsonFile = Utils.joinPaths(List(invalidQDir, q + ".json"))
-            val queryFile = Utils.joinPaths(List(invalidQDir, q))
-            val query = Utils.loadQuery(queryJsonFile)
-            Utils.deleteRecursively(new File(queryFile))
-            Utils.deleteRecursively(new File(queryJsonFile))
-            query
-          })
-          case _ => Seq[Query]()
-        }
-      } else {
-        Seq[Query]()
-      }
+        Utils.getListOfDirs(getQueriesDir) filter(p => {
+          val diffOut = Utils.joinPaths(List(p, "diff_test.out"))
+          val isMismatch =
+            Utils.exists(diffOut) &&
+              Source.fromFile(diffOut).mkString.equals(mismatchTxt)
+          if (options.mismatches.isEmpty) isMismatch
+          else options.mismatches.contains(p.split('/').last.toInt) && isMismatch
+        })
     // Get queries from mismatches and probably matches
     val queries = dirs map (x => {
       val queryJsonFile = Utils.joinPaths(List(x, "query.aql.json"))
       val query = Utils.loadQuery(queryJsonFile)
       // Remove old report
-      Utils.deleteRecursively(new File(x))
-      query
+      //Utils.deleteRecursively(new File(x))
+      (x.split('/').last.toInt, query)
     })
-    queries ++ invalidQueries
+    queries
   }
 
-  def getQueries(): Seq[Query] = {
+  def getQueries(): Seq[(Int, Query)] = {
     options.mode match {
       case Some("test")  =>
         genQuery(schema, limit = options.nuqueries)
@@ -225,84 +205,38 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     }
   }
 
-  def getMismatchesDir(i: Int) =
+  def getQueriesDir() =
     Utils.joinPaths(List(
-      Utils.getReportDir(),
-      schema.name,
-      "mismatches",
-      i.toString)
+      Utils.getReportDir,
+      schema.name)
     )
 
-  def getMismatchDir() =
+  def getQueryOutputDir(qid: Int) =
     Utils.joinPaths(List(
-      Utils.getReportDir(),
+      Utils.getReportDir,
       schema.name,
-      "mismatches")
-    )
-
-  def getInvalidQDir() =
-    Utils.joinPaths(List(
-      Utils.getReportDir(),
-      schema.name,
-      "invalid")
-    )
-
-  def getMatchesDir(i: Int) =
-    Utils.joinPaths(List(
-      Utils.getReportDir(),
-      schema.name,
-      "matches",
-      i.toString)
-    )
-
-  def getMatchDir() =
-    Utils.joinPaths(List(
-      Utils.getReportDir(),
-      schema.name,
-      "matches")
-    )
-
-  def getQDir() =
-    Utils.joinPaths(List(
-      Utils.getReportDir(),
-      schema.name,
-      "queries")
-    )
-
-  def getQueriesDir(i: Int) =
-    Utils.joinPaths(List(
-      Utils.getReportDir(),
-      schema.name,
-      "queries",
-      i.toString)
+      qid.toString)
     )
 
   def getInitialDataFile() =
     Utils.joinPaths(List(Utils.getSchemaDir, s"data_${schema.name}.sql"))
 
-  def getSQLQueryData() =
+  def getSQLQueryData(qid: Int) =
     Utils.joinPaths(
-      List(Utils.getReportDir, schema.name, "data.sql"))
-
-  def storeInvalid(q: Query, i: Int) = {
-    val invDir = getInvalidQDir()
-    new File(invDir).mkdirs
-    val queryFile = Utils.joinPaths(List(invDir, s"query_$i.aql"))
-    val queryJsonFile = Utils.joinPaths(List(invDir, s"query_$i.aql.json"))
-    Utils.writeToFile(queryFile, BlackWhite.tokenize(q).mkString)
-    Utils.writeToFile(queryJsonFile, q.toJson.prettyPrint)
-  }
+      List(Utils.getReportDir, schema.name, qid.toString, "data.sql"))
 
   def storeResults(q: Query, results: Map[(String, String), Seq[Target]],
-                   reportDir: String) = {
+                   reportDir: String, diffOut: String) = {
     storeQueries(q, reportDir)
-    results.foreach { case ((_, k), v) => v.foreach { x =>
-        // FIXME: For debugging purposes only.
-        s"cp -r ${x.orm.projectDir} $reportDir".!!
-        val filename = s"${x.orm.ormName}_${x.db.getName}.out"
-        Utils.writeToFile(Utils.joinPaths(List(reportDir, filename)), k)
+    Utils.writeToFile(Utils.joinPaths(List(reportDir, "diff_test.out")), diffOut)
+    if (!diffOut.equals(invalidTxt))
+      results.foreach { case ((_, k), v) => v.foreach { x =>
+          // FIXME: For debugging purposes only.
+          s"cp -r ${x.orm.projectDir} $reportDir".!!
+          val filename = s"${x.orm.ormName}_${x.db.getName}.out"
+          Utils.writeToFile(Utils.joinPaths(List(reportDir, filename)), k)
+        }
       }
-    }
   }
 
   def storeQueries(q: Query, queriesDir: String) = {
@@ -315,9 +249,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
 
   def generate() = {
     println(s"Generating queries for ${schema.name}...")
-    getQueries().foreach { q =>
-      val qid = genEnumerator.next()
-      val queriesDir = getQueriesDir(qid)
+    getQueries().foreach { case (qid, q) =>
+      val queriesDir = getQueryOutputDir(qid)
       storeQueries(q, queriesDir)
     }
   }
@@ -341,38 +274,44 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         }}
     }}
     val topSort = Utils.topologicalSort(modelMap)
-    topSort map (m => {
+    (topSort map (m => {
       val model = schema.models(m)
       (model, NaiveDataGenerator(model, options.records, limit = options.records))
-    })
+    })).toMap
   }
 
-  def populateSchema(dbs: Set[DB]) =
-    if (Utils.exists(getInitialDataFile)) {
-      dbs.foreach { db => DBSetup.setupSchema(db, getInitialDataFile) }
-      None
-    } else {
-      val insStms =
-        generateNaiveData.foldLeft(Str("")) { case (acc, (model, data)) =>
-          acc << SchemaTranslator.dataToInsertStmts(model, data)
-        }.toString
-      dbs foreach { db =>
-        val dataPath = Utils.joinPaths(
-          List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
-        Utils.writeToFile(dataPath, insStms)
-        DBSetup.setupSchema(db, dataPath)
-      }
-      Some(insStms)
-    }
+  def populateSchema(dataFile: String, getData: () => Option[Map[Model, Seq[Seq[Constant]]]]) =
+    if (Utils.exists(dataFile)) {
+      dbs.foreach { db => DBSetup.setupSchema(db, dataFile) }
+      DataExists
+    } else
+      if (options.mode.get.equals("test")) {
+        getData() match {
+          case None       => DataGenFailed
+          case Some(data) => {
+            val insStms =
+              data.foldLeft(Str("")) { case (acc, (model, data)) =>
+                acc << SchemaTranslator.dataToInsertStmts(model, data)
+              }.toString
+            dbs foreach { db =>
+              val dataPath = Utils.joinPaths(
+                List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
+              Utils.writeToFile(dataPath, insStms)
+              DBSetup.setupSchema(db, dataPath)
+            }
+            DataGenSucc(insStms)
+          }
+        }
+      } else DataExists
 
-  def storeDataSQL(reportDir: String, insertStmts: String) = insertStmts match {
-    case ""            => () // Empty insert statements.
-    case insertStmts   =>
-      Utils.writeToFile(Utils.joinPaths(List(reportDir, "data.sql")), insertStmts)
+  def storeDataSQL(reportDir: String, data: Option[String]) = data match {
+    case None       => () // Empty insert statements.
+    case Some(data) =>
+      Utils.writeToFile(Utils.joinPaths(List(reportDir, "data.sql")), data)
   }
 
-  def prepareFuture(stats: Stats, q: Query, s: State,
-                    insertStmts: String): Future[Stats] = {
+  def prepareFuture(stats: Stats, qid: Int, q: Query, s: State,
+                    data: Option[String]): Future[Stats] = {
     val futures = targets map { t =>
       Future {
         (t, QueryExecutor(q, s, t))
@@ -401,10 +340,9 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
           }
         }}
       val okDbs = oks.keys.map { case (k, _) => k }.toSet
+      val reportDir = getQueryOutputDir(qid)
       if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
           oks.size > dbs.size) {
-        val qid = mismatchEnumerator.next()
-        val reportDir = getMismatchesDir(qid)
         val msg =
           s"""${Console.GREEN}[INFO]: Mismatch found in schema '${schema.name}':${Console.RESET}
           |  - Query ID: $qid
@@ -414,23 +352,17 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
             } mkString "\n"}
           |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
           """.stripMargin
-        storeResults(q, oks ++ failed, reportDir)
-        storeDataSQL(reportDir, insertStmts)
+        storeResults(q, oks ++ failed, reportDir, mismatchTxt)
+        storeDataSQL(reportDir, data)
         println(msg)
         stats ++ (mism = true)
       } else if (failed.size == 0 && oks.size == 0) {
-        val qid = mismatchEnumerator.next()
-        storeInvalid(q, qid)
+        storeResults(q, oks ++ failed, reportDir, invalidTxt)
         stats ++ (invd = true)
       } else {
-        if (options.mismatches.nonEmpty)
-          mismatchEnumerator.next()
         if (options.storeMatches) {
-          val qid = matchesEnumerator.next()
-          val reportDir = getMatchesDir(qid)
-          new File(reportDir).mkdirs
-          storeDataSQL(reportDir, insertStmts)
-          storeResults(q, oks ++ failed, reportDir)
+          storeDataSQL(reportDir, data)
+          storeResults(q, oks ++ failed, reportDir, matchTxt)
         }
         stats.++()
       }
@@ -438,49 +370,41 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   }
 
   def start() = {
-    val insertStmts = new StringBuilder
+    val initialInsertStmts = new StringBuilder
+    val extraInsertStmts = new StringBuilder
     if (!options.solverGen) {
-      populateSchema(dbs) match {
-        case None => ()
-        case Some(stmts) => {
-          insertStmts.append(stmts)
-          Utils.writeToFile(getInitialDataFile, insertStmts.toString)
+      populateSchema(
+        getInitialDataFile,
+        { () =>
+          if (options.mode.get.equals("test")) Some(generateNaiveData())
+          else None
+        }) match {
+        case DataGenSucc(stmts) => {
+          initialInsertStmts.append(stmts)
+          Utils.writeToFile(getInitialDataFile, stmts)
         }
+        case _ => ()
       }
     }
     val stats = getQueries()
-      .foldLeft(Stats()) { (stats, q) => {
+      .foldLeft(Stats()) { case (stats, (qid, q)) => {
         try {
           val s = QueryInterpreter(q)
-          val prelRes =
-            if (!options.solverGen) None
-            else {
-              SolverDataGenerator(
-                  schema, q, s, options.records, options.solverTimeout)() match {
-                case None       => Some(stats.++(timedout = true))
-                case Some(data) => {
-                  val solverInsStmts = (data.foldLeft(Str("")) { case (acc, (m, r)) =>
-                    acc << SchemaTranslator.dataToInsertStmts(m, r)
-                  }).!
-                  // Add insert statements generated by the solver to the existing
-                  // buffer of insert statements.
-                  insertStmts.append(solverInsStmts)
-                  // FIXME: Make it parallel.
-                  dbs foreach { db =>
-                    val dataPath = Utils.joinPaths(
-                      List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
-                    Utils.writeToFile(dataPath, solverInsStmts)
-                    DBSetup.setupSchema(db, dataPath)
-                  }
-                  None
+          val (newStats, data) =
+            if (!options.solverGen && options.mode.get.equals("test"))
+              (stats, None)
+            else
+              populateSchema(
+                getSQLQueryData(qid),
+                { () =>
+                    SolverDataGenerator(
+                      schema, q, s, options.records, options.solverTimeout)()
+                }) match {
+                  case DataGenFailed      => (stats ++ (timedout = true), None)
+                  case DataExists         => (stats, None)
+                  case DataGenSucc(stmts) => (stats, Some(stmts))
                 }
-              }
-            }
-            prelRes match {
-              case None =>
-                Await.result(prepareFuture(stats, q, s, insertStmts.toString), 10 seconds)
-              case Some(res) => res
-            }
+          Await.result(prepareFuture(newStats, qid, q, s, data), 10 seconds)
         } catch {
           case e: TimeoutException => {
             BlackWhite.tokenize(q).mkString
