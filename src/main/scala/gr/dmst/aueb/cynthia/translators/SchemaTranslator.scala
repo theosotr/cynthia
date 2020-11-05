@@ -27,7 +27,7 @@ object SchemaTranslator {
         } mkString ",") << ");\n"
     }
 
-  def translateModel(m: Model, numRecords: Int): QueryStr = {
+  def translateModel(m: Model): QueryStr = {
     def getColumns() =
       m.fields.foldLeft(Str("")) { (acc, f) => f.ftype match {
         case Foreign(_) =>
@@ -43,9 +43,6 @@ object SchemaTranslator {
           Utils.quoteStr(x.name, quotes = "\"") << "(id) ON DELETE NO ACTION"
       }
 
-    def getInsertStms() =
-      dataToInsertStmts(m, NaiveDataGenerator(m, numRecords, limit = numRecords))
-
     QueryStr(None,
       Some((Str("CREATE TABLE ") << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") <<
         " (\n" << getColumns <<
@@ -53,7 +50,7 @@ object SchemaTranslator {
     )
   }
 
-  def apply(schema: Schema, numRecords: Int): String = {
+  def apply(schema: Schema): String = {
     // First we create a map that holds the dependencies among models
     val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) { case (acc, (k, v)) => {
       val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
@@ -72,7 +69,7 @@ object SchemaTranslator {
     // Traverse models in topological order and create the corresponding
     // CREATE TABLE statements.
     topSort.foldLeft(qstr) { case (acc, m) =>
-      acc >> translateModel(schema.models(m), numRecords)
+      acc >> translateModel(schema.models(m))
     }.toString
   }
 }

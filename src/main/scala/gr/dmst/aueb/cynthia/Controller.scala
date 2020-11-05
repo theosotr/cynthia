@@ -25,12 +25,12 @@ object Controller {
       options.mode match {
         case Some("test") =>
           List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s, options.records))
+            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
             _run(options, s, {_.start})
           }}
         case Some("generate") =>
           List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s, options.records))
+            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
             _run(options, s, {_.generate})
           }}
         case Some("run") =>
