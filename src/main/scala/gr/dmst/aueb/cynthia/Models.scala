@@ -72,4 +72,21 @@ case class Schema(name: String, models: Map[String, Model]) {
 
   def getSchemaPath() =
     Utils.joinPaths(List(Utils.getSchemaDir(), name))
+
+  def getModelsInTopSort() = {
+    val modelMap = models.foldLeft(Map[String, Set[String]]()) {
+      case (acc, (k, v)) => {
+        val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
+        (v.fields filter Field.isForeign).foldLeft(acc2) {
+          case (acc, Field(_, Foreign(n))) => {
+            acc get k match {
+              case None    => acc + (k -> Set(n))
+              case Some(e) => acc + (k -> (e + n))
+            }
+          }
+        }
+      }
+    }
+    Utils.topologicalSort(modelMap)  
+  }
 }
