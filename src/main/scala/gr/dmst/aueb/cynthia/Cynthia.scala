@@ -178,7 +178,9 @@ object Cynthia {
         recordsOption,
         minDepthOption,
         maxDepthOption,
-        wellTypedOption
+        wellTypedOption,
+        solverOption,
+        solverTimeoutOption
       )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
@@ -198,11 +200,7 @@ object Cynthia {
             }
           }),
         ormsOption,
-        backendsOption,
-        storeMatchesOption,
-        recordsOption,
-        solverOption,
-        solverTimeoutOption
+        backendsOption
       )
       cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")

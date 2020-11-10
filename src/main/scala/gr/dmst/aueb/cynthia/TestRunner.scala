@@ -244,11 +244,36 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     Utils.writeToFile(queryJsonFile, q.toJson.prettyPrint)
   }
 
+  def generateInitialData() =
+    if (!options.solverGen) {
+      DataGeneratorController(
+        schema,
+        getInitialDataFile,
+        Some(NaiveDataGenerator(schema, options.records))
+      ) populateDBs dbs match {
+        case DataGenSucc(thunk) => thunk()
+        case _                  => ()
+      }
+    }
+
   def generate() = {
     println(s"Generating queries for ${schema.name}...")
+    generateInitialData
     getQueries().foreach { case (qid, q) =>
       val queriesDir = getQueryOutputDir(qid)
       storeQueries(q, queriesDir)
+      if (!options.solverGen && options.generateData) ()
+      else
+        DataGeneratorController(
+          schema,
+          getSQLQueryData(qid),
+          Some(SolverDataGenerator(
+            schema, options.records, q, QueryInterpreter(q),
+            options.solverTimeout))
+        ) populateDBs dbs match {
+          case DataGenSucc(thunk) => thunk()
+          case _ => ()
+        }
     }
   }
 
@@ -310,7 +335,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         storeResults(q, oks ++ failed, reportDir, invalidTxt)
         stats ++ (invd = true)
       } else {
-        if (options.storeMatches) {
+        if (options.storeMatches || options.mode.get.equals("replay")) {
           evalThunk(dataThunk)
           storeResults(q, oks ++ failed, reportDir, matchTxt)
         }
@@ -320,18 +345,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   }
 
   def start() = {
-    if (!options.solverGen) {
-      DataGeneratorController(
-        schema,
-        getInitialDataFile,
-        if(options.generateData)
-          Some(NaiveDataGenerator(schema, options.records))
-        else None
-        ) populateDBs dbs match {
-        case DataGenSucc(thunk) => thunk()
-        case _                  => ()
-      }
-    }
+    generateInitialData
     val stats = getQueries()
       .foldLeft(Stats()) { case (stats, (qid, q)) => {
         try {
