@@ -14,7 +14,7 @@ sealed trait DataGenerator {
   def apply(): Map[Model, Seq[Seq[Constant]]]
 }
 
-case class NaiveDataGenerator(schema: Schema, nuRecords: Int) {
+case class NaiveDataGenerator(schema: Schema, nuRecords: Int) extends DataGenerator {
 
   private val foreignKeyCands = nuRecords
 
@@ -50,11 +50,11 @@ case class NaiveDataGenerator(schema: Schema, nuRecords: Int) {
 
 
 case class SolverDataGenerator(
-    schema: Schema,
-    q: Query,
-    queryState: State,
-    nuRecords: Int,
-    timeout: Int) {
+  schema: Schema,
+  nuRecords: Int,
+  q: Query,
+  queryState: State,
+  timeout: Int) extends DataGenerator {
 
   // This set holds the name of models related to the given query. This
   // also holds the name of models joined with the initial one.
@@ -264,18 +264,9 @@ case class SolverDataGenerator(
   def generateData() = solver.check match {
     case Status.SATISFIABLE => {
       val m = solver.getModel
-      val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) { case (acc, (k, v)) => {
-        val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
-        (v.fields filter Field.isForeign).foldLeft(acc2) { case (acc, Field(_, Foreign(n))) => {
-          acc get k match {
-            case None    => acc + (k -> Set(n))
-            case Some(e) => acc + (k -> (e + n))
-          }
-        }}
-      }}
-      val models = Utils.topologicalSort(modelMap) filter { x =>
-        declModels.contains(x) }
-      Some(models.foldLeft(Map[Model, Seq[Seq[Constant]]]()) { case (acc, x) => {
+
+      val models = schema.getModelsInTopSort filter { declModels.contains(_) }
+      models.foldLeft(Map[Model, Seq[Seq[Constant]]]()) { case (acc, x) => {
         val model = schema.models(x)
         val records = List.range(0, nuRecords) map { i =>
           (model.fields map {
@@ -288,9 +279,10 @@ case class SolverDataGenerator(
           }).toSeq
         }
         acc + (model -> records)
-      }})
+      }}
     }
-    case _ => None
+    // The solver was unable to generate any data.
+    case _ => Map[Model, Seq[Seq[Constant]]]()
   }
 
   def apply() = schema.models get queryState.source match {

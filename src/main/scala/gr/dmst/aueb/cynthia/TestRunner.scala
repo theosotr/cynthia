@@ -258,31 +258,26 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   def loadInitialData() =
     Source.fromFile(getInitialDataFile).mkString
 
-  def generateSolverData(q: Query, s: State) =
-      SolverDataGenerator(schema, q, s, options.records,
-                          options.solverTimeout)()
-
-  def populateSchema(dataFile: String, getData: () => Option[Map[Model, Seq[Seq[Constant]]]]) =
+  def populateSchema(dataFile: String, getData: () => Map[Model, Seq[Seq[Constant]]]) =
     if (Utils.exists(dataFile)) {
       dbs.foreach { db => DBSetup.setupSchema(db, dataFile) }
       DataExists
     } else
       if (options.mode.get.equals("test")) {
-        getData() match {
-          case None       => DataGenFailed
-          case Some(data) => {
-            val insStms =
-              data.foldLeft(Str("")) { case (acc, (model, data)) =>
-                acc << SchemaTranslator.dataToInsertStmts(model, data)
-              }.toString
-            dbs foreach { db =>
-              val dataPath = Utils.joinPaths(
-                List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
-              Utils.writeToFile(dataPath, insStms)
-              DBSetup.setupSchema(db, dataPath)
-            }
-            DataGenSucc(insStms)
+        val data = getData()
+        if (data.isEmpty) DataGenFailed
+        else {
+          val insStms =
+            data.foldLeft(Str("")) { case (acc, (model, data)) =>
+              acc << SchemaTranslator.dataToInsertStmts(model, data)
+            }.toString
+          dbs foreach { db =>
+            val dataPath = Utils.joinPaths(
+              List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
+            Utils.writeToFile(dataPath, insStms)
+            DBSetup.setupSchema(db, dataPath)
           }
+          DataGenSucc(insStms)
         }
       } else DataExists
 
@@ -358,8 +353,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         getInitialDataFile,
         { () =>
           if (options.mode.get.equals("test"))
-            Some(NaiveDataGenerator(schema, options.records)())
-          else None
+            NaiveDataGenerator(schema, options.records)()
+          else Map()
         }) match {
         case DataGenSucc(stmts) => {
           Utils.writeToFile(getInitialDataFile, stmts)
@@ -379,7 +374,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
                 getSQLQueryData(qid),
                 { () =>
                     SolverDataGenerator(
-                      schema, q, s, options.records, options.solverTimeout)()
+                      schema, options.records, q, s, options.solverTimeout)()
                 }) match {
                   case DataGenFailed      => (stats ++ (timedout = true), None)
                   case DataExists         => (stats, None)
