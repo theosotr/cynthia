@@ -1,13 +1,13 @@
 package gr.dmst.aueb.cynthia.gen
 
-
+import java.io.File
 import scala.sys.process._
 import scala.collection.immutable.ListMap
 
 import com.microsoft.z3.{Solver,Context,Status,Expr,ArithExpr,IntExpr,SeqExpr,BoolExpr}
 
 import gr.dmst.aueb.cynthia._
-import gr.dmst.aueb.cynthia.translators.State
+import gr.dmst.aueb.cynthia.translators.{State, SchemaTranslator}
 
 
 sealed trait DataGenerator {
@@ -300,4 +300,48 @@ case class SolverDataGenerator(
       generateData
     }
   }
+}
+
+
+sealed trait DataGenRes
+case object DataExists extends DataGenRes
+case object DataGenFailed extends DataGenRes
+case class  DataGenSucc(data: () => Unit) extends DataGenRes
+
+
+case class DataGeneratorController(
+  schema: Schema,
+  dataFile: String,
+  genStrategy: Option[DataGenerator]
+) {
+
+  def populateDBs(dbs: Set[DB]) =
+    if (Utils.exists(dataFile)) {
+      dbs.foreach { db => DBSetup.setupSchema(db, dataFile) }
+      DataExists
+    } else {
+      genStrategy match {
+        case None => DataExists
+        case Some(genStrategy) => {
+          val data = genStrategy()
+          if (data.isEmpty) DataGenFailed
+          else {
+            val insStms =
+              data.foldLeft(Str("")) { case (acc, (model, data)) =>
+                acc << SchemaTranslator.dataToInsertStmts(model, data)
+              }.toString
+            dbs foreach { db =>
+              val dataPath = Utils.joinPaths(
+                List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
+              Utils.writeToFile(dataPath, insStms)
+              DBSetup.setupSchema(db, dataPath)
+            }
+            DataGenSucc(() => {
+              new File(dataFile).getParentFile.mkdirs
+              Utils.writeToFile(dataFile, insStms)
+            })
+          }
+        }
+      }
+    }
 }

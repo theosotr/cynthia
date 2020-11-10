@@ -14,7 +14,9 @@ import pprint.PPrinter.BlackWhite
 import spray.json._
 import DefaultJsonProtocol._
 
-import gr.dmst.aueb.cynthia.gen.{SolverDataGenerator, NaiveDataGenerator}
+import gr.dmst.aueb.cynthia.gen.{
+  SolverDataGenerator, NaiveDataGenerator, DataGeneratorController,
+  DataGenSucc, DataExists, DataGenFailed}
 import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
 import gr.dmst.aueb.cynthia.translators.{QueryInterpreter, SchemaTranslator, State}
 
@@ -120,11 +122,6 @@ case class Stats(
         if (timedout) Stats(totalQ, mismatches, invalid, solverTimeouts + 1)
         else Stats(totalQ + 1, mismatches, invalid, solverTimeouts)
 }
-
-sealed trait DataGenRes
-case object DataExists extends DataGenRes
-case object DataGenFailed extends DataGenRes
-case class  DataGenSucc(data: String) extends DataGenRes
 
 
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
@@ -258,37 +255,13 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   def loadInitialData() =
     Source.fromFile(getInitialDataFile).mkString
 
-  def populateSchema(dataFile: String, getData: () => Map[Model, Seq[Seq[Constant]]]) =
-    if (Utils.exists(dataFile)) {
-      dbs.foreach { db => DBSetup.setupSchema(db, dataFile) }
-      DataExists
-    } else
-      if (options.mode.get.equals("test")) {
-        val data = getData()
-        if (data.isEmpty) DataGenFailed
-        else {
-          val insStms =
-            data.foldLeft(Str("")) { case (acc, (model, data)) =>
-              acc << SchemaTranslator.dataToInsertStmts(model, data)
-            }.toString
-          dbs foreach { db =>
-            val dataPath = Utils.joinPaths(
-              List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
-            Utils.writeToFile(dataPath, insStms)
-            DBSetup.setupSchema(db, dataPath)
-          }
-          DataGenSucc(insStms)
-        }
-      } else DataExists
-
-  def storeDataSQL(reportDir: String, data: Option[String]) = data match {
+  def evalThunk(dataThunk: Option[() => Unit]) = dataThunk match {
     case None       => () // Empty insert statements.
-    case Some(data) =>
-      Utils.writeToFile(Utils.joinPaths(List(reportDir, "data.sql")), data)
+    case Some(thunk) => thunk()
   }
 
   def prepareFuture(stats: Stats, qid: Int, q: Query, s: State,
-                    data: Option[String]): Future[Stats] = {
+      dataThunk: Option[() => Unit]): Future[Stats] = {
     val futures = targets map { t =>
       Future {
         (t, QueryExecutor(q, s, t))
@@ -330,7 +303,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
           |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
           """.stripMargin
         storeResults(q, oks ++ failed, reportDir, mismatchTxt)
-        storeDataSQL(reportDir, data)
+        evalThunk(dataThunk)
         println(msg)
         stats ++ (mism = true)
       } else if (failed.size == 0 && oks.size == 0) {
@@ -338,7 +311,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         stats ++ (invd = true)
       } else {
         if (options.storeMatches) {
-          storeDataSQL(reportDir, data)
+          evalThunk(dataThunk)
           storeResults(q, oks ++ failed, reportDir, matchTxt)
         }
         stats.++()
@@ -347,40 +320,38 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   }
 
   def start() = {
-    val extraInsertStmts = new StringBuilder
     if (!options.solverGen) {
-      populateSchema(
+      DataGeneratorController(
+        schema,
         getInitialDataFile,
-        { () =>
-          if (options.mode.get.equals("test"))
-            NaiveDataGenerator(schema, options.records)()
-          else Map()
-        }) match {
-        case DataGenSucc(stmts) => {
-          Utils.writeToFile(getInitialDataFile, stmts)
-        }
-        case _ => ()
+        if(options.generateData)
+          Some(NaiveDataGenerator(schema, options.records))
+        else None
+        ) populateDBs dbs match {
+        case DataGenSucc(thunk) => thunk()
+        case _                  => ()
       }
     }
     val stats = getQueries()
       .foldLeft(Stats()) { case (stats, (qid, q)) => {
         try {
           val s = QueryInterpreter(q)
-          val (newStats, data) =
-            if (!options.solverGen && options.mode.get.equals("test"))
-              (stats, None)
+          val (newStats, thunk) =
+            if (!options.solverGen && options.generateData) (stats, None)
             else
-              populateSchema(
+              DataGeneratorController(
+                schema,
                 getSQLQueryData(qid),
-                { () =>
-                    SolverDataGenerator(
-                      schema, options.records, q, s, options.solverTimeout)()
-                }) match {
-                  case DataGenFailed      => (stats ++ (timedout = true), None)
-                  case DataExists         => (stats, None)
-                  case DataGenSucc(stmts) => (stats, Some(stmts))
-                }
-          Await.result(prepareFuture(newStats, qid, q, s, data), 10 seconds)
+                if (options.generateData)
+                  Some(SolverDataGenerator(
+                    schema, options.records, q, s, options.solverTimeout))
+                else None
+              ) populateDBs dbs match {
+                case DataGenFailed      => (stats ++ (timedout = true), None)
+                case DataExists         => (stats, None)
+                case DataGenSucc(thunk) => (stats, Some(thunk))
+              }
+          Await.result(prepareFuture(newStats, qid, q, s, thunk), 10 seconds)
         } catch {
           case e: TimeoutException => {
             BlackWhite.tokenize(q).mkString

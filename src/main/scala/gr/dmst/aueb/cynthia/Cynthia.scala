@@ -29,7 +29,13 @@ case class Options (
   onlyWorkDir: Boolean = false,
   solverGen: Boolean = false,
   solverTimeout: Int = 5000
-)
+) {
+
+  def generateData() = mode match {
+    case Some("test") | Some("generate") => true
+    case _ => false
+  }
+}
 
 
 object Cynthia {
