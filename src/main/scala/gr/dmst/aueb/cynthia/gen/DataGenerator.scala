@@ -10,8 +10,15 @@ import gr.dmst.aueb.cynthia._
 import gr.dmst.aueb.cynthia.translators.State
 
 
-object NaiveDataGenerator {
-  def generateRow(fields: Seq[Field], i: Int, foreignKeyCands: Int): Seq[Constant] =
+sealed trait DataGenerator {
+  def apply(): Map[Model, Seq[Seq[Constant]]]
+}
+
+case class NaiveDataGenerator(schema: Schema, nuRecords: Int) {
+
+  private val foreignKeyCands = nuRecords
+
+  def generateRow(fields: Seq[Field], i: Int): Seq[Constant] =
     fields map { case Field(n, t) =>  t match {
       case Serial => Constant(i.toString, UnQuoted)
       case Int8 | Int16 | Int32 | Int64 | Numeric =>
@@ -25,12 +32,19 @@ object NaiveDataGenerator {
         (RUtils.integer(n = foreignKeyCands) + 1).toString, UnQuoted)
     }}
 
-  def apply(model: Model, foreignKeyCands: Int, limit: Int = 1000) = {
+  def generateModelData(model: Model) = {
     def _generateData(data: LazyList[Seq[Constant]], i: Int): LazyList[Seq[Constant]] =
       if (i <= 0) data
-      else _generateData(generateRow(model.fields, i, foreignKeyCands) #:: data, i - 1)
+      else _generateData(generateRow(model.fields, i) #:: data, i - 1)
 
-    _generateData(LazyList.empty, limit)
+    _generateData(LazyList.empty, nuRecords)
+  }
+
+  def apply() = {
+    (schema.getModelsInTopSort map (m => {
+      val model = schema.models(m)
+      (model, generateModelData(model))
+    })).toMap
   }
 }
 

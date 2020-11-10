@@ -262,24 +262,6 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       SolverDataGenerator(schema, q, s, options.records,
                           options.solverTimeout)()
 
-  def generateNaiveData() = {
-    val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) {
-      case (acc, (k, v)) => {
-        val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
-        (v.fields filter Field.isForeign).foldLeft(acc2) { case (acc, Field(_, Foreign(n))) => {
-          acc get k match {
-            case None    => acc + (k -> Set(n))
-            case Some(e) => acc + (k -> (e + n))
-          }
-        }}
-    }}
-    val topSort = Utils.topologicalSort(modelMap)
-    (topSort map (m => {
-      val model = schema.models(m)
-      (model, NaiveDataGenerator(model, options.records, limit = options.records))
-    })).toMap
-  }
-
   def populateSchema(dataFile: String, getData: () => Option[Map[Model, Seq[Seq[Constant]]]]) =
     if (Utils.exists(dataFile)) {
       dbs.foreach { db => DBSetup.setupSchema(db, dataFile) }
@@ -370,17 +352,16 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   }
 
   def start() = {
-    val initialInsertStmts = new StringBuilder
     val extraInsertStmts = new StringBuilder
     if (!options.solverGen) {
       populateSchema(
         getInitialDataFile,
         { () =>
-          if (options.mode.get.equals("test")) Some(generateNaiveData())
+          if (options.mode.get.equals("test"))
+            Some(NaiveDataGenerator(schema, options.records)())
           else None
         }) match {
         case DataGenSucc(stmts) => {
-          initialInsertStmts.append(stmts)
           Utils.writeToFile(getInitialDataFile, stmts)
         }
         case _ => ()
