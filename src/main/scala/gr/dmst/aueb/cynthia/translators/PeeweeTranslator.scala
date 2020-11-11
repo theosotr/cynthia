@@ -181,7 +181,16 @@ case class PeeweeTranslator(target: Target) extends Translator {
         case Seq() | Seq(FieldDecl(Count(None), _, _, _)) => {
           val dFields = TUtils.mapNonHiddenFields(
             s.fields.values, { x => TUtils.toFieldVar(FieldDecl.as(x)) })
-          val fieldStr = dFields mkString ","
+          // When we have distinct, we implicitly add all fields referenced
+          // in the 'order' operation to the list of fields mentioned in
+          // select.
+          val allFields = s.distinct match {
+            case None => dFields
+            case _    => dFields ++ (s.orders map {
+              case (x, _) => getPeeweeFieldName(x, withAlias = false)
+            })
+          }
+          val fieldStr = allFields mkString ","
           val q =
             if (fieldStr.equals(""))
               s"${s.source}.select()"
