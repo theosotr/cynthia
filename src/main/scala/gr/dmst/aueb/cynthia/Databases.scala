@@ -163,6 +163,12 @@ object DBSetup {
           Source.fromFile(schema).mkString.replaceAll(pattern, "`$1`")
         case MSSQL(_, _, _) =>
           Source.fromFile(schema).mkString.replaceAll(pattern, "[$1]")
+        case Postgres(_, _, _) =>
+          // Add this statement at the end of file in order
+          // to disable all foreign key constraints.
+          // TODO: revisit
+          "SET session_replication_role = 'replica';\n" +
+            Source.fromFile(schema).mkString
         case _ => Source.fromFile(schema).mkString
       }
       sql.replace("\n", "")
