@@ -345,6 +345,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
   }
 
   def start() = {
+    println(s"Testing session for ${schema.name} begins...")
     generateInitialData
     val stats = getQueries()
       .foldLeft(Stats()) { case (stats, (qid, q)) => {
