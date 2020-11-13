@@ -511,10 +511,10 @@ case class QueryGenerator(
   def apply(schema: Schema): Query = {
     val qType = RUtils.chooseFrom(List(
       "set",
-      //"aggr",
-      //"union",
-      //"first",
-      //"subset"
+      "aggr",
+      "union",
+      "first",
+      "subset"
     ))
     val cands = if (noCombined) Seq(NewQS) else Seq(NewQS, UnionQS, IntersectQS)
     qType match {
