@@ -1,6 +1,7 @@
 package gr.dmst.aueb.cynthia
 
 import java.io.File
+import scala.io.Source
 
 
 case class Crash(desc: String, target: (String, String))
@@ -113,13 +114,21 @@ object Inspector {
   def apply(schema: String, mismatches: Seq[Int],
             workdir: String): Option[InspectRes] = {
     val dir = Utils.joinPaths(List(
-      workdir, Utils.reportDir, schema, "mismatches"))
+      workdir, Utils.reportDir, schema))
     Utils.listFiles(dir, ext = "") match {
       case None          => None
       case Some(queries) => {
+        val misQueries =
+          // Find the queries where the output of differential testing
+          // was a MISMATCH.
+          queries filter(x => {
+            val file = Utils.joinPaths(List(dir, x, "diff_test.out"))
+            if (!Utils.exists(file)) false
+            else Source.fromFile(file).mkString.equals("MISMATCH")
+          })
         val q = mismatches match {
-          case Seq() => queries
-          case _     => queries map { _.toInt } filter { mismatches.contains(_) } map { _.toString }
+          case Seq() => misQueries
+          case _     => misQueries map { _.toInt } filter { mismatches.contains(_) } map { _.toString }
         }
         Some(q.foldLeft(InspectRes()) { (acc, x) =>
           inspectMismatch(Utils.joinPaths(List(dir, x)), acc)
