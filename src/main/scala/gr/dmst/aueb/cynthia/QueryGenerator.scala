@@ -365,6 +365,14 @@ case class QueryGenerator(
     }
   }
 
+  // This method generates a default field that corresponds to the id
+  // of the source table. The name of this field is '_default'.
+  def genDefaultField(s: GenState, model: Model) = s.dfields match {
+    case Seq() =>
+      s dfield FieldDecl(F(model.name + ".id"), "_default", IntF, hidden = false)
+    case _ => s
+  }
+
   def generateDeclFields(s: GenState, model: Model,
                          nonHidden: Boolean = true,
                          declF: Option[List[FType]] = None,
@@ -443,8 +451,8 @@ case class QueryGenerator(
         case NewQS => {
           // Choose a random model to query.
           val model = RUtils.chooseFrom(s.schema.models.values.toSeq)
-          val s2 = generateDeclFields(s.++, model,
-                                      nonHidden = hiddenF, declF = declF)
+          val s2 = genDefaultField(generateDeclFields(
+            s.++, model, nonHidden = hiddenF, declF = declF), model)
           val qs = New(model.name, s2.dfields)
           val s3 = s2 queryset qs
           val s4 = s3 candidates List(ApplySort, ApplyFilter, ApplyDistinct)

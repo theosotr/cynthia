@@ -334,7 +334,8 @@ case object QueryInterpreter {
       val spec2 =
         if (s1.combined) spec
         else
-          if (spec exists { _._1.equals(idField) }) spec
+          if (spec exists { x =>
+            x._1.equals(idField) || x._1.equals("_default") }) spec
           else spec :+ (idField, Desc)
       val s2 = if (!s1.nonAggrF.isEmpty) s1 addGroupF (s1.source + ".id") else s1
       spec2.foldLeft(s2) { (s, x) => {
@@ -395,8 +396,8 @@ abstract class Translator {
         constructQuery(s, offset = offset, limit = limit)
     }
     val dfields = s.fields.values.filter { !FieldDecl.hidden(_) }.toSeq match {
-      case Seq() => Seq("id")
-      case f     => f.map  { FieldDecl.as }.toSeq
+      case Seq() => Seq("_default") // Here is the default field
+      case f     => (f map FieldDecl.as).toSeq
     }
     val str = preamble + "\n" + qStr.toString
     qStr.ret match {
