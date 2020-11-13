@@ -285,6 +285,28 @@ case class SolverDataGenerator(
     case _ => Map[Model, Seq[Seq[Constant]]]()
   }
 
+  def inspectAggregates() = {
+    def inspectExpr(e: FieldExpr): Unit = e match {
+      case F(f) => f split '.' match {
+        case Array() | Array(_) | Array(_, _) => ()
+        case arr =>
+          constructJoinVars(arr.dropRight(1).toSeq map { _.capitalize })
+      }
+      case Count(Some(e)) => inspectExpr(e)
+      case Sum(e) => inspectExpr(e)
+      case Avg(e) => inspectExpr(e)
+      case Max(e) => inspectExpr(e)
+      case Min(e) => inspectExpr(e)
+      case Add(e1, e2) => {inspectExpr(e1); inspectExpr(e2)}
+      case Sub(e1, e2) => {inspectExpr(e1); inspectExpr(e2)}
+      case Mul(e1, e2) => {inspectExpr(e1); inspectExpr(e2)}
+      case Div(e1, e2) => {inspectExpr(e1); inspectExpr(e2)}
+      case _ => ()
+    }
+
+    (queryState.aggrs map FieldDecl.expr) foreach inspectExpr
+  }
+
   def apply() = schema.models get queryState.source match {
     case None => throw new Exception(
       s"Model '${queryState.source}' not found in schema '${schema.name}'")
@@ -295,6 +317,7 @@ case class SolverDataGenerator(
       vars ++= constructModelVariables(m)
       constructCompoundVariables
       constructOrderJoins
+      inspectAggregates
       val cons = getFieldConstraints(m) ++ getPredConstraints(queryState.preds)
       solver.add(cons:_*)
       generateData
