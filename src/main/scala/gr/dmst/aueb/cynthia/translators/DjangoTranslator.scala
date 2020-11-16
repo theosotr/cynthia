@@ -174,7 +174,7 @@ case class DjangoTranslator(target: Target) extends Translator {
     else {
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
         val str = Str("ExpressionWrapper(") << constructFieldExpr(f) <<
-          ", output_field=TextField())"
+          ", output_field=" + getType(t) + ")"
         acc >> QueryStr(Some(as), Some(str.!))
       }
     }
