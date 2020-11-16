@@ -250,10 +250,13 @@ case class QueryGenerator(
         RUtils.chooseFrom(Seq(FExpr, ConstantExpr))
       else
         if (!forAggr && (s2.depth < minDepth)) {
-          val fExprs = s2.exprCands filter {
-            case FExpr | ConstantExpr => false
+          val fExprs = s2.exprCands filter(e => (fType, e) match {
+            case (None, FExpr) | (None, ConstantExpr)
+              | (Some(NumberF), FExpr) | (Some(NumberF), ConstantExpr) => false
+            case (Some(StrF), FExpr) | (Some(StrF), ConstantExpr)=> true
+            case (Some(StrF), _) => false
             case _ => true
-          }
+          })
           if (fExprs.size > 1) RUtils.chooseFrom(fExprs)
           else RUtils.chooseFrom(s2.exprCands)
         }
@@ -359,8 +362,8 @@ case class QueryGenerator(
       }
       case StartsWithPred => StartsWith(RUtils.chooseFrom(fields), RUtils.word())
       case EndsWithPred => EndsWith(RUtils.chooseFrom(fields), RUtils.word())
-      case AndPred => And(generatePredicate(s2.++, model, fType), generatePredicate(s2.++, model, fType))
-      case OrPred  => Or(generatePredicate(s2.++, model, fType), generatePredicate(s2.++, model, fType))
+      case AndPred => And(generatePredicate(s2.++, model, fType), generatePredicate(s2.++, model, genQSType))
+      case OrPred  => Or(generatePredicate(s2.++, model, fType), generatePredicate(s2.++, model, genQSType))
       case NotPred => Not(generatePredicate(s2.++, model, fType))
     }
   }
