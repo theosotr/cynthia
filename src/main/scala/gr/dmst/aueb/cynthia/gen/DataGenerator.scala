@@ -132,7 +132,8 @@ case class SolverDataGenerator(
     case Constant(v, UnQuoted) => ctx.mkInt(v)
     case Constant(v, Quoted)   => ctx.mkString(v)
     case F(f)                  => getVariableJ(f, i)
-    case Count(_)              => ctx.mkInt("1") // It's the number of records included in each group.
+    case Count(None)           => ctx.mkInt("1") // It's the number of records included in each group.
+    case Count(Some(e))        => { constructExpr(e, i); ctx.mkInt("1") }
     case Sum(e)                => constructExpr(e, i)
     case Avg(e)                => constructExpr(e, i)
     case Max(e)                => constructExpr(e, i)
