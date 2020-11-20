@@ -86,6 +86,8 @@ case class MSSQL (user: String, password: String, dbname: String) extends DB {
 
 object DBSetup {
 
+  private val tableNameRegex = "INSERT INTO \\[([a-zA-Z]+)\\]\\(".r
+
   def getHost(db: DB) = db match {
     case Postgres(user, password, dbname) =>
       "jdbc:postgresql://localhost:5432/" + dbname +
@@ -161,8 +163,19 @@ object DBSetup {
       val sql = db match {
         case MySQL(_, _, _) =>
           Source.fromFile(schema).mkString.replaceAll(pattern, "`$1`")
-        case MSSQL(_, _, _) =>
-          Source.fromFile(schema).mkString.replaceAll(pattern, "[$1]")
+        case MSSQL(_, _, _) => {
+          // First we need to extract the tables related to the INSERT statements
+          // Then, we construct ALTER TABLE XX NOCHECK CONSTRAINT ALL;
+          // These statements are used to disable foreign key constraints.
+          // We apply these statements before data insertion.
+          val source = Source.fromFile(schema).mkString.replaceAll(
+            pattern, "[$1]")
+          val stmts = (tableNameRegex.findAllIn(
+              source).matchData map { _.group(1) }).toSet map { x: String =>
+            "ALTER TABLE [" + x + "] NOCHECK CONSTRAINT ALL;"
+          }
+          (stmts mkString "\n") + "\n" + source
+        }
         case Postgres(_, _, _) =>
           // Add this statement at the end of file in order
           // to disable all foreign key constraints.
