@@ -218,13 +218,16 @@ case class DjangoTranslator(target: Target) extends Translator {
     }
   }
 
-  def constructDistinct(distinct: Option[String]) = distinct match {
+  def constructDistinct(distinct: Option[String],
+                        hasAnnotate: Boolean) = distinct match {
     case Some("") => "distinct()"
     case Some(x)  => {
-      if (x.split('.').size > 1)
+      // Django does not support DISTINCT ON with annotate() calls.
+      if (x.split('.').size > 1 && !hasAnnotate)
         s"distinct('${getDjangoFieldName(x)}')"
       else
-        throw new UnsupportedException("Distincts with declared fields are not supported")
+        throw new UnsupportedException(
+          "Distincts with declared fields are not supported")
     }
     case _  => ""
   }
@@ -259,21 +262,22 @@ case class DjangoTranslator(target: Target) extends Translator {
     }
     val fieldsTopSort = Utils.topologicalSort(computeFieldGraph(s.fields))
     val (aggrF, nonAggrF) = fieldsTopSort partition { x => s.aggrF.contains(x) }
+    val nonAggrFields = nonAggrF filter (x => s.fields get x match {
+      // filter out hidden fields
+      case None    => false
+      case Some(f) => !FieldDecl.hidden(f)
+    })
     // "buz"
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some((Seq(
         qStr.ret.get,
-        // filter out hidden fields
-        constructAnnotate(nonAggrF filter { x => s.fields get x match {
-          case None    => false
-          case Some(f) => !FieldDecl.hidden(f)
-        }}),
+        constructAnnotate(nonAggrFields),
         constructFilter(nonAggrP),
         if (!s.aggrF.isEmpty) constructValues(groupBy ++ s.constantF) else "",
         constructAnnotate(aggrF),
         constructOrderBy(s.orders),
         constructFilter(aggrP),
-        constructDistinct(s.distinct),
+        constructDistinct(s.distinct, !(nonAggrFields.isEmpty && aggrF.isEmpty)),
         constructValues((fieldVals filter { !FieldDecl.hidden(_) } map FieldDecl.as).toSet),
         constructAggrs(s.aggrs),
         constructFirst(first)
