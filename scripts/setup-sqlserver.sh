@@ -21,7 +21,7 @@ sudo ACCEPT_EULA=Y apt-get install -y mssql-tools unixodbc-dev && \
 sudo apt-get -y install libodbc1 unixodbc unixodbc-dev freetds-dev freetds-bin tdsodbc
 
 export PATH="$PATH:/opt/mssql-tools/bin/"
-echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.zshrc
+echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
 
 sqlcmd -S localhost -U SA -P "$MSSQL_SA_PASSWORD" -Q "CREATE LOGIN orm_testing WITH PASSWORD = '$MSSQL_SA_PASSWORD'"
 sqlcmd -S localhost -U SA -P "$MSSQL_SA_PASSWORD" -Q "EXEC sp_addsrvrolemember 'orm_testing', 'sysadmin'"
