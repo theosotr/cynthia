@@ -14,9 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia.gen
+package cynthia.gen
 
-import gr.dmst.aueb.cynthia._
+import cynthia._
 
 
 object SchemaGenerator {

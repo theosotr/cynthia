@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia.gen
+package cynthia.gen
 
 import java.io.File
 import scala.sys.process._
@@ -22,8 +22,8 @@ import scala.collection.immutable.ListMap
 
 import com.microsoft.z3.{Solver,Context,Status,Expr,ArithExpr,IntExpr,SeqExpr,BoolExpr}
 
-import gr.dmst.aueb.cynthia._
-import gr.dmst.aueb.cynthia.translators.{State, SchemaTranslator}
+import cynthia._
+import cynthia.translators.{State, SchemaTranslator}
 
 
 sealed trait DataGenerator {

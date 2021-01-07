@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia
+package cynthia
 
 import java.io.File
 import java.nio.file.{Paths, Files}
@@ -24,8 +24,8 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Try, Success, Failure}
 
-import gr.dmst.aueb.cynthia.gen.SchemaGenerator
-import gr.dmst.aueb.cynthia.translators.SchemaTranslator
+import cynthia.gen.SchemaGenerator
+import cynthia.translators.SchemaTranslator
 
 
 object Controller {

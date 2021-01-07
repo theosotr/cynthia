@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia
+package cynthia
 
 import java.io.{File, FileWriter, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
@@ -25,7 +25,7 @@ import scala.sys.process._
 
 import spray.json._
 
-import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
+import cynthia.serializers.AQLJsonProtocol._
 
 case class Str(str: String) {
   val buff: StringBuilder = new StringBuilder(str)

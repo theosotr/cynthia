@@ -14,10 +14,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia.translators
+package cynthia.translators
 
-import gr.dmst.aueb.cynthia._
-import gr.dmst.aueb.cynthia.gen.NaiveDataGenerator
+import cynthia._
+import cynthia.gen.NaiveDataGenerator
 
 
 object SchemaTranslator {

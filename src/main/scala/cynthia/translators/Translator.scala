@@ -14,11 +14,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia.translators
+package cynthia.translators
 
 import scala.collection.immutable.ListMap
 
-import gr.dmst.aueb.cynthia._
+import cynthia._
 
 
 final case class UnsupportedException(private val message: String)

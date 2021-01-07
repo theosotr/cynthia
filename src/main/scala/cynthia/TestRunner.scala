@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia
+package cynthia
 
 import java.io.File
 import java.nio.file.{Paths, Files}
@@ -30,11 +30,11 @@ import pprint.PPrinter.BlackWhite
 import spray.json._
 import DefaultJsonProtocol._
 
-import gr.dmst.aueb.cynthia.gen.{
+import cynthia.gen.{
   SolverDataGenerator, NaiveDataGenerator, DataGeneratorController,
   DataGenSucc, DataExists, DataGenFailed}
-import gr.dmst.aueb.cynthia.serializers.AQLJsonProtocol._
-import gr.dmst.aueb.cynthia.translators.{QueryInterpreter, SchemaTranslator, State}
+import cynthia.serializers.AQLJsonProtocol._
+import cynthia.translators.{QueryInterpreter, SchemaTranslator, State}
 
 
 case class Target(orm: ORM, db: DB) {

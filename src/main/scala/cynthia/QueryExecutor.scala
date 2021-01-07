@@ -14,12 +14,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia
+package cynthia
 
 import scala.util.{Try, Success, Failure}
 import scala.sys.process._
 
-import gr.dmst.aueb.cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery, State}
+import cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery, State}
 
 sealed trait QueryRes
 case class Ok(res: String) extends QueryRes {

@@ -14,9 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia.translators
+package cynthia.translators
 
-import gr.dmst.aueb.cynthia._
+import cynthia._
 
 
 case class DjangoTranslator(target: Target) extends Translator {

@@ -14,31 +14,28 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package gr.dmst.aueb.cynthia.translators
+package cynthia.translators
 
-import gr.dmst.aueb.cynthia._
+import cynthia._
 
 
-case class SQLAlchemyTranslator(target: Target) extends Translator {
+case class PeeweeTranslator(target: Target) extends Translator {
+  target.db match {
+    case MSSQL(_, _, _) =>
+      throw UnsupportedException("Peewee does not support MSSQL queries")
+    case _ => ()
+  }
 
   override val preamble =
-    s"""from sqlalchemy import (create_engine, or_, and_, not_, func,
-    |     type_coerce, types, literal, asc, desc)
-    |from sqlalchemy.orm import sessionmaker, aliased
-    |from sqlalchemy.exc import SAWarning
-    |from models import *
-    |import numbers, decimal, warnings
+    s"""import numbers, decimal
+    |from peewee import *
+    |from models_${target.db.getName} import *
     |
-    |# Ignore SQLAlchemy warnings
-    |warnings.simplefilter("ignore", category=SAWarning)
+    |# import logging
+    |# logger = logging.getLogger('peewee')
+    |# logger.addHandler(logging.StreamHandler())
+    |# logger.setLevel(logging.DEBUG)
     |
-    |engine = create_engine(
-    |             '${target.db.getURI()}'
-    |             ${if (target.db.getName().equals("cockroachdb")) ",connect_args={'sslmode': 'disable'}" else ""}
-    |         )
-    |Session = sessionmaker(bind=engine)
-    |session = Session()
-
     |def dump(x, label):
     |    if isinstance(x, numbers.Number):
     |        print(label, round(decimal.Decimal(float(x) + 0.00), 2))
@@ -54,7 +51,7 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
     def _dumpField(v: String, fields: Iterable[String], ident: String = "") =
-      fields map { as => s"${ident}dump(getattr($v,'$as', None), '$as')" } mkString "\n"
+      fields map { as => s"${ident}dump(getattr($v, '$as', None), '$as')" } mkString "\n"
     q match {
       case SetRes(_) | SubsetRes(_, _, _) =>
         s"for r in $ret:\n${_dumpField("r", dFields, ident = " " * 4)}"
@@ -69,44 +66,47 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
     }
   }
 
-  def getSQLAlchemyFieldName(field: String, withAlias: Boolean = false) = {
-    def _getSQLAlchemyFieldName(acc: String, segs: List[String]): String = segs match {
+  def getPeeweeFieldName(field: String, withAlias: Boolean = false) = {
+    def _getPeeweeFieldName(acc: String, segs: List[String]): String = segs match {
       case Nil      => acc
       case h :: Nil => acc + "." + h
       case h :: t   =>
-        if (acc.equals("")) _getSQLAlchemyFieldName(h.capitalize, t)
-        else _getSQLAlchemyFieldName(acc + "_" + h.capitalize, t)
+        if (acc.equals("")) _getPeeweeFieldName(h.capitalize, t)
+        else _getPeeweeFieldName(acc + "_" + h.capitalize, t)
     }
-    val segs = (field split '.').toList
+    val segs = field.split('.').toList
     segs match {
-      case f :: Nil => if (withAlias) Utils.quoteStr(f) else TUtils.toFieldVar(f)
-      case _        => _getSQLAlchemyFieldName("", segs)
+      // Revert alias for declared fields.
+      case _ :: Nil =>
+        if (withAlias) TUtils.toFieldVar(field)
+        else TUtils.toFieldVar(field) + ".alias()"
+      case _        => _getPeeweeFieldName("", segs.toList)
     }
   }
 
   def translatePred(pred: Predicate): String = pred match {
     case Eq(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << "==" << constructFieldExpr(e)).!
+      (Str(getPeeweeFieldName(k)) << "==" << constructFieldExpr(e)).!
     case Gt(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << " > " << constructFieldExpr(e)).!
+      (Str(getPeeweeFieldName(k)) << " > " << constructFieldExpr(e)).!
     case Gte(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << " >= " << constructFieldExpr(e)).!
+      (Str(getPeeweeFieldName(k)) << " >= " << constructFieldExpr(e)).!
     case Lt(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << " < " << constructFieldExpr(e)).!
+      (Str(getPeeweeFieldName(k)) << " < " << constructFieldExpr(e)).!
     case Lte(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << " <= " << constructFieldExpr(e)).!
+      (Str(getPeeweeFieldName(k)) << " <= " << constructFieldExpr(e)).!
     case Contains(k, v) =>
-      (Str(getSQLAlchemyFieldName(k)) << ".contains(" << Utils.quoteStr(Utils.escapeStr(v)) << ", autoescape=True)").!
-    case StartsWith(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << ".startswith(" << Utils.quoteStr(Utils.escapeStr(e)) << ", autoescape=True)").!
-    case EndsWith(k, e) =>
-      (Str(getSQLAlchemyFieldName(k)) << ".endswith(" << Utils.quoteStr(Utils.escapeStr(e)) << ", autoescape=True)").!
+      (Str(getPeeweeFieldName(k)) << ".contains(" << Utils.quoteStr(Utils.escapeStr(v)) << ")").!
+    case StartsWith(k, v) =>
+      (Str(getPeeweeFieldName(k)) << ".startswith(" << Utils.quoteStr(Utils.escapeStr(v)) << ")").!
+    case EndsWith(k, v) =>
+      (Str(getPeeweeFieldName(k)) << ".endswith(" << Utils.quoteStr(Utils.escapeStr(v)) << ")").!
     case Not(pred)                  =>
-      (Str("not_(") << translatePred(pred) << ")").!
+      (Str("~(") << translatePred(pred) << ")").!
     case Or(p1, p2)                 =>
-      (Str("or_(") << translatePred(p1) << ", " << translatePred(p2) << ")").!
+      (Str("(") << translatePred(p1) << ") | (" << translatePred(p2) << ")").!
     case And(p1, p2)                =>
-      (Str("and_(") << translatePred(p1) << ", " << translatePred(p2) << ")").!
+      (Str("(") << translatePred(p1) << ") & (" << translatePred(p2) << ")").!
   }
 
   def constructFilter(preds: Set[Predicate], having: Boolean = false) =
@@ -116,7 +116,7 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
       } mkString(".")
     } else {
       preds map { x =>
-        (Str("filter(") << translatePred(x) << ")").!
+        (Str("where(") << translatePred(x) << ")").!
       } mkString(".")
     }
 
@@ -124,16 +124,14 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
     case Seq() => ""
     case spec  =>
       (s.aggrs, target.db) match {
-        case (Seq(_, _*), Postgres(_, _, _))
-        | (Seq(_, _*), Cockroachdb(_, _, _))
-        | (Seq(_, _*), MSSQL(_, _, _)) => ""
+        case (Seq(_, _*), Postgres(_, _, _)) | (Seq(_, _*), Cockroachdb(_, _, _)) => ""
         case _ =>
           (
             Str("order_by(") << (
-              Utils.removeDups(spec) map { x =>
+              spec map { x =>
                 x match {
-                  case (k, Desc) => "desc(" + getSQLAlchemyFieldName(k, withAlias) + ")"
-                  case (k, Asc)  => "asc(" + getSQLAlchemyFieldName(k, withAlias) + ")"
+                  case (k, Desc) => getPeeweeFieldName(k, withAlias = withAlias) + ".desc()"
+                  case (k, Asc)  => getPeeweeFieldName(k, withAlias = withAlias) + ".asc()"
                 }
               } mkString ","
             ) << ")"
@@ -141,53 +139,45 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
       }
   }
 
-  def constructPrimAggr(fexpr: FieldExpr, fprefix: String) = {
+  def constructPrimAggr(fexpr: FieldExpr) = {
     val (field, op) = fexpr match {
-      case Count(None)        => ("", "func.count")
-      case Count(Some(field)) => (constructFieldExpr(field, fprefix), "func.count")
-      case Sum(field)         => (constructFieldExpr(field, fprefix), "func.sum")
-      case Avg(field)         => (constructFieldExpr(field, fprefix), "func.avg")
-      case Min(field)         => (constructFieldExpr(field, fprefix), "func.min")
-      case Max(field)         => (constructFieldExpr(field, fprefix), "func.max")
+      case Count(None)        => ("", "fn.count")
+      case Count(Some(field)) => (constructFieldExpr(field), "fn.count")
+      case Sum(field)         => (constructFieldExpr(field), "fn.sum")
+      case Avg(field)         => (constructFieldExpr(field), "fn.avg")
+      case Min(field)         => (constructFieldExpr(field), "fn.min")
+      case Max(field)         => (constructFieldExpr(field), "fn.max")
       case _                  => ??? // Unreachable case
     }
     op + "(" + field + ")"
   }
 
-  def constructCompoundAggr(fexpr: FieldExpr, fprefix: String) = {
+  def constructCompoundAggr(fexpr: FieldExpr) = {
     val (a1, a2, op) = fexpr match {
-      // For addition, we explicitly use the '+' operator because when the
-      // operands are strings, sqlalchemy generates the '||' db operator.
-      case Add(a1, a2) => (a1, a2, ".op('+')(")
+      case Add(a1, a2) => (a1, a2, " + ")
       case Sub(a1, a2) => (a1, a2, " - ")
       case Mul(a1, a2) => (a1, a2, " * ")
       case Div(a1, a2) => (a1, a2, " / ")
       case _           => ??? // Unreachable case
     }
-    val str = Str("(") << constructFieldExpr(a1, fprefix) << op <<
-      constructFieldExpr(a2, fprefix) << ")"
-    fexpr match {
-      case Add(_, _) => (str << ")").!
-      case _         => str.!
-    }
+    val str = Str("(") << constructFieldExpr(a1) << op << constructFieldExpr(a2) << ")"
+    str.!
   }
 
-  def constructFieldExpr(fexpr: FieldExpr, fprefix: String = ""): String = fexpr match {
-    case F(f)                  =>
-      if (fprefix.equals("")) getSQLAlchemyFieldName(f)
-      else fprefix + "." + TUtils.toLabel(getSQLAlchemyFieldName(f))
-    case Constant(v, UnQuoted) => "literal(" + v + ")"
-    case Constant(v, Quoted)   => "literal(" + Utils.quoteStr(Utils.escapeStr(v)) + ")"
+  def constructFieldExpr(fexpr: FieldExpr): String = fexpr match {
+    case F(f)                  => getPeeweeFieldName(f)
+    case Constant(v, UnQuoted) => s"Value($v, converter=False)"
+    case Constant(v, Quoted)   => s"Value(${Utils.quoteStr(Utils.escapeStr(v))}, converter=False)"
     case _    =>
-      if (!fexpr.compound) constructPrimAggr(fexpr, fprefix)
-      else constructCompoundAggr(fexpr, fprefix)
+      if (!fexpr.compound) constructPrimAggr(fexpr)
+      else constructCompoundAggr(fexpr)
   }
 
   def constructAliases(joins: Seq[Seq[String]]) = {
     joins.foldLeft(QueryStr()) { (acc, x) =>
       val (h :: t) = x.toList.reverse
       val alias = (t.reverse mkString "_") + "_" + h
-      acc >> QueryStr(Some(alias), Some("aliased(" + h + ")"))
+      acc >> QueryStr(Some(alias), Some(h + ".alias()"))
     }
   }
 
@@ -197,21 +187,8 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
       val aliasSuffix =
         if (prefix.isEmpty) ""
         else (prefix mkString "_") + "_"
-      acc :+ s"join(${aliasSuffix}${s}_${t}, ${aliasSuffix}${s}.${t.toLowerCase})"
+      acc :+ s"switch(${aliasSuffix}${s}).join(${aliasSuffix}${s}_${t})"
     }} mkString "."
-
-  def constructAggrPrefix(s: State, subquery: Boolean) = {
-    val prefix = if (subquery) s.source + ".c" else ""
-    val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
-      case FieldDecl(f, l, t, _) =>
-        s"type_coerce(${constructFieldExpr(f, prefix)}, ${getType(t)}).label('$l')"
-    })
-    val qstr = "session.query(" + (aggrs mkString ", ") + ").select_from(" + s.source + ")"
-    QueryStr(
-      Some("ret" + s.numGen.next().toString),
-      Some(qstr)
-    )
-  }
 
   def constructQueryPrefix(s: State) =  s.query match {
     case None =>
@@ -219,18 +196,37 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
         case Seq() | Seq(FieldDecl(Count(None), _, _, _)) => {
           val dFields = TUtils.mapNonHiddenFields(
             s.fields.values, { x => TUtils.toFieldVar(FieldDecl.as(x)) })
-          val fieldStr = dFields mkString ","
+          // When we have distinct, we implicitly add all fields referenced
+          // in the 'order' operation to the list of fields mentioned in
+          // select.
+          val allFields = s.distinct match {
+            case None => dFields
+            case _    => dFields ++ (s.orders map {
+              case (x, _) => getPeeweeFieldName(x, withAlias = false)
+            })
+          }
+          val fieldStr = allFields mkString ","
           val q =
             if (fieldStr.equals(""))
-              "session.query(" + s.source + ")"
+              s"${s.source}.select()"
             else
-              "session.query(" + fieldStr + ").select_from(" + s.source + ")"
+              s"${s.source}.select($fieldStr)"
           QueryStr(
             Some("ret" + s.numGen.next().toString),
             Some(q)
           )
         }
-        case _ => constructAggrPrefix(s, false)
+        case _ => {
+          val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
+            case FieldDecl(f, l, t, _) =>
+              s"(${constructFieldExpr(f)}).coerce(False).alias('$l')"
+          })
+          val qstr = s"${s.source}.select(${(aggrs mkString ", ")})"
+          QueryStr(
+            Some("ret" + s.numGen.next().toString),
+            Some(qstr)
+          )
+        }
       }
     case Some(q) => q
   }
@@ -244,28 +240,24 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
       if (offset > 0) s"offset($offset)"
       else ""
     case Some(limit) =>
-      if (offset > 0)
-        RUtils.chooseFrom(Seq(
-          s"offset($offset).limit($limit)",
-          s"slice($offset, $offset + $limit)")
-        )
+      if (offset > 0) s"offset($offset).limit($limit)"
       else s"limit($limit)"
   }
 
   def getType(ftype: FieldType) = ftype match {
-    case StringF   => "types.String"
-    case IntF      => "types.Integer"
-    case DoubleF   => "types.Float"
-    case BooleanF  => "types.Boolean"
-    case DateTimeF => "types.DateTime"
+    case StringF   => "str"
+    case IntF      => "int"
+    case DoubleF   => "float"
+    case BooleanF  => "bool"
+    case DateTimeF => "str"
   }
 
   def constructFieldDecls(fields: Iterable[FieldDecl]) =
     if (fields.isEmpty) QueryStr()
     else
       fields.foldLeft(QueryStr()) { case (acc, FieldDecl(f, as, t, _)) => {
-        val str = Str("type_coerce(") << constructFieldExpr(f) << ", " << getType(StringF) <<
-          ").label(" << Utils.quoteStr(as) << ")"
+        val str = Str("(") << constructFieldExpr(f) << ").coerce(False)" <<
+          ".alias(" << Utils.quoteStr(as) << ")"
         acc >> QueryStr(Some(TUtils.toFieldVar(as)), Some(str.!))
       }
     }
@@ -274,51 +266,35 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
     case Seq() => ""
     case _     =>
       "group_by(" + (
-        groupBy map { x => getSQLAlchemyFieldName(x) } mkString ", ") + ")"
+        groupBy map { x => getPeeweeFieldName(x) } mkString ", ") + ")"
   }
 
-  def constructDistinct(distinct: Option[String], s: State) = distinct match {
+  def constructDistinct(distinct: Option[String]) = distinct match {
     case Some("") => "distinct()"
-    case Some(x)  => {
-      target.db match {
-        case Postgres(_, _, _) | Cockroachdb(_, _, _) => {
-          if (x.split('.').size > 1)
-            s"distinct(${getSQLAlchemyFieldName(x)})"
-          else
-            s"distinct(${TUtils.toFieldVar(x)})"
-        }
-        case _                 =>
-          throw new UnsupportedException("Distinct on is supported only by Postgres")
-      }
-    }
+    case Some(x)  => s"distinct(${getPeeweeFieldName(x, withAlias = false)})"
     case _        => ""
   }
 
   override def constructCombinedQuery(s: State) = {
+    if (!s.aggrs.isEmpty)
+      throw UnsupportedException(
+        "Aggregate functions are not supported in combined queries")
     val qstr = constructQueryPrefix(s)
-    val qstr2 = qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
+    qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qstr.ret.get,
         constructOrderBy(s, true),
-        if (!s.aggrs.isEmpty) "subquery()" else ""
+        "objects()",
+        s.aggrs match {
+          case Seq() => ""
+          case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
+          case _ => "first()"
+        }
       ) filter {
         case "" => false
         case _  => true
       }  mkString("."))
     )
-    if (!s.aggrs.isEmpty) {
-      val str = qstr2 >> constructAggrPrefix(s source qstr2.ret.get, true)
-      str >> QueryStr(Some("ret" + s.numGen.next().toString),
-        Some(
-          str.ret.get +
-          (s.aggrs match {
-            case Seq() => ""
-            case Seq(FieldDecl(Count(None), _, _, _)) => ".count()"
-            case _ => ".first()"
-          })
-        )
-      )
-    } else qstr2
   }
 
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
@@ -328,8 +304,8 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
         "Distinct is not supported in aggregate queries.")
     }
     val fieldVals = s.fields.values
-    val aliasStms = constructAliases(s.joins)
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
+    val aliasStms = constructAliases(s.joins)
     val qStr = aliasStms >> constructFieldDecls(fieldVals) >> constructQueryPrefix(s)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
     qStr >> QueryStr(Some("ret" + s.numGen.next().toString),
@@ -340,7 +316,8 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
         constructGroupBy(s.getNonConstantGroupingFields),
         constructFilter(aggrP, having = true),
         constructOrderBy(s, false),
-        constructDistinct(s.distinct, s),
+        constructDistinct(s.distinct),
+        "objects()",
         s.aggrs match {
           case Seq() => ""
           case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
