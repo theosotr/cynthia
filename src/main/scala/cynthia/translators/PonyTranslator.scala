@@ -18,9 +18,9 @@ package cynthia.translators
 
 import scala.collection.immutable.ListMap
 
-import cynthia.Target
+import cynthia.targets.Target
 import cynthia.lang._
-import cynthia.orms.MSSQL
+import cynthia.targets.MSSQL
 import cynthia.utils.{Utils, Str}
 
 

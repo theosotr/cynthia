@@ -18,9 +18,9 @@ package cynthia.translators
 
 import scala.collection.immutable.ListMap
 
-import cynthia.Target
+import cynthia.targets.Target
 import cynthia.lang._
-import cynthia.orms.{Django, Peewee, SQLAlchemy, ActiveRecord, Sequelize, Pony}
+import cynthia.targets.{Django, Peewee, SQLAlchemy, ActiveRecord, Sequelize, Pony}
 import cynthia.utils.Utils
 
 

@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia.orms
+package cynthia.targets
 
 import java.io.File
 import java.sql.{Connection, DriverManager, ResultSet}

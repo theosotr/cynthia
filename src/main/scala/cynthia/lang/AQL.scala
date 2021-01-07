@@ -16,7 +16,7 @@
 
 package cynthia.lang
 
-import cynthia.orms.{DB, SQLite, MySQL, Postgres, MSSQL, Cockroachdb}
+import cynthia.targets.{DB, SQLite, MySQL, Postgres, MSSQL, Cockroachdb}
 
 
 sealed trait ConstantType

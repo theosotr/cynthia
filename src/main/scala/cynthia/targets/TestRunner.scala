@@ -14,7 +14,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.targets
 
 import java.io.File
 import java.nio.file.{Paths, Files}
@@ -30,16 +30,14 @@ import pprint.PPrinter.BlackWhite
 import spray.json._
 import DefaultJsonProtocol._
 
+import cynthia.Options
 import cynthia.lang.{Schema, Query}
 import cynthia.lang.AQLJsonProtocol._
-import cynthia.orms.{ORM, DB, Django, Sequelize, ActiveRecord, Peewee,
-  SQLAlchemy, Pony, DBSetup, MySQL, Postgres, MSSQL, SQLite, ProjectCreator,
-  Cockroachdb}
 import cynthia.gen.{
   SolverDataGenerator, NaiveDataGenerator, DataGeneratorController,
   DataGenSucc, DataExists, DataGenFailed, QueryGenerator}
-import cynthia.utils.Utils
 import cynthia.translators.{QueryInterpreter, SchemaTranslator, State}
+import cynthia.utils.Utils
 
 
 case class Target(orm: ORM, db: DB) {

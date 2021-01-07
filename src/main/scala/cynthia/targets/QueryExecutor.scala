@@ -14,14 +14,12 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.targets
 
 import scala.util.{Try, Success, Failure}
 import scala.sys.process._
 
 import cynthia.lang.Query
-import cynthia.orms.{ORM, DB, Django, Sequelize, ActiveRecord, Peewee,
-  SQLAlchemy}
 import cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery,
   State}
 import cynthia.utils.Utils

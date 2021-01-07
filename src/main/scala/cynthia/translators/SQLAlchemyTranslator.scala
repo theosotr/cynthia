@@ -16,9 +16,9 @@
 
 package cynthia.translators
 
-import cynthia.Target
+import cynthia.targets.Target
 import cynthia.lang._
-import cynthia.orms.{Cockroachdb, Postgres, MSSQL}
+import cynthia.targets.{Cockroachdb, Postgres, MSSQL}
 import cynthia.utils.{Utils, RUtils, Str}
 
 
