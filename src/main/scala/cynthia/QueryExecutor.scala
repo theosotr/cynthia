@@ -19,7 +19,13 @@ package cynthia
 import scala.util.{Try, Success, Failure}
 import scala.sys.process._
 
-import cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery, State}
+import cynthia.lang.Query
+import cynthia.orms.{ORM, DB, Django, Sequelize, ActiveRecord, Peewee,
+  SQLAlchemy}
+import cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery,
+  State}
+import cynthia.utils.Utils
+
 
 sealed trait QueryRes
 case class Ok(res: String) extends QueryRes {

@@ -16,7 +16,8 @@
 
 package cynthia.gen
 
-import cynthia._
+import cynthia.lang._
+import cynthia.utils.RUtils
 
 
 object SchemaGenerator {

@@ -14,7 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.orms
+
+import cynthia.utils.Utils
 
 
 sealed abstract class ORM(

@@ -14,18 +14,21 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.utils
 
-import java.io.{File, FileWriter, FileInputStream, FileOutputStream}
+import java.io.{File, FileWriter, FileInputStream, FileOutputStream,
+                BufferedWriter}
 import java.nio.file.{Files, Paths}
-import java.io.{BufferedWriter, FileWriter}
+
 import scala.reflect.io.Directory
 import scala.io.Source
 import scala.sys.process._
 
 import spray.json._
 
-import cynthia.serializers.AQLJsonProtocol._
+import cynthia.lang.Query
+import cynthia.lang.AQLJsonProtocol._
+
 
 case class Str(str: String) {
   val buff: StringBuilder = new StringBuilder(str)

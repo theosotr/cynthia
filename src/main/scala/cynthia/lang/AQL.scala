@@ -14,7 +14,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.lang
+
+import cynthia.orms.{DB, SQLite, MySQL, Postgres, MSSQL, Cockroachdb}
+
 
 sealed trait ConstantType
 case object Quoted extends ConstantType

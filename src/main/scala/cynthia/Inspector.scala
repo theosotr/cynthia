@@ -19,6 +19,8 @@ package cynthia
 import java.io.File
 import scala.io.Source
 
+import cynthia.utils.Utils
+
 
 case class Crash(desc: String, target: (String, String))
 case class QueryResult(queryId: Int, out: String, backend: String)

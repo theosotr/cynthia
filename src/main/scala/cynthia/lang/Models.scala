@@ -14,7 +14,9 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.lang
+
+import cynthia.utils.Utils
 
 
 sealed trait DataType {

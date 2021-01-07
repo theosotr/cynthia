@@ -20,10 +20,13 @@ import java.io.File
 import scala.sys.process._
 import scala.collection.immutable.ListMap
 
-import com.microsoft.z3.{Solver,Context,Status,Expr,ArithExpr,IntExpr,SeqExpr,BoolExpr}
+import com.microsoft.z3.{Solver, Context, Status, Expr, ArithExpr, IntExpr,
+  SeqExpr, BoolExpr}
 
-import cynthia._
+import cynthia.lang._
+import cynthia.orms.{DB, DBSetup}
 import cynthia.translators.{State, SchemaTranslator}
+import cynthia.utils.{Utils, RUtils, Str}
 
 
 sealed trait DataGenerator {

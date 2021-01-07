@@ -16,7 +16,10 @@
 
 package cynthia.translators
 
-import cynthia._
+import cynthia.Target
+import cynthia.lang._
+import cynthia.orms.{MSSQL, Cockroachdb, Postgres}
+import cynthia.utils.{Utils, Str}
 
 
 case class PeeweeTranslator(target: Target) extends Translator {

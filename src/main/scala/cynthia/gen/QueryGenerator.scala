@@ -14,7 +14,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.gen
+
+import cynthia.lang._
+import cynthia.utils.RUtils
 
 
 sealed trait QuerySetNode

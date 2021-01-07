@@ -16,7 +16,10 @@
 
 package cynthia.translators
 
-import cynthia._
+import cynthia.Target
+import cynthia.lang._
+import cynthia.orms.{Postgres, MySQL, MSSQL, Cockroachdb, SQLite}
+import cynthia.utils.{Utils, RUtils, Str}
 
 
 case class DjangoTranslator(target: Target) extends Translator {

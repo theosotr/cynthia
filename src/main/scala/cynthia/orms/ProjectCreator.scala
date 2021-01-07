@@ -14,9 +14,11 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.orms
 
 import scala.sys.process._
+
+import cynthia.utils.Utils
 
 
 object ProjectCreator {

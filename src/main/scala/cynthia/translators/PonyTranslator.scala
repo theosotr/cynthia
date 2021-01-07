@@ -16,9 +16,12 @@
 
 package cynthia.translators
 
-import cynthia._
-
 import scala.collection.immutable.ListMap
+
+import cynthia.Target
+import cynthia.lang._
+import cynthia.orms.MSSQL
+import cynthia.utils.{Utils, Str}
 
 
 case class PonyTranslator(target: Target) extends Translator {

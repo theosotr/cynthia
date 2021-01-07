@@ -16,8 +16,8 @@
 
 package cynthia.translators
 
-import cynthia._
-import cynthia.gen.NaiveDataGenerator
+import cynthia.lang._
+import cynthia.utils.{Utils, Str}
 
 
 object SchemaTranslator {

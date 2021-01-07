@@ -14,11 +14,13 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia
+package cynthia.orms
 
 import java.io.File
 import java.sql.{Connection, DriverManager, ResultSet}
 import scala.io.Source
+
+import cynthia.utils.Utils
 
 
 sealed trait DB {

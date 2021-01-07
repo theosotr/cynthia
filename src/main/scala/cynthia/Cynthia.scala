@@ -20,6 +20,8 @@ import java.nio.file.{Paths, Files}
 import scala.util.{Success, Failure}
 import scopt.OParser
 
+import cynthia.utils.Utils
+
 
 case class Options (
   mode: Option[String] = None,

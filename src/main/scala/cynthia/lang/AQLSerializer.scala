@@ -14,12 +14,10 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package cynthia.serializers
+package cynthia.lang
 
 import spray.json._
 import DefaultJsonProtocol._
-
-import cynthia._
 
 
 object AQLJsonProtocol extends DefaultJsonProtocol {
