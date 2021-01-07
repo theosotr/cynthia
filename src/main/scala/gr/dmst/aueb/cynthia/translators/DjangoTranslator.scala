@@ -312,7 +312,7 @@ case class DjangoTranslator(target: Target) extends Translator {
     case Lte(k, e) =>
       (Str(getDjangoFieldName(k)) << "__lte=" << constructFieldExpr(e)).!
     case Contains(k, e)             =>
-      (Str(getDjangoFieldName(k)) << "__contains=" << constructFieldExpr(e)).!
+      (Str(getDjangoFieldName(k)) << "__contains=" << Utils.quoteStr(Utils.escapeStr(e))).!
     case StartsWith(k, e)           =>
       (Str(getDjangoFieldName(k)) << "__startswith=" << Utils.quoteStr(Utils.escapeStr(e))).!
     case EndsWith(k, e)           =>

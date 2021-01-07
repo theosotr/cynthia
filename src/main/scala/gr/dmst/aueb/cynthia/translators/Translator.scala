@@ -295,7 +295,7 @@ case object QueryInterpreter {
     case Gte(k, e)        => traverseFieldExpr(setJoinAndGroup(k, s), e)
     case Lt(k, e)         => traverseFieldExpr(setJoinAndGroup(k, s), e)
     case Lte(k, e)        => traverseFieldExpr(setJoinAndGroup(k, s), e)
-    case Contains(k, e)   => traverseFieldExpr(setJoinAndGroup(k, s), e)
+    case Contains(k, e)   => setJoinAndGroup(k, s)
     case StartsWith(k, e) => setJoinAndGroup(k, s)
     case EndsWith(k, e)   => setJoinAndGroup(k, s)
     case Not(pred)        => traversePredicate(s, pred)

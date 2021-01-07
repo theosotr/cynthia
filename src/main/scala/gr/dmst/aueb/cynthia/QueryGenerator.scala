@@ -358,7 +358,7 @@ case class QueryGenerator(
       }
       case ContainsPred => {
         val field = RUtils.chooseFrom(fields)
-        Contains(field, Constant(RUtils.word(), Quoted))
+        Contains(field, RUtils.word())
       }
       case StartsWithPred => StartsWith(RUtils.chooseFrom(fields), RUtils.word())
       case EndsWithPred => EndsWith(RUtils.chooseFrom(fields), RUtils.word())

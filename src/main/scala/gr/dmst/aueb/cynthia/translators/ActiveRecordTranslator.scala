@@ -218,7 +218,7 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
       case Gte(k, e)        => handlePredicate(k, e, ">=")
       case Lt(k, e)         => handlePredicate(k, e, "<")
       case Lte(k, e)        => handlePredicate(k, e, "<=")
-      case Contains(k, e)   => handlePredicate(k, e, "LIKE")
+      case Contains(k, e)   => handlePredicate(k, Constant(e, Quoted), "LIKE")
       case StartsWith(k, e) => handleWithPredicate(k, e, "StartsWith")
       case EndsWith(k, e)   => handleWithPredicate(k, e, "EndsWith")
       case Or(p1, p2)       => {

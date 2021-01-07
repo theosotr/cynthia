@@ -210,7 +210,7 @@ object AQLJsonProtocol extends DefaultJsonProtocol {
                 case "Contains" =>
                   fields("Contains") match {
                     case JsObject(values) =>
-                      Contains(values("k").convertTo[String], values("f").convertTo[FieldExpr])
+                      Contains(values("k").convertTo[String], values("f").convertTo[String])
                     case _ => deserializationError("Contains expected")
                   }
                 case "StartsWith" =>

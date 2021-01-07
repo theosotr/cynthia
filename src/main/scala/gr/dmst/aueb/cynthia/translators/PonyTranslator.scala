@@ -148,7 +148,7 @@ case class PonyTranslator(target: Target) extends Translator {
     case Lte(k, e) =>
       (Str(getPonyFieldName(k)) << " <= " << constructFieldExpr(e)).!
     case Contains(k, e) =>
-      (Str(constructFieldExpr(e)) << " in " << getPonyFieldName(k)).!
+      (Str(constructFieldExpr(Constant(e, Quoted))) << " in " << getPonyFieldName(k)).!
     case StartsWith(k, v) =>
       (Str(getPonyFieldName(k)) << ".startswith(" << Utils.quoteStr(Utils.escapeStr(v), "\"") << ")").!
     case EndsWith(k, v) =>

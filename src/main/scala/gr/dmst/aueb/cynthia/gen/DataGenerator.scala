@@ -173,13 +173,12 @@ case class SolverDataGenerator(
     case Lte(k, e)      => constructConstraint(k, e, { (e1, e2) => ctx.mkLe(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) })
     case Gt(k, e)       => constructConstraint(k, e, { (e1, e2) => ctx.mkGt(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) })
     case Gte(k, e)      => constructConstraint(k, e, { (e1, e2) => ctx.mkGe(e1.asInstanceOf[ArithExpr], e2.asInstanceOf[ArithExpr]) })
-    case Contains(k, Constant(v, _)) =>
+    case Contains(k, v) =>
       constructConstraint(
         k,
         Constant(v, Quoted),
         { (e1, e2) => ctx.mkContains(e1.asInstanceOf[SeqExpr], e2.asInstanceOf[SeqExpr]) }
       )
-    case Contains(_, _) => ??? // Unreachable case
     case StartsWith(k, v) =>
       constructConstraint(
         k,
