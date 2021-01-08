@@ -31,7 +31,7 @@ WORKDIR ${HOME}
 ADD ./scripts/setup-orms.sh ${HOME}/scripts/setup-orms.sh
 
 # Setup a Python3 virtual environment.
-RUN pip3 install virtualenv
+RUN sudo pip3 install virtualenv
 
 # Clone Python ORMs
 RUN git clone https://github.com/django/django
@@ -66,5 +66,7 @@ RUN git clone https://github.com/theosotr/rmre && \
   sudo gem install rmre-0.0.9.gem
 
 ADD ./entrypoint/entrypoint.sh /usr/local/bin/
+
+USER cynthia
 WORKDIR ${HOME}
 ENTRYPOINT ["entrypoint.sh"]
