@@ -47,7 +47,6 @@ RUN sudo npm install --unsafe-perm -g \
   pg pg-hstore \
   mysql \
   tedious \
-  sequelize \
   sequelize-auto
 
 RUN npm install --save \
