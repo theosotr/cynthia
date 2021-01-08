@@ -18,7 +18,7 @@ ADD ./Makefile ${HOME}/cynthia_src/Makefile
 ADD ./scripts/cynthia ${HOME}/cynthia_src/scripts/
 ADD ./lib ${HOME}/cynthia_src/lib
 
-RUN sudo chown -R cynthia:cynthia ${HOME}/cynthia_src
+RUN sudo chown -R cynthia:cynthia ${HOME}
 WORKDIR ${HOME}/cynthia_src
 
 # Build project
@@ -31,7 +31,7 @@ WORKDIR ${HOME}
 ADD ./scripts/setup-orms.sh ${HOME}/scripts/setup-orms.sh
 
 # Setup a Python3 virtual environment.
-RUN sudo pip3 install virtualenv
+RUN pip3 install virtualenv
 
 # Clone Python ORMs
 RUN git clone https://github.com/django/django
@@ -47,6 +47,7 @@ RUN sudo npm install --unsafe-perm -g \
   pg pg-hstore \
   mysql \
   tedious \
+  sequelize \
   sequelize-auto
 
 RUN npm install --save \
@@ -64,4 +65,6 @@ RUN git clone https://github.com/theosotr/rmre && \
   gem build rmre.gemspec && \
   sudo gem install rmre-0.0.9.gem
 
+ADD ./entrypoint/entrypoint.sh /usr/local/bin/
 WORKDIR ${HOME}
+ENTRYPOINT ["entrypoint.sh"]
