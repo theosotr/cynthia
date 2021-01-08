@@ -8,7 +8,8 @@ sudo add-apt-repository "$(wget -qO- https://packages.microsoft.com/config/ubunt
 sudo apt update
 sudo apt-get install -y mssql-server
 sudo MSSQL_SA_PASSWORD=$MSSQL_SA_PASSWORD /opt/mssql/bin/mssql-conf -n setup accept-eula
-systemctl status mssql-server --no-pager
+# systemctl status mssql-server --no-pager
+nohup sudo /opt/mssql/bin/sqlservr start &
 
 curl https://packages.microsoft.com/keys/microsoft.asc |
 sudo apt-key add -
