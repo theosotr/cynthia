@@ -36,9 +36,10 @@ install_py_package()
 
   echo "Installing $base, version $version..."
 
-  git clone $1 $workdir/$base
   source $workdir/.env/bin/activate
-  cd $workdir/$base
+  cd $HOME/$base
+  git checkout .
+  git pull origin
   if [ "$version" != "latest" ]; then
     git checkout $version
   fi
@@ -70,20 +71,6 @@ setup()
   install_py_package https://github.com/django/django $django_version
   install_py_package https://github.com/sqlalchemy/sqlalchemy $sqlalchemy_version
   install_py_package https://github.com/coleifer/peewee $peewee_version
-
-  npm install --save sequelize
-  npm install --save sequelize-auto
-  npm install --save sqlite3
-  npm install --save pg pg-hstore
-  npm install --save mysql2
-
-  sudo gem install sqlite3 mysql2 postgres activerecord pg \
-    activerecord-cockroachdb-adapter ruby-odbc sqlserver
-  git clone https://github.com/theosotr/rmre
-  cd rmre
-  gem build rmre.gemspec
-  sudo gem install rmre-0.0.9.gem
-  cd ..
 }
 
 setup
