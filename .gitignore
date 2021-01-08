@@ -1,3 +1,7 @@
+# misc
+.cynthia/
+*/cynthia-assembly-*
+
 # nodejs
 node_modules/
 package-lock.json
