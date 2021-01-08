@@ -66,6 +66,7 @@ RUN git clone https://github.com/theosotr/rmre && \
   sudo gem install rmre-0.0.9.gem
 
 ADD ./entrypoint/entrypoint.sh /usr/local/bin/
+RUN sudo chown cynthia:cynthia -R $HOME/.config
 
 USER cynthia
 WORKDIR ${HOME}
