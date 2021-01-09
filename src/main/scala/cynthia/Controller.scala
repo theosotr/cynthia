@@ -44,9 +44,14 @@ object Controller {
 
   def createNSchemas(nSchemas: Int, nQueries: Int) =
     List.range(0, nSchemas) map(_ => SchemaGenerator()) map(s =>
-        (s, new ProgressBarBuilder().setTaskName(
-          "Session: " + s.name).setInitialMax(nQueries).setStyle(
-            ProgressBarStyle.ASCII).build)
+        (s,
+          new ProgressBarBuilder()
+            .setTaskName("Session: " + s.name)
+            .setInitialMax(nQueries)
+            .setStyle(ProgressBarStyle.ASCII)
+            .setUpdateIntervalMillis(50)
+            .build
+         )
     )
 
   def apply(options: Options) = {
@@ -79,7 +84,8 @@ object Controller {
             // If options.sql and dst are the same file then the direct copy
             // will fail
             Utils.copyFile(sql, "/tmp/cynthia_db")
-            Utils.copyFile("/tmp/cynthia_db", Utils.joinPaths(List(Utils.getSchemaDir, dst)))
+            Utils.copyFile("/tmp/cynthia_db",
+                           Utils.joinPaths(List(Utils.getSchemaDir, dst)))
             val s = Schema(dst, Map())
             _run(options, s, None, {_.start})
           }}
@@ -150,6 +156,7 @@ object Controller {
     try {
       Await.result(
         Future.sequence(f) map { _ =>
+          Thread.sleep(50)
           println(s"Command ${options.mode.get} finished successfully.")
         },
         options.timeout match {
