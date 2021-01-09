@@ -24,6 +24,8 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Try, Success, Failure}
 
+import me.tongfei.progressbar.{ProgressBar, ProgressBarStyle, ProgressBarBuilder};
+
 import cynthia.lang.Schema
 import cynthia.targets.{DBSetup, Postgres, MySQL, TestRunnerCreator,
   TestRunner}
@@ -33,26 +35,36 @@ import cynthia.utils.Utils
 
 
 object Controller {
-  def _run(options: Options, s: Schema, x: TestRunner => Unit) =
-    TestRunnerCreator(options, s) match {
+  def _run(options: Options, s: Schema, pBar: Option[ProgressBar],
+           x: TestRunner => Unit) =
+    TestRunnerCreator(options, s, pBar) match {
       case Success(testRunner) => x(testRunner)
       case Failure(e)          => println(e.getMessage)
     }
+
+  def createNSchemas(nSchemas: Int, nQueries: Int) =
+    List.range(0, nSchemas) map(_ => SchemaGenerator()) map(s =>
+        (s, new ProgressBarBuilder().setTaskName(
+          "Session: " + s.name).setInitialMax(nQueries).setStyle(
+            ProgressBarStyle.ASCII).build)
+    )
 
   def apply(options: Options) = {
     Utils.setWorkDir()
     val f =
       options.mode match {
         case Some("test") =>
-          List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
-            _run(options, s, {_.start})
-          }}
+          createNSchemas(options.schemas, options.nuqueries) map (out =>
+              Future {
+                Utils.writeToFile(out._1.getSchemaPath, SchemaTranslator(out._1))
+                _run(options, out._1, Some(out._2), {_.start})
+              })
         case Some("generate") =>
-          List.range(0, options.schemas) map { _ => SchemaGenerator() } map { s => Future {
-            Utils.writeToFile(s.getSchemaPath, SchemaTranslator(s))
-            _run(options, s, {_.generate})
-          }}
+          createNSchemas(options.schemas, options.nuqueries) map(out =>
+              Future {
+                Utils.writeToFile(out._1.getSchemaPath, SchemaTranslator(out._1))
+                _run(options, out._1, Some(out._2), {_.generate})
+              })
         case Some("run") =>
           List { Future {
             val sql = options.sql match {
@@ -69,14 +81,14 @@ object Controller {
             Utils.copyFile(sql, "/tmp/cynthia_db")
             Utils.copyFile("/tmp/cynthia_db", Utils.joinPaths(List(Utils.getSchemaDir, dst)))
             val s = Schema(dst, Map())
-            _run(options, s, {_.start})
+            _run(options, s, None, {_.start})
           }}
         case Some("replay") =>
           options.schema match {
             case Some(x) => {
               List { Future {
                 val s = Schema(x, Map())
-                _run(options, s, {_.start})
+                _run(options, s, None, {_.start})
               }}
             }
             case None => {
@@ -87,7 +99,7 @@ object Controller {
             ) filter (!_.endsWith(".sql")) map (_.split('/').last) map { s =>
                 Future {
                   val schema = Schema(s, Map())
-                  _run(options, schema, {_.start})
+                  _run(options, schema, None, {_.start})
               }}
           }
         case Some("inspect") => {

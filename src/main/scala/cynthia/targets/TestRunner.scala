@@ -28,7 +28,7 @@ import scala.sys.process._
 
 import pprint.PPrinter.BlackWhite
 import spray.json._
-import DefaultJsonProtocol._
+import me.tongfei.progressbar.ProgressBar;
 
 import cynthia.Options
 import cynthia.lang.{Schema, Query}
@@ -37,7 +37,7 @@ import cynthia.gen.{
   SolverDataGenerator, NaiveDataGenerator, DataGeneratorController,
   DataGenSucc, DataExists, DataGenFailed, QueryGenerator}
 import cynthia.translators.{QueryInterpreter, SchemaTranslator, State}
-import cynthia.utils.Utils
+import cynthia.utils.{Utils, Str}
 
 
 case class Target(orm: ORM, db: DB) {
@@ -94,7 +94,7 @@ object TestRunnerCreator {
   def genTargets(orms: Seq[ORM], backends: Seq[DB]) =
     orms.flatMap(x => backends.map(y => Target(x, y)))
 
-  def apply(options: Options, schema: Schema) = {
+  def apply(options: Options, schema: Schema, pBar: Option[ProgressBar]) = {
     val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
     val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
     val createdb = Try(genBackends(
@@ -119,31 +119,61 @@ object TestRunnerCreator {
         }
     } match {
       case Success(_) => Success(new TestRunner(
-        schema, genTargets(orms, dbs), options))
+        schema, genTargets(orms, dbs), options, pBar))
       case Failure(e) => Failure(e)
     }
   }
 }
 
 case class Stats(
+  pBar: Option[ProgressBar],
   totalQ: Int = 0,
   mismatches: Int = 0,
   invalid: Int = 0,
   solverTimeouts: Int = 0
   ) {
 
-  def ++(mism: Boolean = false, invd: Boolean = false, timedout: Boolean = false) =
-    if (mism)
-      Stats(totalQ + 1, mismatches + 1, invalid, solverTimeouts)
-    else
-      if (invd) Stats(totalQ + 1, mismatches, invalid + 1, solverTimeouts)
+  override def toString() =
+    (Str("Passed \u2714: ") << passed.toString << ", " <<
+    "Failed \u2718: " << mismatches.toString << ", " <<
+    "Unsp: " << invalid.toString << ", " <<
+    "Timeouts: " << solverTimeouts.toString).!
+
+  def updateProgressBar() = pBar match {
+    case None       => None
+    case Some(pBar) => Some(pBar.step)
+  }
+
+  def passed(): Int =
+    totalQ - mismatches - invalid - solverTimeouts
+
+  def log() = pBar match {
+    case None       => ()
+    case Some(pBar) => pBar.setExtraMessage(" " + toString)
+  }
+
+  def ++(mism: Boolean = false, invd: Boolean = false,
+         timedout: Boolean = false) = {
+    updateProgressBar
+    val newStats =
+      if (mism)
+        Stats(pBar, totalQ + 1, mismatches + 1, invalid, solverTimeouts)
       else
-        if (timedout) Stats(totalQ, mismatches, invalid, solverTimeouts + 1)
-        else Stats(totalQ + 1, mismatches, invalid, solverTimeouts)
+        if (invd)
+          Stats(pBar, totalQ + 1, mismatches, invalid + 1, solverTimeouts)
+        else
+          if (timedout)
+            Stats(pBar, totalQ, mismatches, invalid, solverTimeouts + 1)
+          else
+            Stats(pBar, totalQ + 1, mismatches, invalid, solverTimeouts)
+      newStats.log
+      newStats
+  }
 }
 
 
-class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
+class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
+                 pBar: Option[ProgressBar]) {
 
   private val genEnumerator = LazyList.from(1).iterator
 
@@ -337,18 +367,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
       val reportDir = getQueryOutputDir(qid)
       if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
           oks.size > dbs.size) {
-        val msg =
-          s"""${Console.GREEN}[INFO]: Mismatch found in schema '${schema.name}':${Console.RESET}
-          |  - Query ID: $qid
-          |  - Report Directory: $reportDir
-          |  - OK Target Groups:\n${oks.map { case (_, v) =>
-              "    * " + (v.map {_.toString} mkString ", ")
-            } mkString "\n"}
-          |  - Failed Target Group: ${failed.values.flatten.map { _.toString } mkString ", " }
-          """.stripMargin
         storeResults(q, oks ++ failed, reportDir, mismatchTxt)
         evalThunk(dataThunk)
-        println(msg)
         stats ++ (mism = true)
       } else if (failed.size == 0 && oks.size == 0) {
         storeResults(q, oks ++ failed, reportDir, invalidTxt)
@@ -363,11 +383,11 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
     }
   }
 
-  def start() = {
-    println(s"Testing session for ${schema.name} begins...")
+  def start(): Unit = {
+    //println(s"Testing session for ${schema.name} begins...")
     generateInitialData
-    val stats = getQueries()
-      .foldLeft(Stats()) { case (stats, (qid, q)) => {
+    getQueries()
+      .foldLeft(Stats(pBar)) { case (stats, (qid, q)) => {
         try {
           val s = QueryInterpreter(q)
           val (newStats, thunk) =
@@ -398,15 +418,5 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options) {
         }
       }
     }
-    val msg =
-      s"""Testing session for ${schema.name} ends...
-      |Statistics
-      |----------
-      |Total Queries: ${stats.totalQ}
-      |Queries Passed: ${stats.totalQ - stats.mismatches - stats.invalid - stats.solverTimeouts}
-      |Mismatches: ${stats.mismatches}
-      |Invalid Queries: ${stats.invalid}
-      |Solver Timeouts: ${stats.solverTimeouts}\n""".stripMargin
-    println(msg)
   }
 }
