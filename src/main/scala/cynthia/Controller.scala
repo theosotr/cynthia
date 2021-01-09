@@ -63,7 +63,7 @@ object Controller {
           createNSchemas(options.schemas, options.nuqueries) map(out =>
               Future {
                 Utils.writeToFile(out._1.getSchemaPath, SchemaTranslator(out._1))
-                _run(options, out._1, Some(out._2), {_.generate})
+                _run(options, out._1, None, {_.generate})
               })
         case Some("run") =>
           List { Future {
