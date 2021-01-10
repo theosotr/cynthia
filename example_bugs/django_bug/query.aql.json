@@ -1,0 +1,42 @@
+{
+  "Query": {
+    "SetRes": {
+      "qs": {
+        "QuerySet": {
+          "Union": {
+            "q1": {
+              "QuerySet": {
+                "Union": {
+                  "q1": {
+                    "QuerySet": {
+                      "New": {
+                        "f": [],
+                        "m": "T1"
+                      }
+                    }
+                  },
+                  "q2": {
+                    "QuerySet": {
+                      "New": {
+                        "f": [],
+                        "m": "T2"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "q2": {
+              "QuerySet": {
+                "New": {
+                  "f": [],
+                  "m": "T3"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
