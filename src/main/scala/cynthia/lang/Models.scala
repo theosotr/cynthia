@@ -102,6 +102,7 @@ case class Schema(name: String, models: Map[String, Model]) {
               case Some(e) => acc + (k -> (e + n))
             }
           }
+          case _ => ??? // Unreachable case 
         }
       }
     }

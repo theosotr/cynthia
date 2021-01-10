@@ -22,6 +22,7 @@ import cynthia.utils.{Utils, Str}
 
 object SchemaTranslator {
 
+
   def convertDataType(t: DataType) = t match {
     case Serial | Int8 | Int16 | Int32 | Int64 | Foreign(_) => "integer"  
     case Bool => "boolean"
@@ -59,9 +60,9 @@ object SchemaTranslator {
       }
 
     QueryStr(None,
-      Some((Str("CREATE TABLE ") << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") <<
-        " (\n" << getColumns <<
-      "PRIMARY KEY (id)" << getForeignKeys << "\n);\n").!)
+      Some((Str("CREATE TABLE ") << Utils.quoteStr(m.name.toLowerCase(), quotes = "\"") <<
+        " (\n" << getColumns() <<
+      "PRIMARY KEY (id)" << getForeignKeys() << "\n);\n").!)
     )
   }
 
@@ -69,12 +70,15 @@ object SchemaTranslator {
     // First we create a map that holds the dependencies among models
     val modelMap = schema.models.foldLeft(Map[String, Set[String]]()) { case (acc, (k, v)) => {
       val acc2 = if (acc.contains(k)) acc else acc + (k -> Set[String]())
-      (v.fields filter Field.isForeign).foldLeft(acc2) { case (acc, Field(_, Foreign(n))) => {
-        acc get k match {
-          case None    => acc + (k -> Set(n))
-          case Some(e) => acc + (k -> (e + n))
+      (v.fields filter Field.isForeign).foldLeft(acc2) {
+        case (acc, Field(_, Foreign(n))) => {
+          acc get k match {
+            case None    => acc + (k -> Set(n))
+            case Some(e) => acc + (k -> (e + n))
+          }
         }
-      }}
+        case _ => ??? // Unreachable case
+      }
     }}
     val topSort = Utils.topologicalSort(modelMap)
     // Create drop statements in reverse topological order

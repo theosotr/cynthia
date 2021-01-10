@@ -159,7 +159,7 @@ object DBSetup {
 
   def dropDatabases(db: DB, element: String, dbcon: Connection) = db match {
     case SQLite(_) =>
-      Utils.listFiles(Utils.getDBDir, ext = "") match {
+      Utils.listFiles(Utils.getDBDir(), ext = "") match {
         case Some(files) => files foreach Utils.emptyFile
         case None => ()
       }

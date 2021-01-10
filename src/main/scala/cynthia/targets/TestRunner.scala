@@ -134,27 +134,27 @@ case class Stats(
   ) {
 
   override def toString() =
-    (Str("Passed \u2714: ") << passed.toString << ", " <<
-    "Failed \u2718: " << mismatches.toString << ", " <<
-    "Unsp: " << invalid.toString << ", " <<
-    "Timeouts: " << solverTimeouts.toString).!
+    (Str("Passed \u2714: ") << passed.toString() << ", " <<
+    "Failed \u2718: " << mismatches.toString() << ", " <<
+    "Unsp: " << invalid.toString() << ", " <<
+    "Timeouts: " << solverTimeouts.toString()).!
 
   def updateProgressBar() = pBar match {
     case None       => None
     case Some(pBar) => Some(pBar.step)
   }
 
-  def passed(): Int =
+  def passed =
     totalQ - mismatches - invalid - solverTimeouts
 
   def log() = pBar match {
     case None       => ()
-    case Some(pBar) => pBar.setExtraMessage(" " + toString)
+    case Some(pBar) => pBar.setExtraMessage(" " + toString())
   }
 
   def ++(mism: Boolean = false, invd: Boolean = false,
          timedout: Boolean = false) = {
-    updateProgressBar
+    updateProgressBar()
     val newStats =
       if (mism)
         Stats(pBar, totalQ + 1, mismatches + 1, invalid, solverTimeouts)
@@ -166,7 +166,7 @@ case class Stats(
             Stats(pBar, totalQ, mismatches, invalid, solverTimeouts + 1)
           else
             Stats(pBar, totalQ + 1, mismatches, invalid, solverTimeouts)
-      newStats.log
+      newStats.log()
       newStats
   }
 }
@@ -213,10 +213,10 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
   def getQueriesFromCynthia() = {
     // Revisit We want to return a LazyList
     val dirs =
-      if (options.all) Utils.getListOfDirs(getQueriesDir)
+      if (options.all) Utils.getListOfDirs(getQueriesDir())
       // We cannot have options.all and options.mismatches
       else
-        Utils.getListOfDirs(getQueriesDir) filter(p => {
+        Utils.getListOfDirs(getQueriesDir()) filter(p => {
           val diffOut = Utils.joinPaths(List(p, "diff_test.out"))
           val isMismatch =
             Utils.exists(diffOut) &&
@@ -246,30 +246,30 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
           case Some(x) => getQueriesFromDisk(x)
           case None    => ??? // unreachable
         }
-      case Some("replay") => getQueriesFromCynthia
+      case Some("replay") => getQueriesFromCynthia()
       case _ => ??? // unreachable
     }
   }
 
   def getQueriesDir() =
     Utils.joinPaths(List(
-      Utils.getReportDir,
+      Utils.getReportDir(),
       schema.name)
     )
 
   def getQueryOutputDir(qid: Int) =
     Utils.joinPaths(List(
-      Utils.getReportDir,
+      Utils.getReportDir(),
       schema.name,
       qid.toString)
     )
 
   def getInitialDataFile() =
-    Utils.joinPaths(List(Utils.getSchemaDir, s"data_${schema.name}.sql"))
+    Utils.joinPaths(List(Utils.getSchemaDir(), s"data_${schema.name}.sql"))
 
   def getSQLQueryData(qid: Int) =
     Utils.joinPaths(
-      List(Utils.getReportDir, schema.name, qid.toString, "data.sql"))
+      List(Utils.getReportDir(), schema.name, qid.toString, "data.sql"))
 
   def storeResults(q: Query, results: Map[(String, String), Seq[Target]],
                    reportDir: String, diffOut: String) = {
@@ -279,7 +279,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
       results.foreach { case ((_, k), v) => v.foreach { x =>
           // FIXME: For debugging purposes only.
           s"cp -r ${x.orm.projectDir} $reportDir".!!
-          val filename = s"${x.orm.ormName}_${x.db.getName}.out"
+          val filename = s"${x.orm.ormName}_${x.db.getName()}.out"
           Utils.writeToFile(Utils.joinPaths(List(reportDir, filename)), k)
         }
       }
@@ -297,7 +297,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
     if (!options.solverGen) {
       DataGeneratorController(
         schema,
-        getInitialDataFile,
+        getInitialDataFile(),
         Some(NaiveDataGenerator(schema, options.records))
       ) populateDBs dbs match {
         case DataGenSucc(thunk) => thunk()
@@ -307,11 +307,11 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
 
   def generate() = {
     println(s"Generating queries for ${schema.name}...")
-    generateInitialData
+    generateInitialData()
     getQueries().foreach { case (qid, q) =>
       val queriesDir = getQueryOutputDir(qid)
       storeQueries(q, queriesDir)
-      if (!options.solverGen && options.generateData) ()
+      if (!options.solverGen && options.generateData()) ()
       else
         DataGeneratorController(
           schema,
@@ -327,7 +327,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
   }
 
   def loadInitialData() =
-    Source.fromFile(getInitialDataFile).mkString
+    Source.fromFile(getInitialDataFile()).mkString
 
   def evalThunk(dataThunk: Option[() => Unit]) = dataThunk match {
     case None       => () // Empty insert statements.
@@ -385,18 +385,18 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
 
   def start(): Unit = {
     //println(s"Testing session for ${schema.name} begins...")
-    generateInitialData
+    generateInitialData()
     getQueries()
       .foldLeft(Stats(pBar)) { case (stats, (qid, q)) => {
         try {
           val s = QueryInterpreter(q)
           val (newStats, thunk) =
-            if (!options.solverGen && options.generateData) (stats, None)
+            if (!options.solverGen && options.generateData()) (stats, None)
             else
               DataGeneratorController(
                 schema,
                 getSQLQueryData(qid),
-                if (options.generateData)
+                if (options.generateData())
                   Some(SolverDataGenerator(
                     schema, options.records, q, s, options.solverTimeout))
                 else None

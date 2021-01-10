@@ -36,10 +36,10 @@ case class QueryStr(
   builtQ: Seq[String] = Seq()) {
 
   def >>(qstr: QueryStr) =
-    QueryStr(qstr.ret, None, toBuiltQ ++ qstr.toBuiltQ)
+    QueryStr(qstr.ret, None, toBuiltQ() ++ qstr.toBuiltQ())
 
   def <<(qstr: QueryStr) =
-    QueryStr(ret, None, toBuiltQ ++ qstr.toBuiltQ)
+    QueryStr(ret, None, toBuiltQ() ++ qstr.toBuiltQ())
 
   def toBuiltQ() = (ret, q) match {
     case (None, None) | (Some(_), None) => builtQ
@@ -48,7 +48,7 @@ case class QueryStr(
   }
 
   override def toString() =
-    toBuiltQ mkString ("\n")
+    toBuiltQ() mkString ("\n")
 }
 
 case class State(
@@ -224,7 +224,7 @@ case object QueryInterpreter {
       val (g, s) = acc
       x match {
         case FieldDecl(e, as, _, false) =>
-          (if (!e.isAggregate) g + as else g, s + (as -> (e, false)))
+          (if (!e.isAggregate()) g + as else g, s + (as -> (e, false)))
         case FieldDecl(e, as, _, true) => (g, s + (as -> (e, true)))
       }
     }}
@@ -236,8 +236,8 @@ case object QueryInterpreter {
         case Div(e1, e2) => (e1, e2)
         case _           => ???
       }
-      if (e1.isNaiveAggregate) _computeGroupBy(e2, as, g)
-      else if(e2.isNaiveAggregate) _computeGroupBy(e1, as, g)
+      if (e1.isNaiveAggregate()) _computeGroupBy(e2, as, g)
+      else if(e2.isNaiveAggregate()) _computeGroupBy(e1, as, g)
       else _computeGroupBy(e2, as, _computeGroupBy(e1, as, g))
     }
     def _computeGroupBy(e: FieldExpr, as: String, g: Set[String]): Set[String] = e match {
@@ -246,7 +246,7 @@ case object QueryInterpreter {
           case None         => g + f // the field is native
           case Some((e, h)) => {
             val g2 =
-              if (e.isAggregate)
+              if (e.isAggregate())
                 if (h) g - as else (g - as) - f
               else
                 if (h) g else g + f

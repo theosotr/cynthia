@@ -394,7 +394,7 @@ case class SequelizeTranslator(target: Target) extends Translator {
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val method = if (first) ".findOne" else ".findAll"
     // Coverts set of pairs to map of lists.
-    val joinMap = s.getJoinPairs.groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
+    val joinMap = s.getJoinPairs().groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
     val qStr = importModels(joinMap, Set(s.source)) <<
       createAssociations(joinMap) <<
       constructFieldDecls(s, fieldVals ++ s.aggrs)
@@ -406,7 +406,7 @@ case class SequelizeTranslator(target: Target) extends Translator {
           constructAttributes(s),
           constructFilter(s, nonAggrP),
           constructFilter(s, aggrP, having = true),
-          constructGroupBy(s.getNonConstantGroupingFields),
+          constructGroupBy(s.getNonConstantGroupingFields()),
           constructOrderBy(s.orders, s.fields),
           if (offset >= 0) s"offset: $offset" else "",
           limit match {

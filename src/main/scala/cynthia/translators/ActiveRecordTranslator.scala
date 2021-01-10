@@ -211,7 +211,8 @@ case class ActiveRecordTranslator(target: Target) extends Translator {
 
   def translatePred(pred: Predicate, fields: Map[String, String]): (String, String) = {
     def handlePredicate(k: String, e: FieldExpr, symbol: String): (String, String) = {
-      if (!e.isConstant) throw new UnsupportedException("complex where clauses are not supported")
+      if (!e.isConstant())
+        throw new UnsupportedException("complex where clauses are not supported")
       val key = fields.get(k) match {
           case None     => k.split('.').takeRight(2).mkString(".").toLowerCase()
           case Some(s)  => s
@@ -404,13 +405,13 @@ def constructAggrExpr(fexpr: FieldExpr, fields: Map[String, String]) = {
     QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         model,
-        constructJoins(s.getJoinPairs, s.source),
+        constructJoins(s.getJoinPairs(), s.source),
         constructOrderBy(s.orders, fieldsMap),
         constructFilter(nonAggrP, fieldsMap),
         constructFilter(aggrP, fieldsMap, having=true),
         constructOffsetLimit(offset, limit),
         constructSelects(selectFields),
-        constructGroupBy(s.getNonConstantGroupingFields),
+        constructGroupBy(s.getNonConstantGroupingFields()),
         constructDistinct(s.distinct),
         if (first) "first" else "all",
       ) filter {

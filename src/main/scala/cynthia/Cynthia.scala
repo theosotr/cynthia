@@ -67,7 +67,7 @@ object Cynthia {
       // General options
       def ormsOption() =
         opt[Seq[String]]('o', "orms")
-          .required
+          .required()
           .action((x, o) => o.copy(orms = x))
           .text("ORMs to differentially test")
           .validate(_.foldLeft (success) { (acc, x) => x match {
@@ -166,16 +166,16 @@ object Cynthia {
             if (x < 1) failure("Timeout must be greater than 1")
             else success
           ),
-        ormsOption,
-        backendsOption,
-        storeMatchesOption,
-        noCombineOption,
-        recordsOption,
-        minDepthOption,
-        maxDepthOption,
-        wellTypedOption,
-        solverOption,
-        solverTimeoutOption
+        ormsOption(),
+        backendsOption(),
+        storeMatchesOption(),
+        noCombineOption(),
+        recordsOption(),
+        minDepthOption(),
+        maxDepthOption(),
+        wellTypedOption(),
+        solverOption(),
+        solverTimeoutOption()
       )
       cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
         opt[Int]('n', "queries")
@@ -192,13 +192,13 @@ object Cynthia {
             if (x < 1) failure("You must generate at least one schema")
             else success
           }),
-        noCombineOption,
-        recordsOption,
-        minDepthOption,
-        maxDepthOption,
-        wellTypedOption,
-        solverOption,
-        solverTimeoutOption
+        noCombineOption(),
+        recordsOption(),
+        minDepthOption(),
+        maxDepthOption(),
+        wellTypedOption(),
+        solverOption(),
+        solverTimeoutOption()
       )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
@@ -217,8 +217,8 @@ object Cynthia {
               case _ => acc
             }
           }),
-        ormsOption,
-        backendsOption
+        ormsOption(),
+        backendsOption()
       )
       cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")
@@ -239,9 +239,9 @@ object Cynthia {
               failure("File or directory " + x + " does not exist")
             else success
           }),
-          ormsOption,
-          backendsOption,
-          storeMatchesOption
+          ormsOption(),
+          backendsOption(),
+          storeMatchesOption()
         )
       cmd("inspect") action { (_, c) => c.copy(mode = Some("inspect")) } children(
         opt[String]('c', "cynthia")

@@ -65,61 +65,61 @@ case class Min(f: FieldExpr) extends FieldExpr(false) {
 }
 case class Add(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
-    f1.isAggregate || f2.isAggregate
+    f1.isAggregate() || f2.isAggregate()
   def isNaiveAggregate() = false
   def isConstant() =
-    f1.isConstant && f2.isConstant
+    f1.isConstant() && f2.isConstant()
 }
 case class Sub(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
-    f1.isAggregate || f2.isAggregate
+    f1.isAggregate() || f2.isAggregate()
   def isNaiveAggregate() = false
   def isConstant() =
-    f1.isConstant && f2.isConstant
+    f1.isConstant() && f2.isConstant()
 }
 case class Mul(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
-    f1.isAggregate || f2.isAggregate
+    f1.isAggregate() || f2.isAggregate()
   def isNaiveAggregate() = false
   def isConstant() =
-    f1.isConstant && f2.isConstant
+    f1.isConstant() && f2.isConstant()
 }
 case class Div(f1: FieldExpr, f2: FieldExpr) extends FieldExpr(true) {
   def isAggregate() =
-    f1.isAggregate || f2.isAggregate
+    f1.isAggregate() || f2.isAggregate()
   def isNaiveAggregate() = false
   def isConstant() =
-    f1.isConstant && f2.isConstant
+    f1.isConstant() && f2.isConstant()
 }
 
 sealed abstract class Predicate {
   def isAggregateField(field: String, fields: Map[String, FieldDecl]) =
     fields.get(field) match {
       case None                        => false
-      case Some(FieldDecl(f, _, _, _)) => f.isAggregate
+      case Some(FieldDecl(f, _, _, _)) => f.isAggregate()
     }
 
   def hasAggregate(fields: Map[String, FieldDecl]): Boolean
 }
 case class Eq(key: String, value: FieldExpr) extends Predicate {
   def hasAggregate(fields: Map[String, FieldDecl]) =
-    value.isAggregate || isAggregateField(key, fields)
+    value.isAggregate() || isAggregateField(key, fields)
 }
 case class Gt(key: String, value: FieldExpr) extends Predicate {
   def hasAggregate(fields: Map[String, FieldDecl]) =
-    value.isAggregate || isAggregateField(key, fields)
+    value.isAggregate() || isAggregateField(key, fields)
 }
 case class Lt(key: String, value: FieldExpr) extends Predicate {
   def hasAggregate(fields: Map[String, FieldDecl]) =
-    value.isAggregate || isAggregateField(key, fields)
+    value.isAggregate() || isAggregateField(key, fields)
 }
 case class Gte(key: String, value: FieldExpr) extends Predicate {
   def hasAggregate(fields: Map[String, FieldDecl]) =
-    value.isAggregate || isAggregateField(key, fields)
+    value.isAggregate() || isAggregateField(key, fields)
 }
 case class Lte(key: String, value: FieldExpr) extends Predicate {
   def hasAggregate(fields: Map[String, FieldDecl]) =
-    value.isAggregate || isAggregateField(key, fields)
+    value.isAggregate() || isAggregateField(key, fields)
 }
 case class Contains(key: String, value: String) extends Predicate {
   def hasAggregate(fields: Map[String, FieldDecl]) =
@@ -228,7 +228,7 @@ object FieldDecl {
   }
 
   def isAggregate(fieldDecl: FieldDecl) = fieldDecl match {
-    case FieldDecl(f, _, _, _) => f.isAggregate
+    case FieldDecl(f, _, _, _) => f.isAggregate()
   }
 }
 
@@ -245,25 +245,25 @@ case class New(model: String, fields: Seq[FieldDecl]) extends QuerySet {
 case class Apply(op: Operation, q: QuerySet) extends QuerySet {
   def ordered() = op match {
     case Sort(_) => true
-    case _       => q.ordered
+    case _       => q.ordered()
   }
 
   def filtered() = op match {
     case Filter(_) => true
-    case _         => q.filtered
+    case _         => q.filtered()
   }
 
   def combined() =
-    q.combined
+    q.combined()
 }
 case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet {
-  def ordered() = q1.ordered && q2.ordered
-  def filtered() = q1.filtered || q2.filtered
+  def ordered() = q1.ordered() && q2.ordered()
+  def filtered() = q1.filtered() || q2.filtered()
   def combined() = true
 }
 case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet {
-  def ordered() = q1.ordered && q2.ordered
-  def filtered() = q1.filtered || q2.filtered
+  def ordered() = q1.ordered() && q2.ordered()
+  def filtered() = q1.filtered() || q2.filtered()
   def combined() = true
 }
 

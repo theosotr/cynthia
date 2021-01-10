@@ -38,7 +38,7 @@ object RUtils {
   def word(special: Boolean = true): String = {
     val w = Words.value(r.nextInt(Words.value.size))
     val specialChars = Seq("%", "_", "'", "/", "\\")
-    if (!special || bool) w
+    if (!special || bool()) w
     else
       new StringBuilder(w)
         .insert(w.size - 1, chooseFrom(specialChars))
@@ -57,5 +57,5 @@ object RUtils {
     r.nextInt(n) + from
 
   def bool() =
-    r.nextBoolean
+    r.nextBoolean()
 }

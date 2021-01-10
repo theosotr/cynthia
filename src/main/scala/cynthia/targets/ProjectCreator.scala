@@ -49,7 +49,8 @@ object ProjectCreator {
     }
     case SQLAlchemy(_, pdir) => {
       // Use the first element of the db sequence.
-      val models = Utils.runCmd("sqlacodegen --noinflect " + dbs(0).getURI, None)
+      val models = Utils.runCmd("sqlacodegen --noinflect " + dbs(0).getURI(),
+                                None)
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case Peewee(_, pdir) => {
@@ -73,7 +74,7 @@ object ProjectCreator {
           }
           val models = Utils.runCmd(bcmd + cmd, None)
           Utils.writeToFile(
-            orm.getModelsPath().replace(".py", "_" + db.getName + ".py"),
+            orm.getModelsPath().replace(".py", "_" + db.getName() + ".py"),
             models)
         }
       }
@@ -85,40 +86,40 @@ object ProjectCreator {
           Seq(
             bcmd, "-a", "postgresql",
             "-d", dbname, "-u", user, "-p", password,
-            "-o", orm.getModelsPath
+            "-o", orm.getModelsPath()
           ).mkString(" ")
         case MySQL(user, password, dbname) =>
           Seq(
             bcmd, "-a", "mysql2",
             "-d", dbname.toLowerCase, "-u", user, "-p", password,
-            "-o", orm.getModelsPath
+            "-o", orm.getModelsPath()
           ).mkString(" ")
         case SQLite(dbname) =>
           Seq(
             bcmd, "-a", "postgresql",
             "-d", dbname.split("/").last.toLowerCase,
             "-u", "orm_testing", "-p", "orm_testing",
-            "-o", orm.getModelsPath
+            "-o", orm.getModelsPath()
           ).mkString(" ")
         case Cockroachdb(user, password, dbname) =>
           Seq(
             bcmd, "-a", "postgresql",
             "-s", "localhost", "--port", "26257",
             "-d", dbname, "-u", user,
-            "-o", orm.getModelsPath
+            "-o", orm.getModelsPath()
           ).mkString(" ")
         case MSSQL(user, _, dbname) =>
           Seq(
             bcmd, "-a", "postgresql",
             "-d", dbname, "-u", user, "-p", "orm_testing",
-            "-o", orm.getModelsPath
+            "-o", orm.getModelsPath()
           ).mkString(" ")
       }
       Utils.runCmd(cmd, None)
     }
     case Sequelize(_, pdir) => {
       val db = dbs(0)
-      val bcmd = "sequelize-auto"
+      val bcmd = "node_modules/sequelize-auto/bin/sequelize-auto"
       val cmd = db match {
         case Postgres(user, password, dbname) =>
           Seq(
@@ -179,7 +180,7 @@ object ProjectCreator {
           }
           val models = Utils.runCmd(bcmd + cmd, None)
           Utils.writeToFile(
-            orm.getModelsPath().replace(".py", "_" + db.getName + ".py"),
+            orm.getModelsPath().replace(".py", "_" + db.getName() + ".py"),
             models)
         }
       }

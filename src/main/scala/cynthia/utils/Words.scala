@@ -32,5 +32,5 @@ object Words {
   //
   //  Get unique words
   //  awk '{if (length(() > 1) print}' foo | uniq | sort
-  val value = (for (line <- Source.fromResource("words").getLines) yield line).toSeq
+  val value = (for (line <- Source.fromResource("words").getLines()) yield line).toSeq
 }

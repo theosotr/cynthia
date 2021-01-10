@@ -37,7 +37,7 @@ case class PonyTranslator(target: Target) extends Translator {
     s"""import numbers
     |from decimal import Decimal
     |from pony.orm import *
-    |from models_${target.db.getName} import *
+    |from models_${target.db.getName()} import *
     |
     |# set_sql_debug(True)
     |db.generate_mapping()

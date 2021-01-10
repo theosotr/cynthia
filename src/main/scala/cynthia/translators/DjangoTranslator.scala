@@ -276,8 +276,8 @@ case class DjangoTranslator(target: Target) extends Translator {
     val groupBy: Set[String] = s.nonAggrF.toSeq match {
       case Seq(f) =>
         if (f.equals(s.source + ".id")) Set()
-        else s.getNonConstantGroupingFields
-      case _ => s.getNonConstantGroupingFields
+        else s.getNonConstantGroupingFields()
+      case _ => s.getNonConstantGroupingFields()
     }
     val fieldsTopSort = Utils.topologicalSort(computeFieldGraph(s.fields))
     val (aggrF, nonAggrF) = fieldsTopSort partition { x => s.aggrF.contains(x) }

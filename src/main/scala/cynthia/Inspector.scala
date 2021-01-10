@@ -53,7 +53,7 @@ case object InspectRes {
   def dump(str: String, ident: Int = 0) = {
     def dump_ident() =
       List.range(0, ident).foldLeft("") { (acc, x) => acc + " " }
-    println(dump_ident + str)
+    println(dump_ident() + str)
   }
 
   def printMismatches(inspectRes: InspectRes, startIdent: Int) = {

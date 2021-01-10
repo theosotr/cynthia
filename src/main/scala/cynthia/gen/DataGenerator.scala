@@ -60,7 +60,7 @@ case class NaiveDataGenerator(schema: Schema, nuRecords: Int) extends DataGenera
   }
 
   def apply() = {
-    (schema.getModelsInTopSort map (m => {
+    (schema.getModelsInTopSort() map (m => {
       val model = schema.models(m)
       (model, generateModelData(model))
     })).toMap
@@ -231,7 +231,7 @@ case class SolverDataGenerator(
       }
       // Checks whether the variable name corresponds to a grouping field
       // or the primary key of the table.
-      if (!queryState.getNonConstantGroupingFields.contains(varName) || f.equals("id")) {
+      if (!queryState.getNonConstantGroupingFields().contains(varName) || f.equals("id")) {
 		val cons = List.range(0, nuRecords).foldLeft(List[BoolExpr]()) { case (acc, i) =>
 		  List.range(i, nuRecords).foldLeft(acc) { case (acc, j) =>
 			if (i != j) {
@@ -284,7 +284,7 @@ case class SolverDataGenerator(
     case Status.SATISFIABLE => {
       val m = solver.getModel
 
-      val models = schema.getModelsInTopSort filter { declModels.contains(_) }
+      val models = schema.getModelsInTopSort() filter { declModels.contains(_) }
       models.foldLeft(Map[Model, Seq[Seq[Constant]]]()) { case (acc, x) => {
         val model = schema.models(x)
         val records = List.range(0, nuRecords) map { i =>
@@ -334,12 +334,12 @@ case class SolverDataGenerator(
       params.add("timeout", timeout)
       solver.setParameters(params)
       vars ++= constructModelVariables(m)
-      constructCompoundVariables
-      constructOrderJoins
-      inspectAggregates
+      constructCompoundVariables()
+      constructOrderJoins()
+      inspectAggregates()
       val cons = getFieldConstraints(m) ++ getPredConstraints(queryState.preds)
       solver.add(cons:_*)
-      generateData
+      generateData()
     }
   }
 }
@@ -374,7 +374,7 @@ case class DataGeneratorController(
               }.toString
             dbs foreach { db =>
               val dataPath = Utils.joinPaths(
-                List(Utils.getProjectDir, schema.name, s"data_${db.getName}.sql"))
+                List(Utils.getProjectDir(), schema.name, s"data_${db.getName()}.sql"))
               Utils.writeToFile(dataPath, insStms)
               DBSetup.setupSchema(db, dataPath)
             }

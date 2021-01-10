@@ -340,7 +340,7 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
         qStr.ret.get,
         constructJoins(s.joins.toSet.toSeq.sortWith { (x, y) => x.size < y.size }),
         constructFilter(nonAggrP),
-        constructGroupBy(s.getNonConstantGroupingFields),
+        constructGroupBy(s.getNonConstantGroupingFields()),
         constructFilter(aggrP, having = true),
         constructOrderBy(s, false),
         constructDistinct(s.distinct, s),

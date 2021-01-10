@@ -61,14 +61,14 @@ object Controller {
         case Some("test") =>
           createNSchemas(options.schemas, options.nuqueries) map (out =>
               Future {
-                Utils.writeToFile(out._1.getSchemaPath, SchemaTranslator(out._1))
-                _run(options, out._1, Some(out._2), {_.start})
+                Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
+                _run(options, out._1, Some(out._2), {_.start()})
               })
         case Some("generate") =>
           createNSchemas(options.schemas, options.nuqueries) map(out =>
               Future {
-                Utils.writeToFile(out._1.getSchemaPath, SchemaTranslator(out._1))
-                _run(options, out._1, None, {_.generate})
+                Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
+                _run(options, out._1, None, {_.generate()})
               })
         case Some("run") =>
           List { Future {
@@ -85,16 +85,16 @@ object Controller {
             // will fail
             Utils.copyFile(sql, "/tmp/cynthia_db")
             Utils.copyFile("/tmp/cynthia_db",
-                           Utils.joinPaths(List(Utils.getSchemaDir, dst)))
+                           Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
             val s = Schema(dst, Map())
-            _run(options, s, None, {_.start})
+            _run(options, s, None, {_.start()})
           }}
         case Some("replay") =>
           options.schema match {
             case Some(x) => {
               List { Future {
                 val s = Schema(x, Map())
-                _run(options, s, None, {_.start})
+                _run(options, s, None, {_.start()})
               }}
             }
             case None => {
@@ -105,7 +105,7 @@ object Controller {
             ) filter (!_.endsWith(".sql")) map (_.split('/').last) map { s =>
                 Future {
                   val schema = Schema(s, Map())
-                  _run(options, schema, None, {_.start})
+                  _run(options, schema, None, {_.start()})
               }}
           }
         case Some("inspect") => {
@@ -146,7 +146,7 @@ object Controller {
               Postgres(options.dbUser, options.dbPass, "postgres"),
               MySQL(options.dbUser, options.dbPass, "sys")
             ) map { x => Future {
-              println("Cleaning backend " + x.getName + "...")
+              println("Cleaning backend " + x.getName() + "...")
               DBSetup.clean(x)
               }
             })

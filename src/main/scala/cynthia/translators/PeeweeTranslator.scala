@@ -32,7 +32,7 @@ case class PeeweeTranslator(target: Target) extends Translator {
   override val preamble =
     s"""import numbers, decimal
     |from peewee import *
-    |from models_${target.db.getName} import *
+    |from models_${target.db.getName()} import *
     |
     |# import logging
     |# logger = logging.getLogger('peewee')
@@ -316,7 +316,7 @@ case class PeeweeTranslator(target: Target) extends Translator {
         qStr.ret.get,
         constructJoins(s.joins.toSet.toSeq.sortWith { (x, y) => x.size < y.size }),
         constructFilter(nonAggrP),
-        constructGroupBy(s.getNonConstantGroupingFields),
+        constructGroupBy(s.getNonConstantGroupingFields()),
         constructFilter(aggrP, having = true),
         constructOrderBy(s, false),
         constructDistinct(s.distinct),

@@ -59,7 +59,7 @@ object QueryExecutor {
             if (stderr.length != 0 && stdout.length == 0)
               Fail(stderr.toString)
             else 
-              if (q.queryset.ordered) Ok(stdout.toString)
+              if (q.queryset.ordered()) Ok(stdout.toString)
               else {
                 // If the queryset is not ordered we sort the results
                 // so that we can perform safe comparisons about the output.
