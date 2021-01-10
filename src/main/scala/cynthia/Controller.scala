@@ -44,7 +44,7 @@ object Controller {
 
   def createNSchemas(nSchemas: Int, nQueries: Int) =
     List.range(0, nSchemas) map(_ => SchemaGenerator()) map(s =>
-        (s, Utils.buildProgressBar("Session: " + s.name, Some(nQueries)))
+        (s, Utils.buildProgressBar("Testing " + s.name, Some(nQueries)))
     )
 
   def apply(options: Options) = {
@@ -105,21 +105,21 @@ object Controller {
           }
         case Some("inspect") => {
           val reportDir = List(options.dotCynthia, Utils.reportDir)
-          val projects = options.schema match {
+          val sessions = options.schema match {
             case None    => Utils.listFiles(Utils.joinPaths(reportDir), ext = "")
             case Some(s) => Some(Array(Utils.joinPaths(reportDir :+ s)))
           }
-          projects match {
+          sessions match {
             case None           => Nil
-            case Some(projects) =>
+            case Some(sessions) =>
               List(
                 Future.sequence(
-                  projects.toList map { x => new File(x).getName } map { x =>
+                  sessions.toList map { x => new File(x).getName } map { x =>
                     Future { (x, Inspector(x, options.mismatches, options.dotCynthia)) }
-                }) map { res => res map { case (project, res) => {
-                    println(s"${Console.GREEN}Project: ${project}${Console.RESET}")
+                }) map { res => res map { case (session, res) => {
+                    println(s"${Console.GREEN}Session: ${session}${Console.RESET}")
                     res match {
-                      case None      => println(s"No mismatches found for project '${project}'")
+                      case None      => println(s"No mismatches found for session '${session}'")
                       case Some(res) => {
                         InspectRes.printCrashes(res, startIdent = 2)
                         InspectRes.printMismatches(res, startIdent = 2)

@@ -50,7 +50,7 @@ case class Str(str: String) {
 object Utils {
   val cwdDir = ".cynthia"
   val dbDir = "dbs"
-  val projectDir = "projects"
+  val sessionDir = "sessions"
   val reportDir = "report"
   val schemaDir = "schemas"
 
@@ -137,8 +137,8 @@ object Utils {
   def getDBDir() =
     joinPaths(List(".", cwdDir, dbDir))
 
-  def getProjectDir() =
-    joinPaths(List(".", cwdDir, projectDir))
+  def getSessionDir() =
+    joinPaths(List(".", cwdDir, sessionDir))
 
   def getReportDir() =
     joinPaths(List(".", cwdDir, reportDir))
@@ -155,7 +155,7 @@ object Utils {
 
   def setWorkDir() = {
      val workdir = getWorkdir()
-     List(dbDir, projectDir, reportDir, schemaDir)
+     List(dbDir, sessionDir, reportDir, schemaDir)
        .foreach { dir => {
            val fdir = Utils.joinPaths(List(workdir, dir))
            createDir(fdir)

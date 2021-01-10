@@ -110,10 +110,10 @@ object TestRunnerCreator {
         DBSetup.setupSchema(db, schemaPath)
       })
     }
-    val projectDir = Utils.joinPaths(List(Utils.getProjectDir(), schema.name))
-    val orms = genORMs(options.orms, schema.name, projectDir)
+    val sessionDir = Utils.joinPaths(List(Utils.getSessionDir(), schema.name))
+    val orms = genORMs(options.orms, schema.name, sessionDir)
     schemadb.flatMap { _ =>
-      Try(Utils.createDir(projectDir))
+      Try(Utils.createDir(sessionDir))
         .flatMap { _ => Try (
           orms.foreach { orm => ProjectCreator.createProject(orm, dbs) })
         }
