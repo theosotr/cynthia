@@ -306,9 +306,11 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
     }
 
   def generate() = {
-    println(s"Generating queries for ${schema.name}...")
     generateInitialData()
     getQueries().foreach { case (qid, q) =>
+      if (pBar.isDefined) {
+        pBar.get.step()
+      }
       val queriesDir = getQueryOutputDir(qid)
       storeQueries(q, queriesDir)
       if (!options.solverGen && options.generateData()) ()
