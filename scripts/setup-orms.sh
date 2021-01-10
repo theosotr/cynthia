@@ -8,7 +8,7 @@ patch_dir=$HOME/patches
 get_version()
 {
   orm_name=$1
-  version=$(grep '$orm_name: .*' < $version_file |
+  version=$(grep "$orm_name: .*" < $version_file |
             sed -r "s/$orm_name: (.*)/\1/g")
   if [ -z $version ]; then
     echo "latest"

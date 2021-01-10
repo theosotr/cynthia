@@ -39,12 +39,12 @@ done
 
 echo "django: $django_v" > $HOME/versions.txt
 echo "peewee: $peewee_v" >> $HOME/versions.txt
-echo "sqlalchemy: $sqlalchemy_v" > $HOME/versions.txt
+echo "sqlalchemy: $sqlalchemy_v" >> $HOME/versions.txt
 echo "activerecord: $activerecord_v" >> $HOME/versions.txt
 echo "sequelize: $sequelize_v" >> $HOME/versions.txt
 
 # Setup ORMs
-$HOME/scripts/setup-orms.sh $HOME
+$HOME/scripts/setup-orms.sh $HOME $HOME/versions.txt
 
 # Initialize Backends
 echo "Initialize Backends"
@@ -58,4 +58,7 @@ if [ $# -eq 0  ]; then
   /bin/bash
   exit 0
 fi
+echo
+echo
+echo "Running $@"
 eval "$@"
