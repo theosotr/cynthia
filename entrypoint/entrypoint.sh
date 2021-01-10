@@ -54,4 +54,8 @@ sudo /etc/init.d/mysql start
 sudo /etc/init.d/postgresql start
 
 source $HOME/.env/bin/activate
+if [ $# -eq 0  ]; then
+  /bin/bash
+  exit 0
+fi
 eval "$@"
