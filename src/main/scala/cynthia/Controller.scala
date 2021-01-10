@@ -42,9 +42,9 @@ object Controller {
       case Failure(e)          => println(e.getMessage)
     }
 
-  def createNSchemas(nSchemas: Int, nQueries: Int) =
+  def createNSchemas(nSchemas: Int, nQueries: Int, prefix: String) =
     List.range(0, nSchemas) map(_ => SchemaGenerator()) map(s =>
-        (s, Utils.buildProgressBar("Testing " + s.name, Some(nQueries)))
+        (s, Utils.buildProgressBar(prefix + " " + s.name, Some(nQueries)))
     )
 
   def apply(options: Options) = {
@@ -52,13 +52,13 @@ object Controller {
     val f =
       options.mode match {
         case Some("test") =>
-          createNSchemas(options.schemas, options.nuqueries) map (out =>
+          createNSchemas(options.schemas, options.nuqueries, "Testing") map (out =>
               Future {
                 Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
                 _run(options, out._1, Some(out._2), {_.start()})
               })
         case Some("generate") =>
-          createNSchemas(options.schemas, options.nuqueries) map(out =>
+          createNSchemas(options.schemas, options.nuqueries, "Generating") map(out =>
               Future {
                 Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
                 _run(options, out._1, Some(out._2), {_.generate()})
