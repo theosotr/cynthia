@@ -24,6 +24,7 @@ import scala.reflect.io.Directory
 import scala.io.Source
 import scala.sys.process._
 
+import me.tongfei.progressbar.{ProgressBarStyle, ProgressBarBuilder};
 import spray.json._
 
 import cynthia.lang.Query
@@ -227,4 +228,15 @@ object Utils {
 
   def escapeStr(str: String): String =
     str.replace("\\", "\\\\").replace("'", "\\'")
+
+  def buildProgressBar(name: String, max: Option[Int]) = {
+    val pbarBuilder = new ProgressBarBuilder()
+      .setTaskName(name)
+      .setUpdateIntervalMillis(50)
+      .setStyle(ProgressBarStyle.ASCII)
+    max match {
+      case None => pbarBuilder.build()
+      case Some(max) => pbarBuilder.setInitialMax(max).build()
+    }
+  }
 }

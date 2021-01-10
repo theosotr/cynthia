@@ -24,7 +24,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Try, Success, Failure}
 
-import me.tongfei.progressbar.{ProgressBar, ProgressBarStyle, ProgressBarBuilder};
+import me.tongfei.progressbar.ProgressBar;
 
 import cynthia.lang.Schema
 import cynthia.targets.{DBSetup, Postgres, MySQL, TestRunnerCreator,
@@ -44,14 +44,7 @@ object Controller {
 
   def createNSchemas(nSchemas: Int, nQueries: Int) =
     List.range(0, nSchemas) map(_ => SchemaGenerator()) map(s =>
-        (s,
-          new ProgressBarBuilder()
-            .setTaskName("Session: " + s.name)
-            .setInitialMax(nQueries)
-            .setStyle(ProgressBarStyle.ASCII)
-            .setUpdateIntervalMillis(50)
-            .build
-         )
+        (s, Utils.buildProgressBar("Session: " + s.name, Some(nQueries)))
     )
 
   def apply(options: Options) = {
@@ -68,7 +61,7 @@ object Controller {
           createNSchemas(options.schemas, options.nuqueries) map(out =>
               Future {
                 Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
-                _run(options, out._1, None, {_.generate()})
+                _run(options, out._1, Some(out._2), {_.generate()})
               })
         case Some("run") =>
           List { Future {
@@ -87,14 +80,17 @@ object Controller {
             Utils.copyFile("/tmp/cynthia_db",
                            Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
             val s = Schema(dst, Map())
-            _run(options, s, None, {_.start()})
+            _run(options, s,
+                 Some(Utils.buildProgressBar(schema, None)),
+                 {_.start()})
           }}
         case Some("replay") =>
           options.schema match {
             case Some(x) => {
               List { Future {
                 val s = Schema(x, Map())
-                _run(options, s, None, {_.start()})
+                _run(options, s, Some(Utils.buildProgressBar(x, None)),
+                     {_.start()})
               }}
             }
             case None => {
@@ -105,7 +101,8 @@ object Controller {
             ) filter (!_.endsWith(".sql")) map (_.split('/').last) map { s =>
                 Future {
                   val schema = Schema(s, Map())
-                  _run(options, schema, None, {_.start()})
+                  _run(options, schema, Some(Utils.buildProgressBar(s, None)),
+                       {_.start()})
               }}
           }
         case Some("inspect") => {
