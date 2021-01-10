@@ -69,10 +69,6 @@ object Controller {
               case Some(x) => x
               case None    => ""
             }
-            val schema = options.schema match {
-              case Some(x) => x
-              case None    => ""
-            }
             val dst = Utils.basenameWithoutExtension(sql)
             // If options.sql and dst are the same file then the direct copy
             // will fail
@@ -81,7 +77,7 @@ object Controller {
                            Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
             val s = Schema(dst, Map())
             _run(options, s,
-                 Some(Utils.buildProgressBar(schema, None)),
+                 Some(Utils.buildProgressBar("Running " + dst,  None)),
                  {_.start()})
           }}
         case Some("replay") =>
@@ -89,7 +85,8 @@ object Controller {
             case Some(x) => {
               List { Future {
                 val s = Schema(x, Map())
-                _run(options, s, Some(Utils.buildProgressBar(x, None)),
+                _run(options, s,
+                     Some(Utils.buildProgressBar("Replaying " + x, None)),
                      {_.start()})
               }}
             }
@@ -101,7 +98,8 @@ object Controller {
             ) filter (!_.endsWith(".sql")) map (_.split('/').last) map { s =>
                 Future {
                   val schema = Schema(s, Map())
-                  _run(options, schema, Some(Utils.buildProgressBar(s, None)),
+                  _run(options, schema,
+                       Some(Utils.buildProgressBar("Replaying " + s, None)),
                        {_.start()})
               }}
           }
