@@ -9,7 +9,7 @@ lazy val root = (project in file(".")).
 
 
 libraryDependencies ++= Seq(
-  "com.github.scopt" %% "scopt" % "4.0.0-RC2",
+  "com.github.scopt" %% "scopt" % "4.0.0",
   "org.postgresql" % "postgresql" % "42.2.10",
   "mysql" % "mysql-connector-java" % "8.0.19",
   "org.xerial" % "sqlite-jdbc" % "3.30.1",
