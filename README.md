@@ -60,6 +60,21 @@ curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89
 sudo apt update && sudo apt install sbt
 ```
 
+`Cynthia` employs the [Z3 theorem prover](https://github.com/Z3Prover/z3)
+for generating targeted data by solving the constraints of AQL queries.
+To install Z3, follow the instructions below
+
+```bash
+git clone https://github.com/Z3Prover/z3
+cd z3
+python3 scripts/mk_make.py --java
+cd build
+make -j 8
+sudo make install
+cd ../..
+rm -rf z3
+```
+
 Finally, to build `Cynthia` run
 
 ```bash
