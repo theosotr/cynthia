@@ -7,7 +7,7 @@ a test oracle for ORM-specific bugs.
 Specifically, `Cynthia` first generates random
 relational database schemas, sets up
 the respective databases,
-and then, it queries
+and then, queries
 these databases using the APIs of the ORM systems under test.
 To tackle the challenge that ORMs lack a common input language,
 `Cynthia` generates queries  written in an abstract query language
@@ -92,19 +92,35 @@ sudo docker pull <add docker image>
 ```
 
 
-## Usage
+## Getting Started
+
+To get started with `Cynthia`,
+we will use the previously created Docker image
+(i.e., `Cynthia`) as this image contains all the
+required environment for testing ORMs
+(i.e., it contains installations of the corresponding
+ORMs and the underlying database management systems).
+
+You can enter a new container by using the following command
+
+```bash
+docker run -ti cynthia
+```
+
+### Usage
 
 The CLI of `Cynthia` provides six sub-commands; `test`, 
 `generate`, `replay`, `run`, `inspect`, and `clean`.
 
 ```
-❯ cynthia
-Error: A sub-command is required.
+cynthia@0fbedf262c3d:~$ cynthia --help
 cynthia 0.1
-Usage: cynthia [test|generate|replay|run|inspect|clean]
+Usage: cynthia [test|generate|replay|run|inspect|clean] [options]
 
+Cynthia: Data-Oriented Differential Testing of Object-Relational Mapping Systems
 
-
+  --help                   Prints this usage text
+  --version                Prints the current tool's version
 Command: test [options]
 
   -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
@@ -160,5 +176,127 @@ Command: clean [options]
   --only-workdir           Clean only the working directory .cynthia
 
 ```
+
+### cynthia test
+
+This is the main sub-command for testing ORMs.
+`cynthia test` expects at least two ORMs to test
+(through the `--orms` option),
+and some database systems (i.e., backends) specified
+by the `--backends` options.
+Note that if `--backends` is not given,
+the `SQLite` database system is used by default.
+
+`cynthia test` first generates a number of relational database
+schemas specified by the `--schemas` option.
+Every generated schema corresponds to a *testing session*.
+In every testing session, `cynthia test` generates a number of
+random AQL queries (given by the `--queries` option),
+translates every AQL query into the corresponding executable ORM query,
+and finally runs every ORM query on the given backends.
+
+#### Example
+
+In the following scenario,
+we differentially test the `peewee` and `Django` ORMs
+agaist the `SQLite` and `PostgreSQL` databases,
+by using 5 testing sessions (`--schemas 5`).
+In every testing session, we generate 100 AQL queries
+(`--queries 100`).
+Finally, to populate the underlying databases with data,
+we use an SMT solver (`--solver`) to generate five
+records (`--records 5`) by solving the contraints
+of every generated AQL query.
+
+```bash
+cynthia@0fbedf262c3d:~$ cynthia test --queries 100 \
+  --schemas 5 \
+  -o django,peewee \
+  --solver \
+  --well-typed \
+  --records 5 \
+  --no-combined \
+  -S \
+  -d postgres
+```
+
+The above command will produce an output similar to the following
+
+```
+Testing Skew 100% [========================== Passed ✔: 95, Failed ✘: 0, Unsp: 4, Timeouts: 1
+Testing Oblige 100% [======================== Passed ✔: 90, Failed ✘: 0, Unsp: 7, Timeouts: 3
+Testing Weyden 100% [======================== Passed ✔: 94, Failed ✘: 0, Unsp: 2, Timeouts: 4
+Testing Critic 100% [======================== Passed ✔: 95, Failed ✘: 0, Unsp: 2, Timeouts: 3
+Testing Briefest 100% [====================== Passed ✔: 98, Failed ✘: 0, Unsp: 1, Timeouts: 1
+Command test finished successfully.
+```
+
+Note that `Cynthia` processes testing sessions in parallel by using Scala
+futures. `Cynthia` also dumps some statistics for every testing session.
+For example, the below message
+
+```
+Testing Skew 100% [========================== Passed ✔: 95, Failed ✘: 0, Unsp: 4, Timeouts: 1
+```
+
+means that in the testing session named `Skew`,
+`Cynthia` generated 100 AQL queries of which
+
+* 95 / 100 queries passed (i.e., the ORMs under test produced exact results).
+* 0 / 100 queries failed (i.e., the ORMs under test produced different results).
+  Note that failed queries indicate a bug
+  in at least one of the ORMs under test.
+* 4 / 100 queries were unsupported meaning that the ORMs were unable to execute
+  these queries, because these queries contained features
+  that are not currently supported by the ORMs under test.
+* 1 / 100 queries timed out, i.e., the SMT solver timed out and failed to
+  generate records for populating databases.
+
+#### The .cynthia working directory
+
+`Cynthia` also produces a directory named `.cynthia`
+(inside the current working directory)
+where it stores the complete output of each run.
+The `.cynthia` directory has the following structure.
+
+* `.cynthia/dbs/`: This is the directory where the `SQLite` database files
+  of each testing session are stored.
+* `.cynthia/schemas/`: This directory contains SQL scripts corresponding to
+the database schema of each testing session. Every SQL script contains
+all the necessary `CREATE TABLE` statements for creating the relational
+tables defined in each schema.
+* `.cynthia/projects/`: A directory where `Cynthia` creates and runs
+the corresponding ORM queries.
+* `.cynthia/sessions/`: This directory contains complete information about
+the runs taken place at every testing session. 
+
+In particular, by inspecting the structure of the `.cynthia/sessions/`
+directory, we have the following
+
+* `.cynthia/sessions/<Session Name>/<Query ID>/data.sql`:
+  This is the SQL script that populates the underlying database
+  with data generated by the SMT solver. Note that these data are targeted,
+  meaning that satisfy the constraints of the query specified by `<Query ID>`. 
+* `.cynthia/sessions/<Session Name>/<Query ID>/diff_test.out`:
+  The output of differential testing. Either "MATCH", "MISMATCH", "UNSUPPORTED",
+  or "TIMEOUT".
+* `.cynthia/sessions/<Session Name>/<Query ID>/<orm>_<backend>.out`:
+  The output produced by the query written in ORM named `<orm>`,
+  and when this query is run on the backend `<backend>`.
+* `.cynthia/sessions/<Session Name>/<Query ID>/query.aql`:
+  The AQL query in human readable format.
+* `.cynthia/sessions/<Session Name>/<Query ID>/query.aql.json`:
+  The AQL query in JSON format. This is what `Cynthia` understands.
+* `.cynthia/sessions/<Session Name>/<Query ID>/<orm>/`:
+  This directory contains all ORM-specific files for executing
+  the ORM queries written in ORM named `<orm>`.
+  For example, by executing
+
+  ```bash
+  python .cynthia/sessions/Skew/1/django/driver_postgres.py
+  ```
+
+  You re-execute the Django query stemming from the AQL query
+  with id `1` on the PostgresSQL database.
 
 ## Run Cynthia
