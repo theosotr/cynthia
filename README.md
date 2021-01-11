@@ -504,5 +504,5 @@ This gives
 
 ### cynthia clean
 
-`cynthia` simply cleans the `.cynthia` directory
+`cynthia clean` simply cleans the `.cynthia` directory
 and the database servers from the generated databases.
