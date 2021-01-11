@@ -141,8 +141,9 @@ object Cynthia {
               if (x <= 0) failure("Solver timeout must be greater than zero")
               else success)
 
-      note("\n")
-
+      note("Cynthia: Data-Oriented Differential Testing of Object-Relational Mapping Systems\n")
+      help("help").text("Prints this usage text")
+      version("version").text("Prints the current tool's version")
       // Sub-commands
       cmd("test") action { (_, c) => c.copy(mode = Some("test")) } children(
         opt[Int]('n', "queries")
