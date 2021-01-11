@@ -299,4 +299,61 @@ directory, we have the following
   You re-execute the Django query stemming from the AQL query
   with id `1` on the PostgresSQL database.
 
-## Run Cynthia
+
+## cynthia replay
+
+This sub-command replays the execution of a particular testing
+session based on information extracted from the `.cynthia`
+directory. This command is particularly useful when we want
+to run the same queries with different settings
+(i.e., running the same AQL queries on different database systems).
+
+### Examples
+
+Replay all testing sessions previously created by `cynthia test`
+
+```bash
+cynthia@0fbedf262c3d:~$ cynthia replay -o django,peewee \
+  -d postgres --all
+```
+
+This produces the exact results as `cynthia test`
+
+```
+Replaying Briefest  ? % [=                    Passed ✔: 99, Failed ✘: 0, Unsp: 1, Timeouts: 0
+Replaying Skew  ? % [    =                    Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
+Replaying Oblige  ? % [            =          Passed ✔: 93, Failed ✘: 0, Unsp: 7, Timeouts: 0
+Replaying Weyden  ? % [            =          Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
+Replaying Critic  ? % [            =          Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
+Command replay finished successfully.
+```
+
+Replay the execution of a specific testing session
+
+```bash
+cynthia@0fbedf262c3d:~$ cynthia replay --schema Skew -o django,peewee \
+  -d postgres --all
+```
+
+This produces
+
+```
+Replaying Skew  ? % [    =                    Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
+Command replay finished successfully.
+```
+
+Replay the execution of a specific testing session, and run ORM queries
+on MySQL instead of Postgres.
+
+```bash
+cynthia@0fbedf262c3d:~$ cynthia replay --schema Skew -o django,peewee \
+  -d mysql --all
+```
+
+Replay the execution of a specific testing session, and differentially
+test `SQLAlchemy` and `Sequelize` instead of `Django` and `peeewee`.
+
+
+```bash
+cynthia@0fbedf262c3d:~$ replay --schema Skew -o sqlalchemy,sequelize --all
+```
