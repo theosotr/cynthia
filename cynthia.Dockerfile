@@ -65,8 +65,15 @@ RUN git clone https://github.com/theosotr/rmre && \
   gem build rmre.gemspec && \
   sudo gem install rmre-0.0.9.gem
 
-ADD ./entrypoint/entrypoint.sh /usr/local/bin/
 RUN sudo chown cynthia:cynthia -R $HOME/.config
+RUN  bash -c "virtualenv -p python3 $HOME/.env && \
+  source $HOME/.env/bin/activate && \
+  pip install mysqlclient psycopg2 sqlacodegen pyodbc django-mssql-backend && \
+  $HOME/scripts/setup-orms.sh ${HOME}"
+
+ADD ./examples ${HOME}/cynthia_src
+ADD ./example_bugs ${HOME}/cynthia_src
+ADD ./entrypoint/entrypoint.sh /usr/local/bin/
 
 USER cynthia
 WORKDIR ${HOME}

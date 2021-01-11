@@ -2,6 +2,14 @@
 
 set +e
 
+# Initialize Backends
+echo "Initialize Backends"
+
+source $HOME/.env/bin/activate
+nohup sudo /opt/mssql/bin/sqlservr start &
+sudo /etc/init.d/mysql start
+sudo /etc/init.d/postgresql start
+
 if [ $# -eq 0  ]; then
   /bin/bash
   exit 0
@@ -45,13 +53,6 @@ echo "sequelize: $sequelize_v" >> $HOME/versions.txt
 
 # Setup ORMs
 $HOME/scripts/setup-orms.sh $HOME $HOME/versions.txt
-
-# Initialize Backends
-echo "Initialize Backends"
-
-nohup sudo /opt/mssql/bin/sqlservr start &
-sudo /etc/init.d/mysql start
-sudo /etc/init.d/postgresql start
 
 source $HOME/.env/bin/activate
 if [ $# -eq 0  ]; then

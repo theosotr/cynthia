@@ -36,7 +36,6 @@ install_py_package()
 
   echo "Installing $base, version $version..."
 
-  source $workdir/.env/bin/activate
   cd $HOME/$base
   git checkout .
   git pull origin
@@ -52,21 +51,11 @@ install_py_package()
   pip uninstall $base -y
   python setup.py install
   cd ..
-  rm -rf $workdir/$base
-  cd ..
 }
 
 
 setup()
 {
-  # Setup a Python virtualenv
-  rm -rf $workdir/.env
-  virtualenv -p python3 $workdir/.env
-  source $workdir/.env/bin/activate
-
-  # Install Python drivers and other
-  pip install mysqlclient psycopg2 sqlacodegen pyodbc django-mssql-backend
-
   # Get the master version of Python ORMs from Github.
   install_py_package https://github.com/django/django $django_version
   install_py_package https://github.com/sqlalchemy/sqlalchemy $sqlalchemy_version
