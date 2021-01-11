@@ -29,7 +29,7 @@ case class Options (
   nuqueries: Int = 200,
   records: Int = 20,
   orms: Seq[String] = Seq(),
-  noCombined: Boolean = false,
+  noCombined: Boolean = true,
   dbs: Seq[String] = Seq("sqlite"),
   sql: Option[String] = None,
   aql: Option[String] = None,
@@ -40,7 +40,7 @@ case class Options (
   mismatches: Seq[Int] = Seq(),
   minDepth: Int = 5,
   maxDepth: Int = 25,
-  wellTyped: Boolean = false,
+  wellTyped: Boolean = true,
   dbUser: String = "orm_testing",
   dbPass: String = "orm_testing",
   timeout: Option[Int] = None,
@@ -94,10 +94,10 @@ object Cynthia {
           .action((x, o) => o.copy(storeMatches = true))
           .text("Save matches")
 
-      def noCombineOption() =
-        opt[Unit]("no-combined")
-          .action((_, c) => c.copy(noCombined = true))
-          .text("Don't generate combined queries")
+      def combinedOption() =
+        opt[Unit]("combined")
+          .action((_, c) => c.copy(noCombined = false))
+          .text("Generate AQL queries consting of other simpler queries")
 
       def recordsOption() =
         opt[Int]('r', "records")
@@ -125,9 +125,9 @@ object Cynthia {
               else success)
 
       def wellTypedOption() =
-        opt[Unit]("well-typed")
-          .action((_, c) => c.copy(wellTyped = true))
-          .text("Generate well-typed queries")
+        opt[Unit]("no-well-typed")
+          .action((_, c) => c.copy(wellTyped = false))
+          .text("Generate AQL queries that are type incorrect")
 
       def solverOption() =
         opt[Unit]("solver")
@@ -176,7 +176,7 @@ object Cynthia {
         ormsOption(),
         backendsOption(),
         storeMatchesOption(),
-        noCombineOption(),
+        combinedOption(),
         recordsOption(),
         minDepthOption(),
         maxDepthOption(),
@@ -200,7 +200,7 @@ object Cynthia {
             if (x < 1) failure("You must generate at least one schema")
             else success
           }),
-        noCombineOption(),
+        combinedOption(),
         recordsOption(),
         minDepthOption(),
         maxDepthOption(),
