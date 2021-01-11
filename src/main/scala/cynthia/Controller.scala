@@ -104,10 +104,10 @@ object Controller {
               }}
           }
         case Some("inspect") => {
-          val reportDir = List(options.dotCynthia, Utils.reportDir)
+          val sessionDir = List(options.dotCynthia, Utils.sessionDir)
           val sessions = options.schema match {
-            case None    => Utils.listFiles(Utils.joinPaths(reportDir), ext = "")
-            case Some(s) => Some(Array(Utils.joinPaths(reportDir :+ s)))
+            case None    => Utils.listFiles(Utils.joinPaths(sessionDir), ext = "")
+            case Some(s) => Some(Array(Utils.joinPaths(sessionDir :+ s)))
           }
           sessions match {
             case None           => Nil

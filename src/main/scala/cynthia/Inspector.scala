@@ -132,7 +132,7 @@ object Inspector {
   def apply(schema: String, mismatches: Seq[Int],
             workdir: String): Option[InspectRes] = {
     val dir = Utils.joinPaths(List(
-      workdir, Utils.reportDir, schema))
+      workdir, Utils.sessionDir, schema))
     Utils.listFiles(dir, ext = "") match {
       case None          => None
       case Some(queries) => {

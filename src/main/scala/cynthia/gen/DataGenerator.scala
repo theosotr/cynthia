@@ -374,7 +374,7 @@ case class DataGeneratorController(
               }.toString
             dbs foreach { db =>
               val dataPath = Utils.joinPaths(
-                List(Utils.getSessionDir(), schema.name, s"data_${db.getName()}.sql"))
+                List(Utils.getProjectDir(), schema.name, s"data_${db.getName()}.sql"))
               Utils.writeToFile(dataPath, insStms)
               DBSetup.setupSchema(db, dataPath)
             }

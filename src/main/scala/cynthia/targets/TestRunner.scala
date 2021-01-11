@@ -110,7 +110,7 @@ object TestRunnerCreator {
         DBSetup.setupSchema(db, schemaPath)
       })
     }
-    val sessionDir = Utils.joinPaths(List(Utils.getSessionDir(), schema.name))
+    val sessionDir = Utils.joinPaths(List(Utils.getProjectDir(), schema.name))
     val orms = genORMs(options.orms, schema.name, sessionDir)
     schemadb.flatMap { _ =>
       Try(Utils.createDir(sessionDir))
@@ -253,13 +253,13 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
 
   def getQueriesDir() =
     Utils.joinPaths(List(
-      Utils.getReportDir(),
+      Utils.getSessionDir(),
       schema.name)
     )
 
   def getQueryOutputDir(qid: Int) =
     Utils.joinPaths(List(
-      Utils.getReportDir(),
+      Utils.getSessionDir(),
       schema.name,
       qid.toString)
     )
@@ -269,18 +269,18 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
 
   def getSQLQueryData(qid: Int) =
     Utils.joinPaths(
-      List(Utils.getReportDir(), schema.name, qid.toString, "data.sql"))
+      List(Utils.getSessionDir(), schema.name, qid.toString, "data.sql"))
 
   def storeResults(q: Query, results: Map[(String, String), Seq[Target]],
-                   reportDir: String, diffOut: String) = {
-    storeQueries(q, reportDir)
-    Utils.writeToFile(Utils.joinPaths(List(reportDir, "diff_test.out")), diffOut)
+                   sessionDir: String, diffOut: String) = {
+    storeQueries(q, sessionDir)
+    Utils.writeToFile(Utils.joinPaths(List(sessionDir, "diff_test.out")), diffOut)
     if (!diffOut.equals(invalidTxt))
       results.foreach { case ((_, k), v) => v.foreach { x =>
           // FIXME: For debugging purposes only.
-          s"cp -r ${x.orm.projectDir} $reportDir".!!
+          s"cp -r ${x.orm.projectDir} $sessionDir".!!
           val filename = s"${x.orm.ormName}_${x.db.getName()}.out"
-          Utils.writeToFile(Utils.joinPaths(List(reportDir, filename)), k)
+          Utils.writeToFile(Utils.joinPaths(List(sessionDir, filename)), k)
         }
       }
   }
@@ -366,19 +366,19 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
           }
         }}
       val okDbs = oks.keys.map { case (k, _) => k }.toSet
-      val reportDir = getQueryOutputDir(qid)
+      val sessionDir = getQueryOutputDir(qid)
       if ((failed.keys.exists { case (k, _) => okDbs.contains(k) }) ||
           oks.size > dbs.size) {
-        storeResults(q, oks ++ failed, reportDir, mismatchTxt)
+        storeResults(q, oks ++ failed, sessionDir, mismatchTxt)
         evalThunk(dataThunk)
         stats ++ (mism = true)
       } else if (failed.size == 0 && oks.size == 0) {
-        storeResults(q, oks ++ failed, reportDir, invalidTxt)
+        storeResults(q, oks ++ failed, sessionDir, invalidTxt)
         stats ++ (invd = true)
       } else {
         if (options.storeMatches || options.mode.get.equals("replay")) {
           evalThunk(dataThunk)
-          storeResults(q, oks ++ failed, reportDir, matchTxt)
+          storeResults(q, oks ++ failed, sessionDir, matchTxt)
         }
         stats.++()
       }
