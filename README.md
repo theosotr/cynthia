@@ -217,8 +217,7 @@ cynthia@0fbedf262c3d:~$ cynthia test \
   -orms django,peewee \
   --backends postgres \
   --solver \
-  --records 5 \
-  --random-seed 2
+  --records 5
 ```
 
 The above command will produce an output similar to the following
@@ -425,8 +424,7 @@ cynthia@0fbedf262c3d:~$ cynthia generate \
  --schemas 5 \
  --queries 100 \
  --records 5 \
- --solver \
- --random-seed 12
+ --solver
 ```
 
 ### cynthia inspect
