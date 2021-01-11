@@ -20,7 +20,7 @@ import scala.util.Random
 
 
 object RUtils {
-  val r = new Random
+  val tlRandom = ThreadLocal.withInitial[Random](() => new Random);
 
   def chooseFrom[T](s: Seq[T]): T =
     // TODO: Check the size of n
@@ -61,4 +61,7 @@ object RUtils {
 
   def seed(s: Long) =
     r.setSeed(s)
+
+  def r =
+    tlRandom.get()
 }

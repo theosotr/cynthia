@@ -239,4 +239,7 @@ object Utils {
       case Some(max) => pbarBuilder.setInitialMax(max).build()
     }
   }
+
+  def encodeStr2Int(str: String) =
+    str.toList.map(_.toInt).foldLeft(0)(_ + _)
 }

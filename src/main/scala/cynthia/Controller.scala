@@ -31,7 +31,7 @@ import cynthia.targets.{DBSetup, Postgres, MySQL, TestRunnerCreator,
   TestRunner}
 import cynthia.gen.SchemaGenerator
 import cynthia.translators.SchemaTranslator
-import cynthia.utils.Utils
+import cynthia.utils.{Utils, RUtils}
 
 
 object Controller {
@@ -54,12 +54,14 @@ object Controller {
         case Some("test") =>
           createNSchemas(options.schemas, options.nuqueries, "Testing") map (out =>
               Future {
+                RUtils.seed(Utils.encodeStr2Int(out._1.name))
                 Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
                 _run(options, out._1, Some(out._2), {_.start()})
               })
         case Some("generate") =>
           createNSchemas(options.schemas, options.nuqueries, "Generating") map(out =>
               Future {
+                RUtils.seed(Utils.encodeStr2Int(out._1.name))
                 Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
                 _run(options, out._1, Some(out._2), {_.generate()})
               })
