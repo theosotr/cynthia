@@ -129,26 +129,28 @@ Command: test [options]
   -o, --orms <value>       ORMs to differentially test
   -d, --backends <value>   Database backends to store data (Default Value: sqlite)
   -S, --store-matches      Save matches
-  --no-combined            Don't generate combined queries
+  --combined               Generate AQL queries consting of other simpler queries
   -r, --records <value>    Number of records to generate for each table
   --min-depth <value>      Minimum depth of generated AQL queries
   --max-depth <value>      Maximum depth of generated AQL queries
-  --well-typed             Generate well-typed queries
+  --no-well-typed          Generate AQL queries that are type incorrect
   --solver                 Generate database records through a solver-based approach
   --solver-timeout <value>
                            Solver timeout for each query
+  --random-seed <value>    Make the testing procedure deterministic by giving a random seed
 Command: generate [options]
 
   -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
   -s, --schemas <value>    Number of schemas to generate (Default value: 1)
-  --no-combined            Don't generate combined queries
+  --combined               Generate AQL queries consting of other simpler queries
   -r, --records <value>    Number of records to generate for each table
   --min-depth <value>      Minimum depth of generated AQL queries
   --max-depth <value>      Maximum depth of generated AQL queries
-  --well-typed             Generate well-typed queries
+  --no-well-typed          Generate AQL queries that are type incorrect
   --solver                 Generate database records through a solver-based approach
   --solver-timeout <value>
                            Solver timeout for each query
+  --random-seed <value>    Make the testing procedure deterministic by giving a random seed
 Command: replay [options]
 
   -c, --cynthia <value>    cynthia directory for replaying missmatches (default .cynthia)
@@ -209,44 +211,43 @@ records (`--records 5`) by solving the contraints
 of every generated AQL query.
 
 ```bash
-cynthia@0fbedf262c3d:~$ cynthia test --queries 100 \
+cynthia@0fbedf262c3d:~$ cynthia test \
   --schemas 5 \
-  -o django,peewee \
+  --queries 100 \
+  -orms django,peewee \
+  --backends postgres \
   --solver \
-  --well-typed \
   --records 5 \
-  --no-combined \
-  -S \
-  -d postgres
+  --random-seed 2
 ```
 
 The above command will produce an output similar to the following
 
 ```
-Testing Skew 100% [========================== Passed ✔: 95, Failed ✘: 0, Unsp: 4, Timeouts: 1
-Testing Oblige 100% [======================== Passed ✔: 90, Failed ✘: 0, Unsp: 7, Timeouts: 3
-Testing Weyden 100% [======================== Passed ✔: 94, Failed ✘: 0, Unsp: 2, Timeouts: 4
-Testing Critic 100% [======================== Passed ✔: 95, Failed ✘: 0, Unsp: 2, Timeouts: 3
-Testing Briefest 100% [====================== Passed ✔: 98, Failed ✘: 0, Unsp: 1, Timeouts: 1
+Testing Portray 100% [====================== Passed ✔: 94, Failed ✘: 0, Unsp: 3, Timeouts: 3
+Testing Pervasive 100% [==================== Passed ✔: 98, Failed ✘: 0, Unsp: 1, Timeouts: 1
+Testing Petition 100% [===================== Passed ✔: 93, Failed ✘: 0, Unsp: 4, Timeouts: 3
+Testing Hubby 100% [======================== Passed ✔: 97, Failed ✘: 0, Unsp: 1, Timeouts: 2
+Testing Clanged 100% [====================== Passed ✔: 95, Failed ✘: 0, Unsp: 4, Timeouts: 1
 Command test finished successfully.
 ```
 
 Note that `Cynthia` processes testing sessions in parallel by using Scala
 futures. `Cynthia` also dumps some statistics for every testing session.
-For example, the below message
 
 ```
-Testing Skew 100% [========================== Passed ✔: 95, Failed ✘: 0, Unsp: 4, Timeouts: 1
+Testing Pervasive 100% [==================== Passed ✔: 98, Failed ✘: 0, Unsp: 1, Timeouts: 1
 ```
 
-means that in the testing session named `Skew`,
+For example, the above message
+means that in the testing session named `Pervasive`,
 `Cynthia` generated 100 AQL queries of which
 
-* 95 / 100 queries passed (i.e., the ORMs under test produced exact results).
+* 98 / 100 queries passed (i.e., the ORMs under test produced exact results).
 * 0 / 100 queries failed (i.e., the ORMs under test produced different results).
   Note that failed queries indicate a bug
   in at least one of the ORMs under test.
-* 4 / 100 queries were unsupported meaning that the ORMs were unable to execute
+* 1 / 100 queries were unsupported meaning that the ORMs were unable to execute
   these queries, because these queries contained features
   that are not currently supported by the ORMs under test.
 * 1 / 100 queries timed out, i.e., the SMT solver timed out and failed to
@@ -293,7 +294,7 @@ directory, we have the following
   For example, by executing
 
   ```bash
-  python .cynthia/sessions/Skew/1/django/driver_postgres.py
+  python .cynthia/sessions/Pervasive/1/django/driver_postgres.py
   ```
 
   You re-execute the Django query stemming from the AQL query
@@ -313,32 +314,37 @@ to run the same queries with different settings
 Replay all testing sessions previously created by `cynthia test`
 
 ```bash
-cynthia@0fbedf262c3d:~$ cynthia replay -o django,peewee \
-  -d postgres --all
+cynthia@0fbedf262c3d:~$ cynthia replay \
+  --orms django,peewee \
+  --backends postgres \
+  --all
 ```
 
 This produces the exact results as `cynthia test`
 
 ```
-Replaying Briefest  ? % [=                    Passed ✔: 99, Failed ✘: 0, Unsp: 1, Timeouts: 0
-Replaying Skew  ? % [    =                    Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
-Replaying Oblige  ? % [            =          Passed ✔: 93, Failed ✘: 0, Unsp: 7, Timeouts: 0
-Replaying Weyden  ? % [            =          Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
-Replaying Critic  ? % [            =          Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
+Replaying Petition  ? % [     =              Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
+Replaying Hubby  ? % [            =          Passed ✔: 99, Failed ✘: 0, Unsp: 1, Timeouts: 0
+Replaying Clanged  ? % [=                    Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
+Replaying Pervasive  ? % [          =        Passed ✔: 99, Failed ✘: 0, Unsp: 1, Timeouts: 0
+Replaying Portray  ? % [=                    Passed ✔: 97, Failed ✘: 0, Unsp: 3, Timeouts: 0
 Command replay finished successfully.
 ```
 
 Replay the execution of a specific testing session
 
 ```bash
-cynthia@0fbedf262c3d:~$ cynthia replay --schema Skew -o django,peewee \
-  -d postgres --all
+cynthia@0fbedf262c3d:~$ cynthia replay \
+  --schema Pervasive \
+  --orms django,peewee \
+  --backends postgres \
+  --all
 ```
 
 This produces
 
 ```
-Replaying Skew  ? % [    =                    Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
+Replaying Pervasive  ? % [          =        Passed ✔: 99, Failed ✘: 0, Unsp: 1, Timeouts: 0
 Command replay finished successfully.
 ```
 
@@ -346,8 +352,11 @@ Replay the execution of a specific testing session, and run ORM queries
 on MySQL instead of Postgres.
 
 ```bash
-cynthia@0fbedf262c3d:~$ cynthia replay --schema Skew -o django,peewee \
-  -d mysql --all
+cynthia@0fbedf262c3d:~$ cynthia replay \
+  --schema Pervasive \
+  --orms django,peewee \
+  --backends mysql \
+  --all
 ```
 
 Replay the execution of a specific testing session, and differentially
@@ -355,7 +364,10 @@ test `SQLAlchemy` and `Sequelize` instead of `Django` and `peeewee`.
 
 
 ```bash
-cynthia@0fbedf262c3d:~$ replay --schema Skew -o sqlalchemy,sequelize --all
+cynthia@0fbedf262c3d:~$ replay \
+  --schema Pervasive \
+  --orms sqlalchemy,sequelize \
+  --all
 ```
 
 ### cynthia run
@@ -410,12 +422,11 @@ and each table contains 5 records.
 
 ```bash
 cynthia@0fbedf262c3d:~$ cynthia generate \
- --queries 100 \
  --schemas 5 \
+ --queries 100 \
  --records 5 \
  --solver \
- --well-typed \
- --no-combined
+ --random-seed 12
 ```
 
 ### cynthia inspect
@@ -427,39 +438,40 @@ from the `.cynthia` directory.
 
 ### Example
 
-Inspect the testing session named `Skew`.
+Inspect the testing session named `Pervasive`.
 
 ```bash
-cynthia@0fbedf262c3d:~$ cynthia inspect --schema Skew
+cynthia@0fbedf262c3d:~$ cynthia inspect --schema Pervasive
 ```
 
 This produces
 
 ```
-Session: Skew
+Session: Pervasive
   Crashes:
   Mismatches:
-   * 24[sqlite]:
+   * 6[sqlite]:
      - sequelize
      - django,sqlalchemy,peewee
-   * 98[sqlite]:
-     - django,sqlalchemy,peewee
-     - sequelize
-   * 53[sqlite]:
-     - django,sqlalchemy,peewee
-     - sequelize
-   * 93[sqlite]:
-     - django,sqlalchemy,peewee
-     - sequelize
-   * 87[sqlite]:
+   * 27[sqlite]:
      - sequelize
      - django,sqlalchemy,peewee
+   * 7[sqlite]:
+     - sequelize
+     - django,sqlalchemy,peewee
+   * 58[sqlite]:
+     - sequelize
+     - django,sqlalchemy,peewee
+   * 55[sqlite]:
+     - django,sqlalchemy,peewee
+     - sequelize
 ==================================
 Command inspect finished successfully.
+
 ```
 
 The output above indicates that in five queries
-(namely, 24, 98, 53, 93, 87), the ORMs under test produced
+(namely, 6, 7, 27, 55, 58), the ORMs under test produced
 different results. Specifically,
 in all queries, the `Sequelize` ORM produced different results
 from those produced by the `Django`, `peewee`, and `SQLAlchemy`
@@ -469,8 +481,8 @@ You can verify this by inspecting the corresponding ORM outputs
 from the `.cynthia` directory
 
 ```bash
-cynthia@0fbedf262c3d:~$ diff .cynthia/sessions/Skew/87/sequelize_sqlite.out \
-  .cynthia/sessions/Skew/87/django_sqlite.out
+cynthia@0fbedf262c3d:~$ diff .cynthia/sessions/Pervasive/58/sequelize_sqlite.out \
+  .cynthia/sessions/Pervasive/58/django_sqlite.out
 ```
 
 This gives
