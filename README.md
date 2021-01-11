@@ -217,17 +217,18 @@ cynthia@0fbedf262c3d:~$ cynthia test \
   -orms django,peewee \
   --backends postgres \
   --solver \
-  --records 5
+  --records 5 \
+  --random-seed 1
 ```
 
 The above command will produce an output similar to the following
 
 ```
-Testing Portray 100% [====================== Passed ✔: 94, Failed ✘: 0, Unsp: 3, Timeouts: 3
-Testing Pervasive 100% [==================== Passed ✔: 98, Failed ✘: 0, Unsp: 1, Timeouts: 1
-Testing Petition 100% [===================== Passed ✔: 93, Failed ✘: 0, Unsp: 4, Timeouts: 3
-Testing Hubby 100% [======================== Passed ✔: 97, Failed ✘: 0, Unsp: 1, Timeouts: 2
-Testing Clanged 100% [====================== Passed ✔: 95, Failed ✘: 0, Unsp: 4, Timeouts: 1
+Testing Serially 100% [===================== Passed ✔: 93, Failed ✘: 0, Unsp: 5, Timeouts: 2
+Testing Cucumbers 100% [==================== Passed ✔: 95, Failed ✘: 0, Unsp: 2, Timeouts: 3
+Testing Mumbles 100% [====================== Passed ✔: 94, Failed ✘: 0, Unsp: 3, Timeouts: 3
+Testing Subhead 100% [====================== Passed ✔: 96, Failed ✘: 0, Unsp: 2, Timeouts: 2
+Testing Wild 100% [========================= Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
 Command test finished successfully.
 ```
 
@@ -235,21 +236,21 @@ Note that `Cynthia` processes testing sessions in parallel by using Scala
 futures. `Cynthia` also dumps some statistics for every testing session.
 
 ```
-Testing Pervasive 100% [==================== Passed ✔: 98, Failed ✘: 0, Unsp: 1, Timeouts: 1
+Testing Cucumbers 100% [==================== Passed ✔: 95, Failed ✘: 0, Unsp: 2, Timeouts: 3
 ```
 
 For example, the above message
-means that in the testing session named `Pervasive`,
+means that in the testing session named `Cucumbers`,
 `Cynthia` generated 100 AQL queries of which
 
-* 98 / 100 queries passed (i.e., the ORMs under test produced exact results).
+* 95 / 100 queries passed (i.e., the ORMs under test produced exact results).
 * 0 / 100 queries failed (i.e., the ORMs under test produced different results).
   Note that failed queries indicate a bug
   in at least one of the ORMs under test.
-* 1 / 100 queries were unsupported meaning that the ORMs were unable to execute
+* 2 / 100 queries were unsupported meaning that the ORMs were unable to execute
   these queries, because these queries contained features
   that are not currently supported by the ORMs under test.
-* 1 / 100 queries timed out, i.e., the SMT solver timed out and failed to
+* 3 / 100 queries timed out, i.e., the SMT solver timed out and failed to
   generate records for populating databases.
 
 #### The .cynthia working directory
@@ -293,11 +294,11 @@ directory, we have the following
   For example, by executing
 
   ```bash
-  python .cynthia/sessions/Pervasive/1/django/driver_postgres.py
+  python .cynthia/sessions/Cucumbers/22/django/driver_postgres.py
   ```
 
   You re-execute the Django query stemming from the AQL query
-  with id `1` on the PostgresSQL database.
+  with id `22` on the PostgresSQL database.
 
 
 ### cynthia replay
@@ -322,11 +323,11 @@ cynthia@0fbedf262c3d:~$ cynthia replay \
 This produces the exact results as `cynthia test`
 
 ```
-Replaying Petition  ? % [     =              Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
-Replaying Hubby  ? % [            =          Passed ✔: 99, Failed ✘: 0, Unsp: 1, Timeouts: 0
-Replaying Clanged  ? % [=                    Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
-Replaying Pervasive  ? % [          =        Passed ✔: 99, Failed ✘: 0, Unsp: 1, Timeouts: 0
-Replaying Portray  ? % [=                    Passed ✔: 97, Failed ✘: 0, Unsp: 3, Timeouts: 0
+Replaying Serially  ? % [     =              Passed ✔: 95, Failed ✘: 0, Unsp: 5, Timeouts: 0
+Replaying Cucumbers  ? % [          =        Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
+Replaying Subhead  ? % [=                    Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
+Replaying Mumbles  ? % [=                    Passed ✔: 97, Failed ✘: 0, Unsp: 3, Timeouts: 0
+Replaying Wild  ? % [        =               Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
 Command replay finished successfully.
 ```
 
@@ -334,7 +335,7 @@ Replay the execution of a specific testing session
 
 ```bash
 cynthia@0fbedf262c3d:~$ cynthia replay \
-  --schema Pervasive \
+  --schema Cucumbers \
   --orms django,peewee \
   --backends postgres \
   --all
@@ -343,7 +344,7 @@ cynthia@0fbedf262c3d:~$ cynthia replay \
 This produces
 
 ```
-Replaying Pervasive  ? % [          =        Passed ✔: 99, Failed ✘: 0, Unsp: 1, Timeouts: 0
+Replaying Cucumbers  ? % [          =        Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
 Command replay finished successfully.
 ```
 
@@ -352,7 +353,7 @@ on MySQL instead of Postgres.
 
 ```bash
 cynthia@0fbedf262c3d:~$ cynthia replay \
-  --schema Pervasive \
+  --schema Cucumbers \
   --orms django,peewee \
   --backends mysql \
   --all
@@ -364,7 +365,7 @@ test `SQLAlchemy` and `Sequelize` instead of `Django` and `peeewee`.
 
 ```bash
 cynthia@0fbedf262c3d:~$ replay \
-  --schema Pervasive \
+  --schema Cucumbers \
   --orms sqlalchemy,sequelize \
   --all
 ```
@@ -436,40 +437,33 @@ from the `.cynthia` directory.
 
 ### Example
 
-Inspect the testing session named `Pervasive`.
+Inspect the testing session named `Cucumbers`.
 
 ```bash
-cynthia@0fbedf262c3d:~$ cynthia inspect --schema Pervasive
+cynthia@0fbedf262c3d:~$ cynthia inspect --schema Cucumbers
 ```
 
 This produces
 
 ```
-Session: Pervasive
+Session: Cucumbers
   Crashes:
   Mismatches:
-   * 6[sqlite]:
+   * 71[sqlite]:
+     - django,sqlalchemy,peewee
+     - sequelize
+   * 17[sqlite]:
      - sequelize
      - django,sqlalchemy,peewee
-   * 27[sqlite]:
-     - sequelize
-     - django,sqlalchemy,peewee
-   * 7[sqlite]:
-     - sequelize
-     - django,sqlalchemy,peewee
-   * 58[sqlite]:
-     - sequelize
-     - django,sqlalchemy,peewee
-   * 55[sqlite]:
+   * 73[sqlite]:
      - django,sqlalchemy,peewee
      - sequelize
 ==================================
 Command inspect finished successfully.
-
 ```
 
-The output above indicates that in five queries
-(namely, 6, 7, 27, 55, 58), the ORMs under test produced
+The output above indicates that in three AQL queries
+(namely, 17, 71, and 73), the ORMs under test produced
 different results. Specifically,
 in all queries, the `Sequelize` ORM produced different results
 from those produced by the `Django`, `peewee`, and `SQLAlchemy`
@@ -479,15 +473,17 @@ You can verify this by inspecting the corresponding ORM outputs
 from the `.cynthia` directory
 
 ```bash
-cynthia@0fbedf262c3d:~$ diff .cynthia/sessions/Pervasive/58/sequelize_sqlite.out \
-  .cynthia/sessions/Pervasive/58/django_sqlite.out
+cynthia@0fbedf262c3d:~$ diff .cynthia/sessions/Cucumbers/73/sequelize_sqlite.out \
+  .cynthia/sessions/Cucumbers/73/django_sqlite.out
 ```
 
 This gives
 
 ```diff
-0a1
-> sign eliminat'/e
+0a1,2
+> _default -1.00
+> _default 0.00
+\ No newline at end of file
 ```
 
 ### cynthia clean
