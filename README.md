@@ -214,7 +214,7 @@ of every generated AQL query.
 cynthia@0fbedf262c3d:~$ cynthia test \
   --schemas 5 \
   --queries 100 \
-  -orms django,peewee \
+  --orms django,peewee \
   --backends postgres \
   --solver \
   --records 5 \
