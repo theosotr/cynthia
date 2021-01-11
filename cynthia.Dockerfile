@@ -75,6 +75,15 @@ ADD ./examples ${HOME}/cynthia_src
 ADD ./example_bugs ${HOME}/cynthia_src
 ADD ./entrypoint/entrypoint.sh /usr/local/bin/
 
+# Set up locales
+RUN sudo apt install -y locales
+# Set the locale
+RUN sudo sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    sudo locale-gen
+ENV LANG en_US.UTF-8  
+ENV LANGUAGE en_US:en  
+ENV LC_ALL en_US.UTF-8     
+
 USER cynthia
 WORKDIR ${HOME}
 ENTRYPOINT ["entrypoint.sh"]
