@@ -218,7 +218,8 @@ cynthia@0fbedf262c3d:~$ cynthia test \
   --backends postgres \
   --solver \
   --records 5 \
-  --random-seed 1
+  --random-seed 1 \
+  --store-matches
 ```
 
 The above command will produce an output similar to the following
@@ -364,7 +365,7 @@ test `SQLAlchemy` and `Sequelize` instead of `Django` and `peeewee`.
 
 
 ```bash
-cynthia@0fbedf262c3d:~$ replay \
+cynthia@0fbedf262c3d:~$ cynthia replay \
   --schema Cucumbers \
   --orms sqlalchemy,sequelize \
   --all
