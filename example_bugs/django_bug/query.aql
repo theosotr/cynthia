@@ -1,9 +1,0 @@
-SetRes(
-  Union(
-    Union(
-      New("T1", Seq()),
-      New("T2", Seq())
-     ),
-     New("T3", Seq())  
-  )
-)
