@@ -93,15 +93,16 @@ object Controller {
             case None => {
 
             }
-            Utils.getListOfFiles(
-              Utils.joinPaths(List(options.dotCynthia, Utils.schemaDir))
-            ) filter (!_.endsWith(".sql")) map (_.split('/').last) map { s =>
-                Future {
-                  val schema = Schema(s, Map())
-                  _run(options, schema,
-                       Some(Utils.buildProgressBar("Replaying " + s, None)),
-                       {_.start()})
-              }}
+            val schemaFiles = Utils.getListOfFiles(
+              Utils.joinPaths(List(options.dotCynthia, Utils.schemaDir))) filter (
+                !_.endsWith(".sql"))
+
+            schemaFiles map (_.split('/').last) map (s =>
+                (s, Utils.buildProgressBar("Replaying " + s, None))) map(out =>
+                  Future {
+                    val schema = Schema(out._1, Map())
+                    _run(options, schema, Some(out._2), {_.start()})
+                  })
           }
         case Some("inspect") => {
           val sessionDir = List(options.dotCynthia, Utils.sessionDir)

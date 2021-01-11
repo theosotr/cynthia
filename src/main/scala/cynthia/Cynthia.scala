@@ -20,7 +20,7 @@ import java.nio.file.{Paths, Files}
 import scala.util.{Success, Failure}
 import scopt.OParser
 
-import cynthia.utils.Utils
+import cynthia.utils.{Utils, RUtils}
 
 
 case class Options (
@@ -46,7 +46,8 @@ case class Options (
   timeout: Option[Int] = None,
   onlyWorkDir: Boolean = false,
   solverGen: Boolean = false,
-  solverTimeout: Int = 5000
+  solverTimeout: Int = 5000,
+  randomSeed: Long = System.currentTimeMillis()
 ) {
 
   def generateData() = mode match {
@@ -141,6 +142,11 @@ object Cynthia {
               if (x <= 0) failure("Solver timeout must be greater than zero")
               else success)
 
+      def randomSeed() =
+        opt[Int]("random-seed")
+          .action((x, o) => o.copy(randomSeed = x))
+          .text("Make the testing procedure deterministic by giving a random seed")
+
       note("Cynthia: Data-Oriented Differential Testing of Object-Relational Mapping Systems\n")
       help("help").text("Prints this usage text")
       version("version").text("Prints the current tool's version")
@@ -176,7 +182,8 @@ object Cynthia {
         maxDepthOption(),
         wellTypedOption(),
         solverOption(),
-        solverTimeoutOption()
+        solverTimeoutOption(),
+        randomSeed()
       )
       cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
         opt[Int]('n', "queries")
@@ -199,7 +206,8 @@ object Cynthia {
         maxDepthOption(),
         wellTypedOption(),
         solverOption(),
-        solverTimeoutOption()
+        solverTimeoutOption(),
+        randomSeed()
       )
       cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
         opt[String]('c', "cynthia")
@@ -288,9 +296,10 @@ object Cynthia {
       )
     }
 
-    cliParser.parse(args, Options()) map { options =>
+    cliParser.parse(args, Options()) map (options => {
+      RUtils.seed(options.randomSeed)
       Controller(options)
-    } getOrElse {
+    }) getOrElse {
       // Wrong arguments
     }
   }

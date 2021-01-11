@@ -58,4 +58,7 @@ object RUtils {
 
   def bool() =
     r.nextBoolean()
+
+  def seed(s: Long) =
+    r.setSeed(s)
 }
