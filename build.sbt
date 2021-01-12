@@ -9,6 +9,8 @@ lazy val root = (project in file(".")).
 
 
 libraryDependencies ++= Seq(
+  "org.scalatest" %% "scalatest" % "3.2.2" % "test",
+  "org.scalamock" %% "scalamock" % "4.4.0" % "test",
   "com.github.scopt" %% "scopt" % "4.0.0",
   "org.postgresql" % "postgresql" % "42.2.10",
   "mysql" % "mysql-connector-java" % "8.0.19",

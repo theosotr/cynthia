@@ -32,7 +32,7 @@ import cynthia.lang.AQLJsonProtocol._
 
 
 case class Str(str: String) {
-  val buff: StringBuilder = new StringBuilder(str)
+  private val buff: StringBuilder = new StringBuilder(str)
 
   def <<(obj: Object) = {
     buff.append(obj.toString)
