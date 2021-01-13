@@ -25,8 +25,10 @@ import scala.language.postfixOps
 import scala.util.{Try, Success, Failure}
 
 import me.tongfei.progressbar.ProgressBar;
+import spray.json._
 
 import cynthia.lang.Schema
+import cynthia.lang.ModelJsonProtocol._
 import cynthia.targets.{DBSetup, Postgres, MySQL, TestRunnerCreator,
   TestRunner}
 import cynthia.gen.SchemaGenerator
@@ -43,9 +45,12 @@ object Controller {
     }
 
   def createNSchemas(nSchemas: Int, nQueries: Int, prefix: String) =
-    List.range(0, nSchemas) map(_ => SchemaGenerator()) map(s =>
-        (s, Utils.buildProgressBar(prefix + " " + s.name, Some(nQueries)))
-    )
+    List.range(0, nSchemas) map(_ => SchemaGenerator()) map(s => {
+      val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(),
+                                       s"${s.name}.schema.json"))
+      Utils.writeToFile(schemaPath, s.toJson.prettyPrint)
+      (s, Utils.buildProgressBar(prefix + " " + s.name, Some(nQueries)))
+    })
 
   def apply(options: Options) = {
     Utils.setWorkDir()
@@ -86,7 +91,9 @@ object Controller {
           options.schema match {
             case Some(x) => {
               List { Future {
-                val s = Schema(x, Map())
+                val schemaPath = Utils.joinPaths(List(
+                  Utils.getSchemaDir(), s"$x.schema.json"))
+                val s = Utils.loadSchema(schemaPath)
                 _run(options, s,
                      Some(Utils.buildProgressBar("Replaying " + x, None)),
                      {_.start()})
@@ -96,13 +103,15 @@ object Controller {
 
             }
             val schemaFiles = Utils.getListOfFiles(
-              Utils.joinPaths(List(options.dotCynthia, Utils.schemaDir))) filter (
-                !_.endsWith(".sql"))
+              Utils.joinPaths(List(options.dotCynthia, Utils.schemaDir))) filter (x =>
+                !x.endsWith(".sql") && !x.endsWith(".json"))
 
             schemaFiles map (_.split('/').last) map (s =>
                 (s, Utils.buildProgressBar("Replaying " + s, None))) map(out =>
                   Future {
-                    val schema = Schema(out._1, Map())
+                    val schemaPath = Utils.joinPaths(List(
+                      Utils.getSchemaDir(), s"${out._1}.schema.json"))
+                    val schema = Utils.loadSchema(schemaPath)
                     _run(options, schema, Some(out._2), {_.start()})
                   })
           }

@@ -386,7 +386,6 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
   }
 
   def start(): Unit = {
-    //println(s"Testing session for ${schema.name} begins...")
     generateInitialData()
     getQueries()
       .foldLeft(Stats(pBar)) { case (stats, (qid, q)) => {

@@ -27,8 +27,9 @@ import scala.sys.process._
 import me.tongfei.progressbar.{ProgressBarStyle, ProgressBarBuilder};
 import spray.json._
 
-import cynthia.lang.Query
+import cynthia.lang.{Query, Schema}
 import cynthia.lang.AQLJsonProtocol._
+import cynthia.lang.ModelJsonProtocol._
 
 
 case class Str(str: String) {
@@ -101,13 +102,6 @@ object Utils {
 
   def readFromFile(path: String) =
     new String(Files.readAllBytes(Paths.get(path)))
-
-  def writeJson(path: String, q: Query) = {
-    val json = q.toJson
-    val w = new BufferedWriter(new FileWriter(path))
-    w.write(json.prettyPrint)
-    w.close
-  }
 
   def getListOfFiles(dir: String): List[String] = {
     new File(dir).listFiles.filter(_.isFile)
@@ -213,6 +207,9 @@ object Utils {
 
   def loadQuery(path: String): Query =
     readFromFile(path).parseJson.convertTo[Query]
+
+  def loadSchema(path: String): Schema =
+    readFromFile(path).parseJson.convertTo[Schema]
 
   def basenameWithoutExtension(x: String) =
       x.split("/").last.split("\\.(?=[^\\.]+$)").head
