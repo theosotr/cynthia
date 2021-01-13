@@ -107,7 +107,6 @@ case class GenState(
     AddExpr,
     SubExpr,
     MulExpr,
-    //DivExpr
   )
 
   def ++ =
@@ -167,7 +166,8 @@ case class QueryGenerator(
   minDepth: Int,
   maxDepth: Int,
   noCombined: Boolean,
-  wellTyped: Boolean
+  wellTyped: Boolean,
+  constrainedQ: Boolean
 ) {
 
   val predNodes = Seq(
@@ -464,10 +464,21 @@ case class QueryGenerator(
     if (wellTyped) Some(RUtils.chooseFrom(Seq(NumberF, StrF)))
     else None
 
+  def stopGen(s: GenState) =
+    // These are the conditions for terminating the generation of query.
+    //
+    // This randomly stops the generation process when some conditions are met
+    // (e.g.,, the query is filtered) or if there are no longer any query
+    // candidates for construction.
+    (s.qs.isDefined 
+      && (constrainedQ && s.qs.get.filtered())
+      && RUtils.bool()) || s.cands.isEmpty
+
+
   def generateQuerySet(s: GenState, declF: Option[List[FType]] = None,
       hiddenF: Boolean = false, declaredOnly: Boolean = false): GenState =
     // We randomly decide if we should stop query generation or not.
-    if (s.qs.isDefined && RUtils.bool() || s.cands.isEmpty) s
+    if (stopGen(s)) s
     else {
       assert(!s.cands.isEmpty)
       val next = RUtils.chooseFrom(s.cands)
@@ -532,14 +543,22 @@ case class QueryGenerator(
       }
     }
 
+  def getQueryTypes() =
+    if (constrainedQ)
+      // If the 'constrainedQ' option is enabled, then generate only regular
+      // (i.e, SetQueries).
+      List("set")
+    else
+      List(
+        "set",
+        "aggr",
+        "union",
+        "first",
+        "subset"
+      )
+
   def apply(schema: Schema): Query = {
-    val qType = RUtils.chooseFrom(List(
-      "set",
-      "aggr",
-      "union",
-      "first",
-      "subset"
-    ))
+    val qType = RUtils.chooseFrom(getQueryTypes())
     val cands = if (noCombined) Seq(NewQS) else Seq(NewQS, UnionQS, IntersectQS)
     qType match {
       case "set" =>

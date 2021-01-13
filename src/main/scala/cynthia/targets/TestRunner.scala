@@ -186,7 +186,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
   private val invalidTxt = "INVALID"
 
   val qGen = QueryGenerator(
-    options.minDepth, options.maxDepth, options.noCombined, options.wellTyped)
+    options.minDepth, options.maxDepth, options.noCombined, options.wellTyped,
+    options.onlyConstrainedQ)
 
   // test and generate modes
   def genQuery(schema: Schema, limit: Int = 10) = {
@@ -412,12 +413,10 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
           Await.result(prepareFuture(newStats, qid, q, s, thunk), 10 seconds)
         } catch {
           case e: TimeoutException => {
-            BlackWhite.tokenize(q).mkString
             stats
           }
           case e: Exception => {
-            println(BlackWhite.tokenize(q).mkString)
-            throw e
+            stats ++ (invd = true)
           }
         }
       }
