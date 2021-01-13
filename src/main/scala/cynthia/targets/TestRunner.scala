@@ -298,7 +298,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
       DataGeneratorController(
         schema,
         getInitialDataFile(),
-        Some(NaiveDataGenerator(schema, options.records))
+        Some(NaiveDataGenerator(schema, options.records)),
+        options.regenerateData
       ) populateDBs dbs match {
         case DataGenSucc(thunk) => thunk()
         case _                  => ()
@@ -313,14 +314,15 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
       }
       val queriesDir = getQueryOutputDir(qid)
       storeQueries(q, queriesDir)
-      if (!options.solverGen && options.generateData()) ()
+      if (!options.solverGen && options.generateData) ()
       else
         DataGeneratorController(
           schema,
           getSQLQueryData(qid),
           Some(SolverDataGenerator(
             schema, options.records, q, QueryInterpreter(q),
-            options.solverTimeout))
+            options.solverTimeout)),
+          options.regenerateData
         ) populateDBs dbs match {
           case DataGenSucc(thunk) => thunk()
           case _ => ()
@@ -392,15 +394,16 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
         try {
           val s = QueryInterpreter(q)
           val (newStats, thunk) =
-            if (!options.solverGen && options.generateData()) (stats, None)
+            if (!options.solverGen && options.generateData) (stats, None)
             else
               DataGeneratorController(
                 schema,
                 getSQLQueryData(qid),
-                if (options.generateData())
+                if (options.generateData)
                   Some(SolverDataGenerator(
                     schema, options.records, q, s, options.solverTimeout))
-                else None
+                else None,
+                options.regenerateData
               ) populateDBs dbs match {
                 case DataGenFailed      => (stats ++ (timedout = true), None)
                 case DataExists         => (stats, None)

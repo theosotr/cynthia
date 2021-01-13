@@ -47,13 +47,17 @@ case class Options (
   onlyWorkDir: Boolean = false,
   solverGen: Boolean = false,
   solverTimeout: Int = 5000,
+  regenerateData: Boolean = false,
   randomSeed: Long = System.currentTimeMillis()
 ) {
 
-  def generateData() = mode match {
-    case Some("test") | Some("generate") => true
-    case _ => false
-  }
+  def generateData =
+    if (regenerateData) true
+    else
+      mode match {
+      case Some("test") | Some("generate") => true
+      case _ => false
+    }
 }
 
 
@@ -226,8 +230,15 @@ object Cynthia {
               case _ => acc
             }
           }),
+        opt[Unit]("generate-data")
+          .action((x, o) => o.copy(regenerateData = true))
+          .text("Re-generate data while replaying testing sessions"),
         ormsOption(),
-        backendsOption()
+        backendsOption(),
+        recordsOption(),
+        solverOption(),
+        solverTimeoutOption(),
+        randomSeed()
       )
       cmd("run") action { (_, c) => c.copy(mode = Some("run")) } children(
         opt[String]('s', "sql")

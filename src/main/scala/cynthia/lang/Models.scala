@@ -61,7 +61,6 @@ case class Foreign(to: String) extends DataType {
 }
 
 
-// TODO Maybe we should add field constraints.
 case class Field(name: String, ftype: DataType)
 case object Field {
   def name(f: Field) = f match {

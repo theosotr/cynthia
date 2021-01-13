@@ -354,11 +354,12 @@ case class  DataGenSucc(data: () => Unit) extends DataGenRes
 case class DataGeneratorController(
   schema: Schema,
   dataFile: String,
-  genStrategy: Option[DataGenerator]
+  genStrategy: Option[DataGenerator],
+  forceGen: Boolean
 ) {
 
   def populateDBs(dbs: Set[DB]) =
-    if (Utils.exists(dataFile)) {
+    if (Utils.exists(dataFile) && !forceGen) {
       dbs.foreach { db => DBSetup.setupSchema(db, dataFile) }
       DataExists
     } else {
