@@ -471,7 +471,7 @@ case class QueryGenerator(
     // (e.g.,, the query is filtered) or if there are no longer any query
     // candidates for construction.
     (s.qs.isDefined 
-      && (constrainedQ && s.qs.get.filtered())
+      && (if (constrainedQ) s.qs.get.filtered() else true)
       && RUtils.bool()) || s.cands.isEmpty
 
 
