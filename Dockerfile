@@ -120,7 +120,8 @@ RUN sudo chown cynthia:cynthia -R $HOME/.config
 RUN  bash -c "virtualenv -p python3 $HOME/.env && \
   source $HOME/.env/bin/activate && \
   pip install mysqlclient psycopg2 sqlacodegen pyodbc django-mssql-backend && \
-  $HOME/scripts/setup-orms.sh ${HOME}"
+  $HOME/scripts/setup-orms.sh --django-version latest \
+    --sqlalchemy-version latest --peewee-version latest"
 
 ADD ./examples ${HOME}/cynthia_src
 ADD ./entrypoint/entrypoint.sh /usr/local/bin/

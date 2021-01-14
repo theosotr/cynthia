@@ -1,32 +1,36 @@
 #! /bin/bash
 
-workdir=$1
-version_file=$2
-patch_dir=$HOME/patches
 
+OPTS=`getopt --long django-version:,peewee-version:,sqlalchemy-version: \
+             activerecord-version:,sequelize-version: "$@"`
 
-get_version()
-{
-  orm_name=$1
-  version=$(grep "$orm_name: .*" < $version_file |
-            sed -r "s/$orm_name: (.*)/\1/g")
-  if [ -z $version ]; then
-    echo "latest"
-  else
-    echo $version
-  fi
-}
-
-
-if [[ ! -f "$version_file" || -z $version_file ]]; then
-  django_version="latest"
-  peewee_version="latest"
-  sqlalchemy_version="latest"
-else
-  django_version=$(get_version "django")
-  peewee_version=$(get_version "peewee")
-  sqlalchemy_version=$(get_version "sqlalchemy")
+if [ $? != 0 ]; then
+  exit 1
 fi
+
+# Note the quotes around `$TEMP': they are essential!
+eval set -- "$OPTS"
+
+django_v=latest
+peewee_v=latest
+sqlalchemy_v=latest
+activerecord_v=latest
+sequelize_v=latest
+
+while true; do
+  case "$1" in
+    --django-version )       django_v="$2"; shift 2 ;;
+    --peewee-version )       peewee_v="$2"; shift 2 ;;
+    --sqlalchemy-version )   sqlalchemy_v="$2"; shift 2 ;;
+    --activerecord-version ) activerecord_v="$2"; shift 2 ;;
+    --sequelize-version )    sequelize_v="$2"; shift 2 ;;
+    -- ) shift ; break ;;
+    * ) break ;;
+  esac
+done
+
+workdir=$HOME
+patch_dir=$HOME/patches
 
 
 install_py_package()
@@ -57,9 +61,17 @@ install_py_package()
 setup()
 {
   # Get the master version of Python ORMs from Github.
-  install_py_package https://github.com/django/django $django_version
-  install_py_package https://github.com/sqlalchemy/sqlalchemy $sqlalchemy_version
-  install_py_package https://github.com/coleifer/peewee $peewee_version
+  if [ ! -z $django_v ]; then
+    install_py_package https://github.com/django/django $django_v
+  fi
+
+  if [ ! -z $sqlalchemy_v ]; then
+    install_py_package https://github.com/sqlalchemy/sqlalchemy $sqlalchemy_v
+  fi
+
+  if [ ! -z $peewee_v ]; then
+    install_py_package https://github.com/coleifer/peewee $peewee_v
+  fi
 }
 
 setup
