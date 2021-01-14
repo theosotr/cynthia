@@ -1,6 +1,7 @@
 # misc
 .cynthia/
 */cynthia-assembly-*
+project/project
 
 # nodejs
 node_modules/
