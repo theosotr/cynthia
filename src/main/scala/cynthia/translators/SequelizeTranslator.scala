@@ -131,7 +131,13 @@ case class SequelizeTranslator(target: Target) extends Translator {
         |  sequelize.close()
         |  ${_dumpField("x", dFields, ident = " " * 2)}
         |})""".stripMargin
-      case AggrRes (aggrs, _) => {
+      case AggrRes(Seq(FieldDecl(Count(None), as, _, _)), _) => {
+        s"""$ret.then((x) => {
+        |  sequelize.close()
+        |  ${" " * 2}dump(x, '$as')
+        |})""".stripMargin
+      }
+      case AggrRes(aggrs, _) => {
         val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
         s"""$ret.then((x) => {
         |  sequelize.close()
@@ -324,8 +330,12 @@ case class SequelizeTranslator(target: Target) extends Translator {
   }
 
   def constructAttributes(state: State) = {
+    val aggrs = state.aggrs match {
+      case Seq(FieldDecl(Count(None), _, _, _)) => Seq()
+      case _ => state.aggrs
+    }
     val attrStr = TUtils.mapNonHiddenFields(
-      state.fields.values ++ state.aggrs,
+      state.fields.values ++ aggrs,
       { case FieldDecl(_, as, _, _) =>
         (Str("[") << TUtils.toFieldVar(as) << ", " << Utils.quoteStr(as) << "]").!
       }
@@ -381,6 +391,13 @@ case class SequelizeTranslator(target: Target) extends Translator {
       "group: [" + (
       groupBy map { x => getSeqFieldName(x, false) } mkString ", ") + "]"
 
+  def selectMethod(s: State, first: Boolean) =
+    if (first) ".findOne"
+    else s.aggrs match {
+      case Seq(FieldDecl(Count(None), _, _, _)) => ".count"
+      case _ => ".findAll"
+    }
+
   override def constructCombinedQuery(s: State) =
     throw new UnsupportedException("Sequelize does not support combined queries")
 
@@ -392,7 +409,7 @@ case class SequelizeTranslator(target: Target) extends Translator {
     }
     val fieldVals = s.fields.values
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
-    val method = if (first) ".findOne" else ".findAll"
+    val method = selectMethod(s, first)
     // Coverts set of pairs to map of lists.
     val joinMap = s.getJoinPairs().groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
     val qStr = importModels(joinMap, Set(s.source)) <<
