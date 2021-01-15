@@ -341,7 +341,8 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
 
   def prepareFuture(stats: Stats, qid: Int, q: Query, s: State,
       dataThunk: Option[() => Unit]): Future[Stats] = {
-    val futures = targets map { t =>
+    val futures = targets map (t =>
+        (t, s.copy(numGen = LazyList.from(1).iterator))) map { case (t, s) =>
       Future {
         (t, QueryExecutor(q, s, t))
       }
