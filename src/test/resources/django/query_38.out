@@ -1,0 +1,8 @@
+ORsHBgQ = ExpressionWrapper(Value(6), output_field=IntegerField())
+othaPT = ExpressionWrapper((Sum(Value('pD1B'), output_field=FloatField()) / F('sale_price')), output_field=FloatField())
+gOtzP = ExpressionWrapper(F('othaPT'), output_field=FloatField())
+S = ExpressionWrapper(Avg(Value('AOjkd'), output_field=FloatField()), output_field=FloatField())
+x = ExpressionWrapper(Value(4), output_field=IntegerField())
+G = ExpressionWrapper(F('gOtzP'), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(ORsHBgQ=ORsHBgQ).values('sale_price', 'ORsHBgQ').annotate(othaPT=othaPT).annotate(gOtzP=gOtzP).values('ORsHBgQ', 'othaPT', 'gOtzP')

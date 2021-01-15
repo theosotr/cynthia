@@ -1,0 +1,1 @@
+ret1 = Listing.order("listing.foo DESC","listing.sale_price ASC","listing.id DESC").all

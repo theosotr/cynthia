@@ -1,0 +1,1 @@
+ret1 = Listing.select("(sum('pD1B')/listing.sale_price) as \"othaPT\"").select("6 as \"ORsHBgQ\"").select("(sum('pD1B')/listing.sale_price) as \"gOtzP\"").group("Listing.sale_price").all

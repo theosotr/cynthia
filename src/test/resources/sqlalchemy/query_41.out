@@ -1,0 +1,5 @@
+EoDFfvD_cynthia = type_coerce((Listing.sale_price - Listing.yearly_rent), types.String).label('EoDFfvD')
+aJZXPcub_cynthia = type_coerce(func.min(literal('8')), types.String).label('aJZXPcub')
+KWpgDGBLp_cynthia = type_coerce((Listing.sale_price / EoDFfvD_cynthia), types.String).label('KWpgDGBLp')
+ret1 = session.query(aJZXPcub_cynthia,KWpgDGBLp_cynthia).select_from(Listing)
+ret2 = ret1.group_by(KWpgDGBLp_cynthia, Listing.sale_price, Listing.yearly_rent)

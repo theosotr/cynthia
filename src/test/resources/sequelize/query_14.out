@@ -1,0 +1,13 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+custom_cynthia = sequelize.cast(sequelize.literal(`(5 + 15)`),'signed')
+text_cynthia = sequelize.cast(sequelize.literal(`\'foobar\'`),'varchar(100)')
+ret1 = Listing.findAll({
+attributes: [
+ [custom_cynthia, 'custom'],
+    [text_cynthia, 'text']],
+where: {
+  [Op.and]: [
+    {[Op.and]: [{'$custom$': {[Op.eq]: sequelize.literal(20)}},{'$text$': {[Op.eq]: sequelize.literal(`\'foobar\'`)}}]}  ]
+},
+offset: 0
+})

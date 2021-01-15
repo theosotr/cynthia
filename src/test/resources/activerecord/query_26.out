@@ -1,0 +1,1 @@
+ret1 = Listing.select("'EcwE' as \"wduesdvc\"").select("('EcwE'-'EcwE') as \"rrW\"").select("(2+listing.sale_price) as \"bCGVwr\"").all

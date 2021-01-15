@@ -1,0 +1,13 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+GTfzOMrj_cynthia = sequelize.cast(sequelize.literal(`(listing.sale_price - listing.sale_price)`),'float')
+lqA_cynthia = sequelize.cast(sequelize.literal(`(listing.sale_price - ${getC(GTfzOMrj_cynthia)})`),'float')
+Rp_cynthia = sequelize.cast(sequelize.fn('min', sequelize.col('listing.sale_price')),'float')
+blny_cynthia = sequelize.cast(sequelize.fn('sum', GTfzOMrj_cynthia),'float')
+ret1 = Listing.findAll({
+attributes: [
+ [lqA_cynthia, 'lqA'],
+    [Rp_cynthia, 'Rp'],
+    [blny_cynthia, 'blny']],
+group: ['lqA', 'listing.sale_price'],
+offset: 0
+})

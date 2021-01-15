@@ -1,0 +1,4 @@
+sales = ExpressionWrapper(F('sale_price'), output_field=FloatField())
+sum = ExpressionWrapper(Sum(F('yearly_rent'), output_field=FloatField()), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(sales=sales).values('sales', 'sale_price').annotate(sum=sum).values('sales', 'sum')

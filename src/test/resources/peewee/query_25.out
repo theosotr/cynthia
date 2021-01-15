@@ -1,0 +1,5 @@
+Jble_cynthia = (Value('JB', converter=False)).coerce(False).alias('Jble')
+cn_cynthia = (Value(1, converter=False)).coerce(False).alias('cn')
+FJOKGoi_cynthia = (fn.min((Value('qdbiycgpD', converter=False) + Value('3WnBi', converter=False)))).coerce(False).alias('FJOKGoi')
+ret1 = Listing.select(Jble_cynthia,FJOKGoi_cynthia)
+ret2 = ret1.group_by(Listing.id).objects()

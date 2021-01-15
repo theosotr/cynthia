@@ -1,0 +1,2 @@
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values().aggregate(count=ExpressionWrapper(Count('*', output_field=IntegerField()), output_field=IntegerField()))

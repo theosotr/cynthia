@@ -1,0 +1,5 @@
+Bypp_cynthia = type_coerce(func.max(Listing.sale_price), types.String).label('Bypp')
+XcRfBTT_cynthia = type_coerce(Bypp_cynthia, types.String).label('XcRfBTT')
+PsJ_cynthia = type_coerce(literal('duySFSo3w'), types.String).label('PsJ')
+ret1 = session.query(XcRfBTT_cynthia).select_from(Listing)
+ret2 = ret1.group_by(Listing.id)

@@ -1,0 +1,5 @@
+EoDFfvD = ExpressionWrapper((F('sale_price') - F('yearly_rent')), output_field=FloatField())
+aJZXPcub = ExpressionWrapper(Min(Value('8'), output_field=FloatField()), output_field=TextField())
+KWpgDGBLp = ExpressionWrapper((F('sale_price') / EoDFfvD), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(KWpgDGBLp=KWpgDGBLp).values('KWpgDGBLp', 'sale_price', 'yearly_rent').annotate(aJZXPcub=aJZXPcub).values('aJZXPcub', 'KWpgDGBLp')

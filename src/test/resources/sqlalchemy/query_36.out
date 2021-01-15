@@ -1,0 +1,5 @@
+jJqOpWLil_cynthia = type_coerce(func.count(Listing.id), types.String).label('jJqOpWLil')
+ij_cynthia = type_coerce(Listing.sale_price, types.String).label('ij')
+FPCwjJlb_cynthia = type_coerce(jJqOpWLil_cynthia, types.String).label('FPCwjJlb')
+ret1 = session.query(FPCwjJlb_cynthia).select_from(Listing)
+ret2 = ret1.group_by(Listing.id)

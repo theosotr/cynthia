@@ -1,0 +1,4 @@
+heTkuJqO_cynthia = type_coerce((((Listing.id.op('+')(func.min((Listing.sale_price * Listing.sale_price)))) - literal(7)).op('+')((Listing.sale_price.op('+')((((func.min(literal('e5LIn')).op('+')(Listing.sale_price)).op('+')(func.count(Listing.id))) / Listing.sale_price))))), types.String).label('heTkuJqO')
+BIKnH_cynthia = type_coerce(heTkuJqO_cynthia, types.String).label('BIKnH')
+ret1 = session.query(BIKnH_cynthia).select_from(Listing)
+ret2 = ret1.group_by(Listing.id, Listing.sale_price)

@@ -1,0 +1,1 @@
+ret1 = Listing.select("sum(listing.yearly_rent) as \"I\"").select("sum(listing.yearly_rent) as \"eqQy\"").group("Listing.id").all

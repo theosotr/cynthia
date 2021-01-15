@@ -1,0 +1,10 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+irOHtSumD_cynthia = sequelize.cast(sequelize.fn('avg', sequelize.literal(1)),'float')
+jiAtXcec_cynthia = sequelize.cast(irOHtSumD_cynthia,'float')
+ret1 = Listing.findAll({
+attributes: [
+ [irOHtSumD_cynthia, 'irOHtSumD'],
+    [jiAtXcec_cynthia, 'jiAtXcec']],
+group: ['listing.id'],
+offset: 0
+})

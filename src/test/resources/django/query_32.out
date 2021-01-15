@@ -1,0 +1,4 @@
+heTkuJqO = ExpressionWrapper((((F('id') + Min((F('sale_price') * F('sale_price')), output_field=FloatField())) - Value(7)) + (F('sale_price') + (((Min(Value('e5LIn'), output_field=FloatField()) + F('sale_price')) + Count(F('id'), output_field=FloatField())) / F('sale_price')))), output_field=FloatField())
+BIKnH = ExpressionWrapper(heTkuJqO, output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values('id', 'sale_price').annotate(BIKnH=BIKnH).values('BIKnH')

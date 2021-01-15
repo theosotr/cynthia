@@ -1,0 +1,5 @@
+EoDFfvD_cynthia = ((Listing.sale_price - Listing.yearly_rent)).coerce(False).alias('EoDFfvD')
+aJZXPcub_cynthia = (fn.min(Value('8', converter=False))).coerce(False).alias('aJZXPcub')
+KWpgDGBLp_cynthia = ((Listing.sale_price / EoDFfvD_cynthia.alias())).coerce(False).alias('KWpgDGBLp')
+ret1 = Listing.select(aJZXPcub_cynthia,KWpgDGBLp_cynthia)
+ret2 = ret1.group_by(KWpgDGBLp_cynthia.alias(), Listing.sale_price, Listing.yearly_rent).objects()

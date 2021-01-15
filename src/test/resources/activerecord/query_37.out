@@ -1,0 +1,1 @@
+ret1 = Listing.select("((min(0)/listing.sale_price)+(min(0)/listing.sale_price)) as \"Te\"").group("Listing.sale_price").all

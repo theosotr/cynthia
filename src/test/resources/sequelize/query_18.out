@@ -1,0 +1,14 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+sales_cynthia = sequelize.cast(sequelize.col('listing.sale_price'),'float')
+max_cynthia = sequelize.cast(sequelize.fn('max', sequelize.literal(`(listing.yearly_rent + 10)`)),'float')
+ret1 = Listing.findAll({
+attributes: [
+ [sales_cynthia, 'sales'],
+    [max_cynthia, 'max']],
+having: {
+  [Op.and]: [
+    {'$max$': {[Op.gte]: sequelize.literal(`(10 + ${getC(sales_cynthia)})`)}}  ]
+},
+group: ['sales', 'listing.sale_price'],
+offset: 0
+})

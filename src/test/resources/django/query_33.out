@@ -1,0 +1,5 @@
+Szgw = ExpressionWrapper(Avg(F('id'), output_field=FloatField()), output_field=FloatField())
+K = ExpressionWrapper(Value('VWSKU7'), output_field=TextField())
+ee = ExpressionWrapper(F('sale_price'), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(ee=ee).values('ee', 'sale_price').annotate(Szgw=Szgw).values('Szgw', 'ee')

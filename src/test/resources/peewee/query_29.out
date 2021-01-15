@@ -1,0 +1,6 @@
+QutFiZgOg_cynthia = (((Value(3, converter=False) * ((Listing.yearly_rent + Listing.id) - fn.sum(Value('obAoS5v', converter=False)))) + Value('bfJWBP7p', converter=False))).coerce(False).alias('QutFiZgOg')
+SsJNcy_cynthia = (fn.avg((Listing.sale_price - Value(4, converter=False)))).coerce(False).alias('SsJNcy')
+wdVXax_cynthia = (Listing.sale_price).coerce(False).alias('wdVXax')
+wmWMTQf_cynthia = (((Listing.id + fn.min(Listing.sale_price)) - (SsJNcy_cynthia.alias() / (SsJNcy_cynthia.alias() - Value('HYQvPq', converter=False))))).coerce(False).alias('wmWMTQf')
+ret1 = Listing.select(QutFiZgOg_cynthia,SsJNcy_cynthia,wdVXax_cynthia,wmWMTQf_cynthia)
+ret2 = ret1.group_by(wdVXax_cynthia.alias(), Listing.yearly_rent, Listing.id, Listing.sale_price).objects()

@@ -1,0 +1,11 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+wduesdvc_cynthia = sequelize.cast(sequelize.literal(`\'EcwE\'`),'varchar(100)')
+rrW_cynthia = sequelize.cast(sequelize.literal(`(${getC(wduesdvc_cynthia)} - ${getC(wduesdvc_cynthia)})`),'float')
+bCGVwr_cynthia = sequelize.cast(sequelize.literal(`(2 + listing.sale_price)`),'float')
+ret1 = Listing.findAll({
+attributes: [
+ [wduesdvc_cynthia, 'wduesdvc'],
+    [rrW_cynthia, 'rrW'],
+    [bCGVwr_cynthia, 'bCGVwr']],
+offset: 0
+})

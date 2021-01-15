@@ -1,0 +1,3 @@
+EfLr = ExpressionWrapper(((F('id') + (((Value(9) / Value('n3zKcdj2')) + (((Value(8) / Value(1)) / F('id')) + F('yearly_rent'))) / Value('px5me'))) - (Value('y1e8rj') - Value('f1cay92kV'))), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(EfLr=EfLr).values('EfLr').aggregate(KiqJoUU=ExpressionWrapper(Count(F('EfLr'), output_field=IntegerField()), output_field=IntegerField()))

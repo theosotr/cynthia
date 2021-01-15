@@ -1,0 +1,5 @@
+V = ExpressionWrapper(F('sale_price'), output_field=FloatField())
+jjG = ExpressionWrapper((F('id') * F('V')), output_field=FloatField())
+qmIqh = ExpressionWrapper(((F('id') / F('jjG')) * Min((F('V') - Value(7)), output_field=FloatField())), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(V=V).annotate(jjG=jjG).values('V', 'jjG', 'sale_price', 'id').annotate(qmIqh=qmIqh).values('V', 'jjG', 'qmIqh')

@@ -1,0 +1,2 @@
+ret1 = Listing.objects.using('default')
+ret2 = ret1.filter(~Q(foo=Value('bar'))).values()

@@ -1,0 +1,1 @@
+ret1 = Listing.select("(listing.sale_price-(listing.sale_price-listing.sale_price)) as \"lqA\"").select("min(listing.sale_price) as \"Rp\"").select("sum((listing.sale_price-listing.sale_price)) as \"blny\"").group("(listing.sale_price-(listing.sale_price-listing.sale_price))", "Listing.sale_price").all

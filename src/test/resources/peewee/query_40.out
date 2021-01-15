@@ -1,0 +1,8 @@
+eqQy_cynthia = (fn.sum(Listing.yearly_rent)).coerce(False).alias('eqQy')
+rQe_cynthia = (eqQy_cynthia.alias()).coerce(False).alias('rQe')
+dvcVCurv_cynthia = (fn.count(Listing.id)).coerce(False).alias('dvcVCurv')
+I_cynthia = (eqQy_cynthia.alias()).coerce(False).alias('I')
+TPH_cynthia = (Listing.sale_price).coerce(False).alias('TPH')
+bqZCpnWO_cynthia = (Value(5, converter=False)).coerce(False).alias('bqZCpnWO')
+ret1 = Listing.select(eqQy_cynthia,I_cynthia)
+ret2 = ret1.group_by(Listing.id).objects()

@@ -1,0 +1,1 @@
+ret1 = Listing.select("listing.sale_price as \"sales\"").select("sum(listing.yearly_rent) as \"sum\"").group("listing.sale_price", "Listing.sale_price").all

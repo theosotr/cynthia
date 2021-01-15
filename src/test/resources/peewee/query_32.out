@@ -1,0 +1,4 @@
+heTkuJqO_cynthia = ((((Listing.id + fn.min((Listing.sale_price * Listing.sale_price))) - Value(7, converter=False)) + (Listing.sale_price + (((fn.min(Value('e5LIn', converter=False)) + Listing.sale_price) + fn.count(Listing.id)) / Listing.sale_price)))).coerce(False).alias('heTkuJqO')
+BIKnH_cynthia = (heTkuJqO_cynthia.alias()).coerce(False).alias('BIKnH')
+ret1 = Listing.select(BIKnH_cynthia)
+ret2 = ret1.group_by(Listing.id, Listing.sale_price).objects()

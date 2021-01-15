@@ -1,0 +1,1 @@
+ret1 = Listing.select("max(listing.sale_price) as \"XcRfBTT\"").group("Listing.id").all

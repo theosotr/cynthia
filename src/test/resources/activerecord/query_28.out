@@ -1,0 +1,1 @@
+ret1 = Listing.select("3 as \"WXDdG\"").select("(sum((listing.id+2))*listing.id) as \"CBG\"").group("Listing.id").all

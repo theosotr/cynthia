@@ -1,0 +1,10 @@
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values()
+ret3 = Listing.objects.using('default')
+ret4 = ret3.values()
+ret5 = Listing.objects.using('default')
+ret6 = ret5.values()
+ret7 = ret4.union(ret6)
+ret8 = ret7
+ret9 = ret2.union(ret8)
+ret10 = ret9

@@ -1,0 +1,1 @@
+ret1 = Listing.select("listing.sale_price as \"V\"").select("(listing.id*listing.sale_price) as \"jjG\"").select("((listing.id/(listing.id*listing.sale_price))*min((listing.sale_price-7))) as \"qmIqh\"").group("listing.sale_price", "(listing.id*listing.sale_price)", "Listing.sale_price", "Listing.id").all

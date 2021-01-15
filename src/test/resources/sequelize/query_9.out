@@ -1,0 +1,13 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+sum_sale_cynthia = sequelize.cast(sequelize.fn('sum', sequelize.col('listing.sale_price')),'float')
+max_sale_cynthia = sequelize.cast(sequelize.fn('max', sequelize.col('listing.sale_price')),'float')
+min_sale_cynthia = sequelize.cast(sequelize.fn('min', sequelize.col('listing.sale_price')),'float')
+avg_sale_cynthia = sequelize.cast(sequelize.fn('avg', sequelize.col('listing.sale_price')),'float')
+ret1 = Listing.findAll({
+attributes: [
+ [sum_sale_cynthia, 'sum_sale'],
+    [max_sale_cynthia, 'max_sale'],
+    [min_sale_cynthia, 'min_sale'],
+    [avg_sale_cynthia, 'avg_sale']],
+offset: 0
+})

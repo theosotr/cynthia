@@ -1,0 +1,13 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+sales_cynthia = sequelize.cast(sequelize.col('listing.sale_price'),'float')
+fooF_cynthia = sequelize.cast(sequelize.col('listing.foo'),'varchar(100)')
+mul_cynthia = sequelize.cast(sequelize.literal(`(listing.sale_price * listing.sale_price)`),'float')
+squared_cynthia = sequelize.cast(sequelize.fn('avg', mul_cynthia),'float')
+ret1 = Listing.findAll({
+attributes: [
+ [sales_cynthia, 'sales'],
+    [fooF_cynthia, 'fooF'],
+    [squared_cynthia, 'squared']],
+group: ['sales', 'fooF', 'listing.sale_price', 'listing.foo'],
+offset: 0
+})

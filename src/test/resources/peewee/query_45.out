@@ -1,0 +1,7 @@
+R_cynthia = (Listing.sale_price).coerce(False).alias('R')
+vlrkx_cynthia = ((Listing.sale_price / R_cynthia.alias())).coerce(False).alias('vlrkx')
+mUoSMAxdl_cynthia = (vlrkx_cynthia.alias()).coerce(False).alias('mUoSMAxdl')
+uBnSWipsi_cynthia = (((Value(8, converter=False) * Listing.id) / Value('PHoJX5b', converter=False))).coerce(False).alias('uBnSWipsi')
+OAYwxOOET_cynthia = ((Value(9, converter=False) / (Value('', converter=False) + Value(1, converter=False)))).coerce(False).alias('OAYwxOOET')
+ret1 = Listing.select((fn.count(R_cynthia.alias())).coerce(False).alias('R'))
+ret2 = ret1.group_by().objects().first()

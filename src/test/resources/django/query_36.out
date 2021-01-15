@@ -1,0 +1,5 @@
+jJqOpWLil = ExpressionWrapper(Count(F('id'), output_field=FloatField()), output_field=IntegerField())
+ij = ExpressionWrapper(F('sale_price'), output_field=FloatField())
+FPCwjJlb = ExpressionWrapper(jJqOpWLil, output_field=IntegerField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values().annotate(FPCwjJlb=FPCwjJlb).values('FPCwjJlb')

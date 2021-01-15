@@ -1,0 +1,6 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+ret1 = Listing.findAll({
+order: [
+  ['foo', 'DESC'],  ['sale_price', 'ASC'],  ['id', 'DESC']],
+offset: 0
+})

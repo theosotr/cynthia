@@ -1,0 +1,8 @@
+ORsHBgQ_cynthia = (Value(6, converter=False)).coerce(False).alias('ORsHBgQ')
+othaPT_cynthia = ((fn.sum(Value('pD1B', converter=False)) / Listing.sale_price)).coerce(False).alias('othaPT')
+gOtzP_cynthia = (othaPT_cynthia.alias()).coerce(False).alias('gOtzP')
+S_cynthia = (fn.avg(Value('AOjkd', converter=False))).coerce(False).alias('S')
+x_cynthia = (Value(4, converter=False)).coerce(False).alias('x')
+G_cynthia = (gOtzP_cynthia.alias()).coerce(False).alias('G')
+ret1 = Listing.select(ORsHBgQ_cynthia,othaPT_cynthia,gOtzP_cynthia)
+ret2 = ret1.group_by(Listing.sale_price).objects()

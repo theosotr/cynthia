@@ -1,0 +1,6 @@
+GTfzOMrj = ExpressionWrapper((F('sale_price') - F('sale_price')), output_field=FloatField())
+lqA = ExpressionWrapper((F('sale_price') - GTfzOMrj), output_field=FloatField())
+Rp = ExpressionWrapper(Min(F('sale_price'), output_field=FloatField()), output_field=FloatField())
+blny = ExpressionWrapper(Sum(GTfzOMrj, output_field=FloatField()), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(lqA=lqA).values('lqA', 'sale_price').annotate(Rp=Rp).annotate(blny=blny).values('lqA', 'Rp', 'blny')

@@ -1,0 +1,4 @@
+yVmbvGHWe = ExpressionWrapper((Min(Value(0), output_field=FloatField()) / F('sale_price')), output_field=FloatField())
+Te = ExpressionWrapper((yVmbvGHWe + yVmbvGHWe), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values('sale_price').annotate(Te=Te).values('Te')

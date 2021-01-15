@@ -1,0 +1,1 @@
+ret1 = Listing.where(["(listing.yearly_rent+listing.sale_price) >= ?", 50]).select("(listing.yearly_rent+listing.sale_price) as \"custom\"").all

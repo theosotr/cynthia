@@ -1,0 +1,6 @@
+QutFiZgOg_cynthia = type_coerce(((literal(3) * ((Listing.yearly_rent.op('+')(Listing.id)) - func.sum(literal('obAoS5v')))).op('+')(literal('bfJWBP7p'))), types.String).label('QutFiZgOg')
+SsJNcy_cynthia = type_coerce(func.avg((Listing.sale_price - literal(4))), types.String).label('SsJNcy')
+wdVXax_cynthia = type_coerce(Listing.sale_price, types.String).label('wdVXax')
+wmWMTQf_cynthia = type_coerce(((Listing.id.op('+')(func.min(Listing.sale_price))) - (SsJNcy_cynthia / (SsJNcy_cynthia - literal('HYQvPq')))), types.String).label('wmWMTQf')
+ret1 = session.query(QutFiZgOg_cynthia,SsJNcy_cynthia,wdVXax_cynthia,wmWMTQf_cynthia).select_from(Listing)
+ret2 = ret1.group_by(wdVXax_cynthia, Listing.yearly_rent, Listing.id, Listing.sale_price)

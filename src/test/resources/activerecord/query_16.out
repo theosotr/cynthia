@@ -1,0 +1,1 @@
+ret1 = Listing.where(["(10*(5/listing.sale_price)) >= ?", 1]).select("(10*(5/listing.sale_price)) as \"sales\"").select("sum(listing.yearly_rent) as \"sum\"").group("(10*(5/listing.sale_price))", "Listing.sale_price").all

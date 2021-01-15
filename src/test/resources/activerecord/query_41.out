@@ -1,0 +1,1 @@
+ret1 = Listing.select("min('8') as \"aJZXPcub\"").select("(listing.sale_price/(listing.sale_price-listing.yearly_rent)) as \"KWpgDGBLp\"").group("(listing.sale_price/(listing.sale_price-listing.yearly_rent))", "Listing.sale_price", "Listing.yearly_rent").all

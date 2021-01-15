@@ -1,0 +1,2 @@
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values().aggregate(max=ExpressionWrapper(Max(F('foo'), output_field=TextField()), output_field=TextField()),min=ExpressionWrapper(Min(F('foo'), output_field=TextField()), output_field=TextField()))

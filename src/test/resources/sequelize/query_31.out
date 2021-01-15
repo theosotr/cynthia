@@ -1,0 +1,10 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+Bypp_cynthia = sequelize.cast(sequelize.fn('max', sequelize.col('listing.sale_price')),'float')
+XcRfBTT_cynthia = sequelize.cast(Bypp_cynthia,'float')
+PsJ_cynthia = sequelize.cast(sequelize.literal(`\'duySFSo3w\'`),'varchar(100)')
+ret1 = Listing.findAll({
+attributes: [
+ [XcRfBTT_cynthia, 'XcRfBTT']],
+group: ['listing.id'],
+offset: 0
+})

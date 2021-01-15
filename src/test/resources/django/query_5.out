@@ -1,0 +1,2 @@
+ret1 = Listing.objects.using('default')
+ret2 = ret1.order_by('-foo','sale_price','-id').values()

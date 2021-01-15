@@ -1,0 +1,2 @@
+ret1 = session.query(type_coerce(func.max(Listing.foo), types.String).label('max'), type_coerce(func.min(Listing.foo), types.String).label('min')).select_from(Listing)
+ret2 = ret1.group_by().first()

@@ -1,0 +1,2 @@
+ret1 = Listing.select((fn.max(Listing.foo)).coerce(False).alias('max'), (fn.min(Listing.foo)).coerce(False).alias('min'))
+ret2 = ret1.group_by().objects().first()

@@ -1,0 +1,5 @@
+Jble_cynthia = type_coerce(literal('JB'), types.String).label('Jble')
+cn_cynthia = type_coerce(literal(1), types.String).label('cn')
+FJOKGoi_cynthia = type_coerce(func.min((literal('qdbiycgpD').op('+')(literal('3WnBi')))), types.String).label('FJOKGoi')
+ret1 = session.query(Jble_cynthia,FJOKGoi_cynthia).select_from(Listing)
+ret2 = ret1.group_by(Listing.id)

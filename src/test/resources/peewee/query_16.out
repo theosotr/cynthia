@@ -1,0 +1,4 @@
+sales_cynthia = ((Value(10, converter=False) * (Value(5, converter=False) / Listing.sale_price))).coerce(False).alias('sales')
+sum_cynthia = (fn.sum(Listing.yearly_rent)).coerce(False).alias('sum')
+ret1 = Listing.select(sales_cynthia,sum_cynthia)
+ret2 = ret1.where(sales_cynthia.alias() >= Value(1, converter=False)).group_by(sales_cynthia.alias(), Listing.sale_price).objects()

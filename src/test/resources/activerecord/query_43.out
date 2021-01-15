@@ -1,0 +1,1 @@
+ret1 = Listing.order("listing.id DESC").select("count('wAi8pi4f') as \"jcVbPimsG\"").select("(listing.yearly_rent/listing.sale_price) as \"WrTj\"").select("0 as \"cCqQb\"").group("Listing.sale_price", "Listing.id", "(listing.yearly_rent/listing.sale_price)", "Listing.yearly_rent").all

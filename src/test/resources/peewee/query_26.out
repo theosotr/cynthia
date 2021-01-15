@@ -1,0 +1,5 @@
+wduesdvc_cynthia = (Value('EcwE', converter=False)).coerce(False).alias('wduesdvc')
+rrW_cynthia = ((wduesdvc_cynthia.alias() - wduesdvc_cynthia.alias())).coerce(False).alias('rrW')
+bCGVwr_cynthia = ((Value(2, converter=False) + Listing.sale_price)).coerce(False).alias('bCGVwr')
+ret1 = Listing.select(wduesdvc_cynthia,rrW_cynthia,bCGVwr_cynthia)
+ret2 = ret1.group_by().objects()

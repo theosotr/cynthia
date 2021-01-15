@@ -1,0 +1,6 @@
+GTfzOMrj_cynthia = type_coerce((Listing.sale_price - Listing.sale_price), types.String).label('GTfzOMrj')
+lqA_cynthia = type_coerce((Listing.sale_price - GTfzOMrj_cynthia), types.String).label('lqA')
+Rp_cynthia = type_coerce(func.min(Listing.sale_price), types.String).label('Rp')
+blny_cynthia = type_coerce(func.sum(GTfzOMrj_cynthia), types.String).label('blny')
+ret1 = session.query(lqA_cynthia,Rp_cynthia,blny_cynthia).select_from(Listing)
+ret2 = ret1.group_by(lqA_cynthia, Listing.sale_price)

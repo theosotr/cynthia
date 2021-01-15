@@ -1,0 +1,7 @@
+WrTj = ExpressionWrapper((F('yearly_rent') / F('sale_price')), output_field=FloatField())
+MPi = ExpressionWrapper(Value(5), output_field=IntegerField())
+jcVbPimsG = ExpressionWrapper(Count(Value('wAi8pi4f'), output_field=FloatField()), output_field=IntegerField())
+hj = ExpressionWrapper(F('WrTj'), output_field=FloatField())
+cCqQb = ExpressionWrapper(Value(0), output_field=IntegerField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(WrTj=WrTj).annotate(cCqQb=cCqQb).values('yearly_rent', 'id', 'WrTj', 'sale_price', 'cCqQb').annotate(jcVbPimsG=jcVbPimsG).order_by('-id').values('WrTj', 'jcVbPimsG', 'cCqQb')

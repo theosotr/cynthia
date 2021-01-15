@@ -1,0 +1,5 @@
+V_cynthia = (Listing.sale_price).coerce(False).alias('V')
+jjG_cynthia = ((Listing.id * V_cynthia.alias())).coerce(False).alias('jjG')
+qmIqh_cynthia = (((Listing.id / jjG_cynthia.alias()) * fn.min((V_cynthia.alias() - Value(7, converter=False))))).coerce(False).alias('qmIqh')
+ret1 = Listing.select(V_cynthia,jjG_cynthia,qmIqh_cynthia)
+ret2 = ret1.group_by(V_cynthia.alias(), jjG_cynthia.alias(), Listing.sale_price, Listing.id).objects()

@@ -1,0 +1,1 @@
+ret1 = Listing.where.not(["listing.foo = ?", 'bar']).where(["listing.sale_price >= ?", 100]).all

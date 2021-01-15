@@ -1,0 +1,2 @@
+ret1 = session.query(Listing)
+ret2 = ret1.filter(and_(not_(Listing.foo==literal('bar')), Listing.sale_price >= literal(100))).group_by()

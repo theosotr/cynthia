@@ -1,0 +1,14 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+eqQy_cynthia = sequelize.cast(sequelize.fn('sum', sequelize.col('listing.yearly_rent')),'float')
+rQe_cynthia = sequelize.cast(eqQy_cynthia,'float')
+dvcVCurv_cynthia = sequelize.cast(sequelize.fn('count', sequelize.col('listing.id')),'signed')
+I_cynthia = sequelize.cast(eqQy_cynthia,'float')
+TPH_cynthia = sequelize.cast(sequelize.col('listing.sale_price'),'float')
+bqZCpnWO_cynthia = sequelize.cast(sequelize.literal(5),'signed')
+ret1 = Listing.findAll({
+attributes: [
+ [eqQy_cynthia, 'eqQy'],
+    [I_cynthia, 'I']],
+group: ['listing.id'],
+offset: 0
+})

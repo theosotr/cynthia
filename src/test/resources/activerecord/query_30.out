@@ -1,0 +1,1 @@
+ret1 = Listing.select("'6quxR' as \"y\"").select("sum(('6quxR'/2)) as \"WIhPq\"").group("Listing.id").all

@@ -1,0 +1,6 @@
+sales = ExpressionWrapper(F('sale_price'), output_field=FloatField())
+fooF = ExpressionWrapper(F('foo'), output_field=TextField())
+mul = ExpressionWrapper((F('sale_price') * F('sale_price')), output_field=FloatField())
+squared = ExpressionWrapper(Avg(mul, output_field=FloatField()), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(fooF=fooF).annotate(sales=sales).values('sales', 'fooF', 'sale_price', 'foo').annotate(squared=squared).values('sales', 'fooF', 'squared')

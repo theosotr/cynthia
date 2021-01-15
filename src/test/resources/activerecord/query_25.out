@@ -1,0 +1,1 @@
+ret1 = Listing.select("'JB' as \"Jble\"").select("min(('qdbiycgpD'+'3WnBi')) as \"FJOKGoi\"").group("Listing.id").all

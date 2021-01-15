@@ -1,0 +1,7 @@
+R = ExpressionWrapper(F('sale_price'), output_field=FloatField())
+vlrkx = ExpressionWrapper((F('sale_price') / F('R')), output_field=FloatField())
+mUoSMAxdl = ExpressionWrapper(F('vlrkx'), output_field=FloatField())
+uBnSWipsi = ExpressionWrapper(((Value(8) * F('id')) / Value('PHoJX5b')), output_field=FloatField())
+OAYwxOOET = ExpressionWrapper((Value(9) / (Value('') + Value(1))), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(R=R).annotate(vlrkx=vlrkx).annotate(mUoSMAxdl=mUoSMAxdl).annotate(OAYwxOOET=OAYwxOOET).annotate(uBnSWipsi=uBnSWipsi).values('R', 'vlrkx', 'OAYwxOOET', 'uBnSWipsi', 'mUoSMAxdl').aggregate(R=ExpressionWrapper(Count(F('R'), output_field=IntegerField()), output_field=IntegerField()))

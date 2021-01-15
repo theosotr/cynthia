@@ -1,0 +1,5 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+count_cynthia = sequelize.cast(sequelize.fn('count', '*'),'signed')
+ret1 = Listing.count({
+offset: 0
+})

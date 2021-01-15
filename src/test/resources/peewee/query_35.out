@@ -1,0 +1,4 @@
+QpUmZQeX_cynthia = (fn.count(Listing.id)).coerce(False).alias('QpUmZQeX')
+dvdddN_cynthia = ((Value('p4d', converter=False) * Value('qYCGT', converter=False))).coerce(False).alias('dvdddN')
+ret1 = Listing.select(QpUmZQeX_cynthia)
+ret2 = ret1.group_by(Listing.id).objects()

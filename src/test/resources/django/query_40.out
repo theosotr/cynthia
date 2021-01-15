@@ -1,0 +1,8 @@
+eqQy = ExpressionWrapper(Sum(F('yearly_rent'), output_field=FloatField()), output_field=FloatField())
+rQe = ExpressionWrapper(F('eqQy'), output_field=FloatField())
+dvcVCurv = ExpressionWrapper(Count(F('id'), output_field=FloatField()), output_field=IntegerField())
+I = ExpressionWrapper(F('eqQy'), output_field=FloatField())
+TPH = ExpressionWrapper(F('sale_price'), output_field=FloatField())
+bqZCpnWO = ExpressionWrapper(Value(5), output_field=IntegerField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values().annotate(eqQy=eqQy).annotate(I=I).values('eqQy', 'I')

@@ -1,0 +1,4 @@
+irOHtSumD = ExpressionWrapper(Avg(Value(1), output_field=FloatField()), output_field=FloatField())
+jiAtXcec = ExpressionWrapper(F('irOHtSumD'), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values().annotate(irOHtSumD=irOHtSumD).annotate(jiAtXcec=jiAtXcec).values('irOHtSumD', 'jiAtXcec')

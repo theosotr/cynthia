@@ -1,0 +1,1 @@
+ret1 = Listing.select("listing.sale_price as \"sales\"").select("listing.foo as \"fooF\"").select("avg((listing.sale_price*listing.sale_price)) as \"squared\"").group("listing.sale_price", "listing.foo", "Listing.sale_price", "Listing.foo").all

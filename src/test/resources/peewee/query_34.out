@@ -1,0 +1,3 @@
+ppVMYfS_cynthia = ((fn.min(Listing.sale_price) - Listing.sale_price)).coerce(False).alias('ppVMYfS')
+ret1 = Listing.select()
+ret2 = ret1.group_by().objects()

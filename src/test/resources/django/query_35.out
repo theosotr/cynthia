@@ -1,0 +1,4 @@
+QpUmZQeX = ExpressionWrapper(Count(F('id'), output_field=FloatField()), output_field=IntegerField())
+dvdddN = ExpressionWrapper((Value('p4d') * Value('qYCGT')), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values().annotate(QpUmZQeX=QpUmZQeX).values('QpUmZQeX')

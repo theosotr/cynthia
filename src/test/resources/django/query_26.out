@@ -1,0 +1,5 @@
+wduesdvc = ExpressionWrapper(Value('EcwE'), output_field=TextField())
+rrW = ExpressionWrapper((F('wduesdvc') - F('wduesdvc')), output_field=FloatField())
+bCGVwr = ExpressionWrapper((Value(2) + F('sale_price')), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(wduesdvc=wduesdvc).annotate(rrW=rrW).annotate(bCGVwr=bCGVwr).values('wduesdvc', 'rrW', 'bCGVwr')

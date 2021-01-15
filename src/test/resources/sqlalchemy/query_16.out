@@ -1,0 +1,4 @@
+sales_cynthia = type_coerce((literal(10) * (literal(5) / Listing.sale_price)), types.String).label('sales')
+sum_cynthia = type_coerce(func.sum(Listing.yearly_rent), types.String).label('sum')
+ret1 = session.query(sales_cynthia,sum_cynthia).select_from(Listing)
+ret2 = ret1.filter(sales_cynthia >= literal(1)).group_by(sales_cynthia, Listing.sale_price)

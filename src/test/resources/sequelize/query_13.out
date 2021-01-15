@@ -1,0 +1,11 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+custom_cynthia = sequelize.cast(sequelize.literal(`(listing.yearly_rent + listing.sale_price)`),'float')
+ret1 = Listing.findAll({
+attributes: [
+ [custom_cynthia, 'custom']],
+where: {
+  [Op.and]: [
+    {'$custom$': {[Op.gte]: sequelize.literal(50)}}  ]
+},
+offset: 0
+})

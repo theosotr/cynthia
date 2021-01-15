@@ -1,0 +1,8 @@
+eqQy_cynthia = type_coerce(func.sum(Listing.yearly_rent), types.String).label('eqQy')
+rQe_cynthia = type_coerce(eqQy_cynthia, types.String).label('rQe')
+dvcVCurv_cynthia = type_coerce(func.count(Listing.id), types.String).label('dvcVCurv')
+I_cynthia = type_coerce(eqQy_cynthia, types.String).label('I')
+TPH_cynthia = type_coerce(Listing.sale_price, types.String).label('TPH')
+bqZCpnWO_cynthia = type_coerce(literal(5), types.String).label('bqZCpnWO')
+ret1 = session.query(eqQy_cynthia,I_cynthia).select_from(Listing)
+ret2 = ret1.group_by(Listing.id)

@@ -1,0 +1,4 @@
+sales_cynthia = (Listing.sale_price).coerce(False).alias('sales')
+squared_cynthia = (fn.avg((Listing.sale_price * Listing.sale_price))).coerce(False).alias('squared')
+ret1 = Listing.select(sales_cynthia,squared_cynthia)
+ret2 = ret1.group_by(sales_cynthia.alias(), Listing.sale_price).objects()

@@ -1,0 +1,3 @@
+mul = ExpressionWrapper((Avg(F('yearly_rent'), output_field=FloatField()) * Avg(F('sale_price'), output_field=FloatField())), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.values().annotate(mul=mul).values('mul')

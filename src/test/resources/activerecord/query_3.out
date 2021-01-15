@@ -1,0 +1,1 @@
+ret1 = Listing.where.not(["listing.foo = ?", 'bar']).all

@@ -1,0 +1,6 @@
+sales_cynthia = type_coerce(Listing.sale_price, types.String).label('sales')
+fooF_cynthia = type_coerce(Listing.foo, types.String).label('fooF')
+mul_cynthia = type_coerce((Listing.sale_price * Listing.sale_price), types.String).label('mul')
+squared_cynthia = type_coerce(func.avg(mul_cynthia), types.String).label('squared')
+ret1 = session.query(sales_cynthia,fooF_cynthia,squared_cynthia).select_from(Listing)
+ret2 = ret1.group_by(sales_cynthia, fooF_cynthia, Listing.sale_price, Listing.foo)

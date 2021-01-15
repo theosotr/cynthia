@@ -1,0 +1,10 @@
+ret1 = session.query(Listing)
+ret2 = ret1.group_by()
+ret3 = session.query(Listing)
+ret4 = ret3.group_by()
+ret5 = session.query(Listing)
+ret6 = ret5.group_by()
+ret7 = ret4.union(ret6)
+ret8 = ret7
+ret9 = ret2.union(ret8)
+ret10 = ret9

@@ -1,0 +1,7 @@
+R_cynthia = type_coerce(Listing.sale_price, types.String).label('R')
+vlrkx_cynthia = type_coerce((Listing.sale_price / R_cynthia), types.String).label('vlrkx')
+mUoSMAxdl_cynthia = type_coerce(vlrkx_cynthia, types.String).label('mUoSMAxdl')
+uBnSWipsi_cynthia = type_coerce(((literal(8) * Listing.id) / literal('PHoJX5b')), types.String).label('uBnSWipsi')
+OAYwxOOET_cynthia = type_coerce((literal(9) / (literal('').op('+')(literal(1)))), types.String).label('OAYwxOOET')
+ret1 = session.query(type_coerce(func.count(R_cynthia), types.Integer).label('R')).select_from(Listing)
+ret2 = ret1.group_by().first()

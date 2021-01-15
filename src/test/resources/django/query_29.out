@@ -1,0 +1,6 @@
+QutFiZgOg = ExpressionWrapper(((Value(3) * ((F('yearly_rent') + F('id')) - Sum(Value('obAoS5v'), output_field=FloatField()))) + Value('bfJWBP7p')), output_field=FloatField())
+SsJNcy = ExpressionWrapper(Avg((F('sale_price') - Value(4)), output_field=FloatField()), output_field=FloatField())
+wdVXax = ExpressionWrapper(F('sale_price'), output_field=FloatField())
+wmWMTQf = ExpressionWrapper(((F('id') + Min(F('sale_price'), output_field=FloatField())) - (F('SsJNcy') / (F('SsJNcy') - Value('HYQvPq')))), output_field=FloatField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(wdVXax=wdVXax).values('wdVXax', 'yearly_rent', 'id', 'sale_price').annotate(SsJNcy=SsJNcy).annotate(QutFiZgOg=QutFiZgOg).annotate(wmWMTQf=wmWMTQf).values('QutFiZgOg', 'SsJNcy', 'wdVXax', 'wmWMTQf')

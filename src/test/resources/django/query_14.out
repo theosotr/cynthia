@@ -1,0 +1,4 @@
+custom = ExpressionWrapper((Value(5) + Value(15)), output_field=IntegerField())
+text = ExpressionWrapper(Value('foobar'), output_field=TextField())
+ret1 = Listing.objects.using('default')
+ret2 = ret1.annotate(custom=custom).annotate(text=text).filter(Q(custom=Value(20)), Q(text=Value('foobar'))).values('custom', 'text')

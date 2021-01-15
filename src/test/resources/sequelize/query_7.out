@@ -1,0 +1,8 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+ret1 = Listing.findAll({
+where: {
+  [Op.and]: [
+    {[Op.and]: [{[Op.not]: {'$listing.foo$': {[Op.eq]: sequelize.literal(`\'bar\'`)}}},{'$listing.sale_price$': {[Op.gte]: sequelize.literal(100)}}]}  ]
+},
+offset: 0
+})

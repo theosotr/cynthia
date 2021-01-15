@@ -1,0 +1,10 @@
+Listing = require('./listing.js')(sequelize, Sequelize)
+sales_cynthia = sequelize.cast(sequelize.col('listing.sale_price'),'float')
+sum_cynthia = sequelize.cast(sequelize.fn('sum', sequelize.col('listing.yearly_rent')),'float')
+ret1 = Listing.findAll({
+attributes: [
+ [sales_cynthia, 'sales'],
+    [sum_cynthia, 'sum']],
+group: ['sales', 'listing.sale_price'],
+offset: 0
+})

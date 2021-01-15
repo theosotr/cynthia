@@ -1,0 +1,4 @@
+QpUmZQeX_cynthia = type_coerce(func.count(Listing.id), types.String).label('QpUmZQeX')
+dvdddN_cynthia = type_coerce((literal('p4d') * literal('qYCGT')), types.String).label('dvdddN')
+ret1 = session.query(QpUmZQeX_cynthia).select_from(Listing)
+ret2 = ret1.group_by(Listing.id)

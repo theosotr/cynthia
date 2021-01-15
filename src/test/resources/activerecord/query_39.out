@@ -1,0 +1,1 @@
+ret1 = Listing.select("avg(1) as \"irOHtSumD\"").select("avg(1) as \"jiAtXcec\"").group("Listing.id").all

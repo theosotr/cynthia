@@ -1,0 +1,1 @@
+ret1 = Listing.select("count(listing.id) as \"FPCwjJlb\"").group("Listing.id").all

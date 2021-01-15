@@ -1,0 +1,1 @@
+ret1 = Listing.select("avg(listing.id) as \"Szgw\"").select("listing.sale_price as \"ee\"").group("listing.sale_price", "Listing.sale_price").all

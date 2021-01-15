@@ -1,0 +1,2 @@
+ret1 = Listing.select((fn.sum(Listing.sale_price)).coerce(False).alias('sum_sale'), (fn.max(Listing.sale_price)).coerce(False).alias('max_sale'), (fn.min(Listing.sale_price)).coerce(False).alias('min_sale'), (fn.avg(Listing.sale_price)).coerce(False).alias('avg_sale'))
+ret2 = ret1.group_by().objects().first()

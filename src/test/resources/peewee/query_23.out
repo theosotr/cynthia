@@ -1,0 +1,3 @@
+mul_cynthia = ((fn.avg(Listing.yearly_rent) * fn.avg(Listing.sale_price))).coerce(False).alias('mul')
+ret1 = Listing.select(mul_cynthia)
+ret2 = ret1.group_by(Listing.id).objects()
