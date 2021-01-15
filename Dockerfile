@@ -50,7 +50,6 @@ ADD ./scripts/setup-postgres.sh ${HOME}/scripts/setup-postgres.sh
 RUN ${HOME}/scripts/setup-postgres.sh
 
 ADD ./scripts/setup-mysql.sh ${HOME}/scripts/setup-mysql.sh
-ADD ./scripts/mysql.exp ${HOME}/scripts/mysql.exp
 RUN ${HOME}/scripts/setup-mysql.sh
 
 ADD ./scripts/setup-z3.sh ${HOME}/scripts/setup-z3.sh
