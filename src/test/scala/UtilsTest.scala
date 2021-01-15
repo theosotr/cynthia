@@ -1,12 +1,12 @@
 import java.io.File
-import java.nio.file.{Path, Paths}
+import java.nio.file.Paths
 
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalamock.scalatest.MockFactory
 
 import cynthia.utils.Utils
 
-class UtilsTest extends AnyFunSuite with MockFactory {
+
+class UtilsTest extends AnyFunSuite {
   val cwd = Paths.get(".").normalize().toAbsolutePath.toString
   val sep = File.separator
 
