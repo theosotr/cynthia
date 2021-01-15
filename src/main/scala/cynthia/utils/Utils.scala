@@ -174,7 +174,8 @@ object Utils {
   def quoteStr(str: String, quotes: String = "'") =
     quotes + str + quotes
 
-  def mergeMap[T1, T2](m1: Map[T1, Set[T2]], m2: Map[T1, Set[T2]]): Map[T1, Set[T2]] = {
+  def mergeMap[T1, T2](m1: Map[T1, Set[T2]],
+                       m2: Map[T1, Set[T2]]): Map[T1, Set[T2]] = {
     val grouped = (m1.toSeq ++ m2.toSeq).groupBy(_._1)
     grouped.view.mapValues(_.foldLeft(Set[T2]()) { (acc, x) => acc ++ x._2 }).toMap
   }
@@ -212,7 +213,7 @@ object Utils {
     readFromFile(path).parseJson.convertTo[Schema]
 
   def basenameWithoutExtension(x: String) =
-      x.split("/").last.split("\\.(?=[^\\.]+$)").head
+      x.split(File.separator).last.split("\\.(?=[^\\.]+$)").head
 
   def removeDups[T](l: Seq[T]): Seq[T] =
     l.foldLeft((Seq[T](), Set[T]())) { case ((acc, v), x) =>
