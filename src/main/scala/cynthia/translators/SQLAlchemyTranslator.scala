@@ -63,7 +63,7 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
         s"for r in $ret:\n${_dumpField("r", dFields, ident = " " * 4)}"
       case FirstRes(_) => _dumpField(ret, dFields)
       case AggrRes(aggrs, _) => aggrs match {
-        case Seq(FieldDecl(Count(None), _, _, _)) => s"dump($ret, 'count')"
+        case Seq(FieldDecl(Count(None), as, _, _)) => s"dump($ret, '$as')"
         case _ => {
           val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
           _dumpField(ret, aggrF)
