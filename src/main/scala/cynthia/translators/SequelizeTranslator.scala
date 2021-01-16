@@ -99,7 +99,7 @@ case class SequelizeTranslator(target: Target) extends Translator {
     |}
     |
     |function dump(x, label) {
-    |  if (x === null) {
+    |  if (x === null || x === undefined) {
     |    console.log(label, '0.00')
     |    return;
     |  }
