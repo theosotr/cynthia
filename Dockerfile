@@ -19,7 +19,8 @@ RUN apt install -y \
     systemd \
     ruby-full \
     ruby-dev \
-    libsqlite3-dev
+    libsqlite3-dev \
+    locales
 
 # Install node
 RUN curl -sL https://deb.nodesource.com/setup_14.x -o nodesource_setup.sh
@@ -126,8 +127,6 @@ RUN  bash -c "virtualenv -p python3 $HOME/.env && \
 ADD ./examples ${HOME}/cynthia_src
 ADD ./entrypoint/entrypoint.sh /usr/local/bin/
 
-# Set up locales
-RUN sudo apt install -y locales
 # Set the locale
 RUN sudo sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
     sudo locale-gen
