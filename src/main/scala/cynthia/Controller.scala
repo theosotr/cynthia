@@ -37,11 +37,14 @@ import cynthia.utils.{Utils, RUtils}
 
 
 object Controller {
-  def _run(options: Options, s: Schema, pBar: Option[ProgressBar],
+  def _run(options: Options, s: Schema, pBar: ProgressBar,
            x: TestRunner => Unit) =
     TestRunnerCreator(options, s, pBar) match {
       case Success(testRunner) => x(testRunner)
-      case Failure(e)          => println(e.getMessage)
+      case Failure(e)          => {
+        pBar.close()
+        println(s"Cannot start testing session for ${s.name}: ${e.getMessage}")
+      }
     }
 
   def createNSchemas(nSchemas: Int, nQueries: Int, prefix: String) =
@@ -61,14 +64,14 @@ object Controller {
               Future {
                 RUtils.seed(Utils.encodeStr2Int(out._1.name))
                 Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
-                _run(options, out._1, Some(out._2), {_.start()})
+                _run(options, out._1, out._2, {_.start()})
               })
         case Some("generate") =>
           createNSchemas(options.schemas, options.nuqueries, "Generating") map(out =>
               Future {
                 RUtils.seed(Utils.encodeStr2Int(out._1.name))
                 Utils.writeToFile(out._1.getSchemaPath(), SchemaTranslator(out._1))
-                _run(options, out._1, Some(out._2), {_.generate()})
+                _run(options, out._1, out._2, {_.generate()})
               })
         case Some("run") =>
           List { Future {
@@ -84,7 +87,7 @@ object Controller {
                            Utils.joinPaths(List(Utils.getSchemaDir(), dst)))
             val s = Schema(dst, Map())
             _run(options, s,
-                 Some(Utils.buildProgressBar("Running " + dst,  None)),
+                 Utils.buildProgressBar("Running " + dst,  None),
                  {_.start()})
           }}
         case Some("replay") =>
@@ -95,7 +98,7 @@ object Controller {
                   Utils.getSchemaDir(), s"$x.schema.json"))
                 val s = Utils.loadSchema(schemaPath)
                 _run(options, s,
-                     Some(Utils.buildProgressBar("Replaying " + x, None)),
+                     Utils.buildProgressBar("Replaying " + x, None),
                      {_.start()})
               }}
             }
@@ -112,7 +115,7 @@ object Controller {
                     val schemaPath = Utils.joinPaths(List(
                       Utils.getSchemaDir(), s"${out._1}.schema.json"))
                     val schema = Utils.loadSchema(schemaPath)
-                    _run(options, schema, Some(out._2), {_.start()})
+                    _run(options, schema, out._2, {_.start()})
                   })
           }
         case Some("inspect") => {

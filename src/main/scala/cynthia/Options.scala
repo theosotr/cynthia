@@ -92,6 +92,16 @@ object OptionParser {
           }
         })
 
+    def dbUserOption() =
+      opt[String]('u', "db-user")
+        .action((x, o) => o.copy(dbUser = x))
+        .text("Username to log in the databases")
+
+    def dbPassOption() =
+      opt[String]('p', "db-pass")
+        .action((x, o) => o.copy(dbPass = x))
+        .text("Password to log in the databases")
+
     def storeMatchesOption() =
       opt[Unit]('S', "store-matches")
         .action((x, o) => o.copy(storeMatches = true))
@@ -158,6 +168,8 @@ object OptionParser {
     note("Cynthia: Data-Oriented Differential Testing of Object-Relational Mapping Systems\n")
     help("help").text("Prints this usage text")
     version("version").text("Prints the current tool's version")
+
+
     // Sub-commands
     cmd("test") action { (_, c) => c.copy(mode = Some("test")) } children(
       opt[Int]('n', "queries")
@@ -183,6 +195,8 @@ object OptionParser {
         ),
       ormsOption(),
       backendsOption(),
+      dbUserOption(),
+      dbPassOption(),
       storeMatchesOption(),
       combinedOption(),
       recordsOption(),
@@ -241,6 +255,8 @@ object OptionParser {
         .text("Re-generate data while replaying testing sessions"),
       ormsOption(),
       backendsOption(),
+      dbUserOption(),
+      dbPassOption(),
       recordsOption(),
       solverOption(),
       solverTimeoutOption(),
@@ -265,10 +281,12 @@ object OptionParser {
             failure("File or directory " + x + " does not exist")
           else success
         }),
-        ormsOption(),
-        backendsOption(),
-        storeMatchesOption()
-      )
+      ormsOption(),
+      backendsOption(),
+      dbUserOption(),
+      dbPassOption(),
+      storeMatchesOption()
+    )
     cmd("inspect") action { (_, c) => c.copy(mode = Some("inspect")) } children(
       opt[String]('c', "cynthia")
         .action((x, o) => o.copy(dotCynthia = x))
@@ -283,8 +301,11 @@ object OptionParser {
     cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) } children(
       opt[Unit]("only-workdir")
         .action((x, o) => o.copy(onlyWorkDir = true))
-        .text("Clean only the working directory .cynthia")
-      )
+        .text("Clean only the working directory .cynthia"),
+      dbUserOption(),
+      dbPassOption()
+    )
+
     checkConfig(x =>
       x.mode match {
         case Some("test") =>

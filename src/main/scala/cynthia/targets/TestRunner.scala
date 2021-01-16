@@ -94,7 +94,7 @@ object TestRunnerCreator {
   def genTargets(orms: Seq[ORM], backends: Seq[DB]) =
     orms.flatMap(x => backends.map(y => Target(x, y)))
 
-  def apply(options: Options, schema: Schema, pBar: Option[ProgressBar]) = {
+  def apply(options: Options, schema: Schema, pBar: ProgressBar) = {
     val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
     val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
     val createdb = Try(genBackends(
@@ -126,7 +126,7 @@ object TestRunnerCreator {
 }
 
 case class Stats(
-  pBar: Option[ProgressBar],
+  pBar: ProgressBar,
   totalQ: Int = 0,
   mismatches: Int = 0,
   invalid: Int = 0,
@@ -139,22 +139,12 @@ case class Stats(
     "Unsp: " << invalid.toString() << ", " <<
     "Timeouts: " << solverTimeouts.toString()).!
 
-  def updateProgressBar() = pBar match {
-    case None       => None
-    case Some(pBar) => Some(pBar.step)
-  }
-
   def passed =
     totalQ - mismatches - invalid - solverTimeouts
 
-  def log() = pBar match {
-    case None       => ()
-    case Some(pBar) => pBar.setExtraMessage(" " + toString())
-  }
-
   def ++(mism: Boolean = false, invd: Boolean = false,
          timedout: Boolean = false) = {
-    updateProgressBar()
+    pBar.step()
     val newStats =
       if (mism)
         Stats(pBar, totalQ + 1, mismatches + 1, invalid, solverTimeouts)
@@ -166,14 +156,14 @@ case class Stats(
             Stats(pBar, totalQ, mismatches, invalid, solverTimeouts + 1)
           else
             Stats(pBar, totalQ + 1, mismatches, invalid, solverTimeouts)
-      newStats.log()
+      pBar.setExtraMessage(" " + toString())
       newStats
   }
 }
 
 
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
-                 pBar: Option[ProgressBar]) {
+                 pBar: ProgressBar) {
 
   private val genEnumerator = LazyList.from(1).iterator
 
@@ -310,9 +300,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
   def generate() = {
     generateInitialData()
     getQueries().foreach { case (qid, q) =>
-      if (pBar.isDefined) {
-        pBar.get.step()
-      }
+      pBar.step()
       val queriesDir = getQueryOutputDir(qid)
       storeQueries(q, queriesDir)
       if (!options.solverGen && options.generateData) ()
