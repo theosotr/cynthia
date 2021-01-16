@@ -415,7 +415,7 @@ abstract class Translator {
         constructQuery(s, offset = offset, limit = limit)
     }
     val dfields = s.fields.values.filter { !FieldDecl.hidden(_) }.toSeq match {
-      case Seq() => Seq("_default") // Here is the default field
+      case Seq() => Seq("id") // Here is the default field
       case f     => (f map FieldDecl.as).toSeq
     }
     val str = preamble + "\n" + qStr.toString
@@ -427,9 +427,10 @@ abstract class Translator {
 
   def constructCombinedQueries(s: State): QueryStr = s.from match {
     case None => ??? // Unreachable case
-    case Some(UnionState(s1, s2)) => constructCombinedQuery(unionQueries(s1, s2))
+    case Some(UnionState(s1, s2)) =>
+      constructCombinedQuery(unionQueries(s1, s2).copy(orders = s.orders))
     case Some(IntersectState(s1, s2)) =>
-      constructCombinedQuery(intersectQueries(s1, s2))
+      constructCombinedQuery(intersectQueries(s1, s2).copy(orders = s.orders))
   }
 
   def constructQuery(s: State, first: Boolean = false, offset: Int = 0,

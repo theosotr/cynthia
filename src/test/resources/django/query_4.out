@@ -3,7 +3,7 @@ ret2 = ret1.values()
 ret3 = Listing.objects.using('default')
 ret4 = ret3.values()
 ret5 = ret2.union(ret4)
-ret6 = ret5
+ret6 = ret5.order_by('yearly_rent')
 for r in ret6:
 
     if(isinstance(r, dict)):

@@ -3,6 +3,6 @@ ret2 = ret1.group_by()
 ret3 = session.query(Listing)
 ret4 = ret3.group_by()
 ret5 = ret2.union(ret4)
-ret6 = ret5
+ret6 = ret5.order_by(asc(Listing.yearly_rent))
 for r in ret6:
     dump(getattr(r,'_default', None), '_default')
