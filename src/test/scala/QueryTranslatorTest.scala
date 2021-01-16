@@ -60,8 +60,15 @@ class TranslatorTest extends AnyFunSuite {
 
   TestQueries.queries.zipWithIndex.foreach {case (q, i) =>
     test("testing PeeweeTranslator in query " + (i + 1)) {
-      val (qStr, expectedQStr) = translateQuery("peewee", i, q)
-      assert(qStr == expectedQStr)
+       val invalidQueries = List(2, 6)
+       if (invalidQueries.contains(i + 1)) {
+         assertThrows[UnsupportedException] {
+           translateQuery("peewee", i, q)
+         }
+       } else {
+         val (qStr, expectedQStr) = translateQuery("peewee", i, q)
+         assert(qStr == expectedQStr)
+       }
     }
 
     test("testing DjangoTranslator in query " + (i + 1)) {

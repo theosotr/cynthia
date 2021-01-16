@@ -428,9 +428,11 @@ abstract class Translator {
   def constructCombinedQueries(s: State): QueryStr = s.from match {
     case None => ??? // Unreachable case
     case Some(UnionState(s1, s2)) =>
-      constructCombinedQuery(unionQueries(s1, s2).copy(orders = s.orders))
+      constructCombinedQuery(unionQueries(s1, s2).copy(
+        aggrs = s.aggrs, orders = s.orders))
     case Some(IntersectState(s1, s2)) =>
-      constructCombinedQuery(intersectQueries(s1, s2).copy(orders = s.orders))
+      constructCombinedQuery(intersectQueries(s1, s2).copy(
+        aggrs = s.aggrs, orders = s.orders))
   }
 
   def constructQuery(s: State, first: Boolean = false, offset: Int = 0,

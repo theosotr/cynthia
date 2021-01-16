@@ -279,9 +279,10 @@ case class PeeweeTranslator(target: Target) extends Translator {
   }
 
   override def constructCombinedQuery(s: State) = {
-    if (!s.aggrs.isEmpty)
-      throw UnsupportedException(
-        "Aggregate functions are not supported in combined queries")
+    if (!s.aggrs.isEmpty) {
+      throw new UnsupportedException(
+        "Aggregations in combined queries are not allowed")
+    }
     val qstr = constructQueryPrefix(s)
     qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(

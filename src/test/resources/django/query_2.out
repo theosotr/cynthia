@@ -7,7 +7,7 @@ ret6 = ret5.values()
 ret7 = ret4.union(ret6)
 ret8 = ret7
 ret9 = ret2.union(ret8)
-ret10 = ret9
+ret10 = ret9.aggregate(count=ExpressionWrapper(Count('*', output_field=IntegerField()), output_field=IntegerField()))
 
 if(isinstance(ret10, dict)):
     dump(ret10.get('count', None), 'count')

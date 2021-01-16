@@ -8,4 +8,5 @@ ret7 = ret4.union(ret6)
 ret8 = ret7
 ret9 = ret2.union(ret8)
 ret10 = ret9
-dump(ret10, 'count')
+ret11 = ret10.count()
+dump(ret11, 'count')

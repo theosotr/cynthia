@@ -205,7 +205,11 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
 
   def constructAggrPrefix(s: State, subquery: Boolean) = {
     val prefix = if (subquery) s.source + ".c" else ""
-    val aggrs = TUtils.mapNonHiddenFields(s.aggrs, {
+    val aggrS = s.aggrs match {
+      case Seq(FieldDecl(Count(None), _, _, _)) => Seq()
+      case _ => s.aggrs
+    }
+    val aggrs = TUtils.mapNonHiddenFields(aggrS, {
       case FieldDecl(f, l, t, _) =>
         s"type_coerce(${constructFieldExpr(f, prefix)}, ${getType(t)}).label('$l')"
     })
@@ -297,31 +301,42 @@ case class SQLAlchemyTranslator(target: Target) extends Translator {
     case _        => ""
   }
 
+  def isCount(s: State) = s.aggrs match {
+    case Seq(FieldDecl(Count(None), _, _, _)) => true
+    case _ => false
+  }
+
   override def constructCombinedQuery(s: State) = {
     val qstr = constructQueryPrefix(s)
     val qstr2 = qstr >> QueryStr(Some("ret" + s.numGen.next().toString),
       Some(Seq(
         qstr.ret.get,
         constructOrderBy(s, true),
-        if (!s.aggrs.isEmpty) "subquery()" else ""
+        if (!s.aggrs.isEmpty && !isCount(s)) "subquery()" else ""
       ) filter {
         case "" => false
         case _  => true
       }  mkString("."))
     )
-    if (!s.aggrs.isEmpty) {
-      val str = qstr2 >> constructAggrPrefix(s source qstr2.ret.get, true)
-      str >> QueryStr(Some("ret" + s.numGen.next().toString),
-        Some(
-          str.ret.get +
-          (s.aggrs match {
-            case Seq() => ""
-            case Seq(FieldDecl(Count(None), _, _, _)) => ".count()"
-            case _ => ".first()"
-          })
+    s.aggrs match {
+      case Seq() => qstr2
+      // If the aggregate function we are going to apply is count,
+      // the there are no much to do: we simply call the count() function.
+      case Seq(FieldDecl(Count(None), _, _, _)) =>
+        qstr2 >> QueryStr(Some("ret" + s.numGen.next().toString),
+          Some(qstr2.ret.get + ".count()"))
+      case _ =>
+        val str = qstr2 >> constructAggrPrefix(s source qstr2.ret.get, true)
+        str >> QueryStr(Some("ret" + s.numGen.next().toString),
+          Some(
+            str.ret.get +
+            (s.aggrs match {
+              case Seq() => ""
+              case _ => ".first()"
+            })
+          )
         )
-      )
-    } else qstr2
+    }
   }
 
   override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
