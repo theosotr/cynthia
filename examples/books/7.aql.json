@@ -38,14 +38,7 @@
                               "p2": {
                                 "Predicate": {
                                   "Contains": {
-                                    "f": {
-                                      "FieldExpr": {
-                                        "Constant": {
-                                          "v": "o",
-                                          "vt": "Quoted"
-                                        }
-                                      }
-                                    },
+                                    "f": "o",
                                     "k": "Review.book.author.surname"
                                   }
                                 }
