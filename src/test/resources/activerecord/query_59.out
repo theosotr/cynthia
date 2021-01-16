@@ -1,0 +1,13 @@
+ret1 = Author.select("((((min('T26')+author.first_name)-5)*8)+(author.first_name+avg(4))) as \"YUA\"").select("avg(('2BRyR3'/3)) as \"oD\"").group("Author.first_name").all
+for i in ret1
+  begin
+    dump(i.YUA, 'YUA')
+  rescue
+    dump(i, 'YUA')
+  end
+  begin
+    dump(i.oD, 'oD')
+  rescue
+    dump(i, 'oD')
+  end
+end

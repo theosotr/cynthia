@@ -3,3 +3,6 @@ mul_cynthia = type_coerce((Listing.sale_price * Listing.sale_price), types.Strin
 squared_cynthia = type_coerce((func.avg(mul_cynthia) - literal(10)), types.String).label('squared')
 ret1 = session.query(sales_cynthia,squared_cynthia).select_from(Listing)
 ret2 = ret1.group_by(sales_cynthia, Listing.sale_price)
+for r in ret2:
+    dump(getattr(r,'sales', None), 'sales')
+    dump(getattr(r,'squared', None), 'squared')

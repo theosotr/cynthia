@@ -1,1 +1,8 @@
 ret1 = Listing.all
+for i in ret1
+  begin
+    dump(i._default, '_default')
+  rescue
+    dump(i, '_default')
+  end
+end

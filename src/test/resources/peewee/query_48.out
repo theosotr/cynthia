@@ -1,0 +1,5 @@
+Review_Book = Book.alias()
+ret1 = Review.select()
+ret2 = ret1.switch(Review).join(Review_Book).where(Review_Book.title==Value('Random book', converter=False)).group_by().objects()
+for r in ret2:
+    dump(getattr(r, '_default', None), '_default')

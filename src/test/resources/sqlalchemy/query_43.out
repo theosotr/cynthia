@@ -5,3 +5,7 @@ hj_cynthia = type_coerce(WrTj_cynthia, types.String).label('hj')
 cCqQb_cynthia = type_coerce(literal(0), types.String).label('cCqQb')
 ret1 = session.query(WrTj_cynthia,jcVbPimsG_cynthia,cCqQb_cynthia).select_from(Listing)
 ret2 = ret1.group_by(Listing.yearly_rent, Listing.id, WrTj_cynthia, Listing.sale_price).order_by(desc(Listing.id))
+for r in ret2:
+    dump(getattr(r,'WrTj', None), 'WrTj')
+    dump(getattr(r,'jcVbPimsG', None), 'jcVbPimsG')
+    dump(getattr(r,'cCqQb', None), 'cCqQb')

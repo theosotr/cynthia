@@ -1,0 +1,6 @@
+ret1 = Review.joins({book:[:author]}).order("book.title DESC","review.reviewer_name ASC","review.id DESC").where(["((review.rating >= ?) AND (author.surname LIKE ?))", 2, "%#{'o'}%"]).first
+begin
+dump(ret1._default, '_default')
+rescue
+dump(ret1, '_default')
+end

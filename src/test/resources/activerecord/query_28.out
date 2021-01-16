@@ -1,1 +1,13 @@
 ret1 = Listing.select("3 as \"WXDdG\"").select("(sum((listing.id+2))*listing.id) as \"CBG\"").group("Listing.id").all
+for i in ret1
+  begin
+    dump(i.WXDdG, 'WXDdG')
+  rescue
+    dump(i, 'WXDdG')
+  end
+  begin
+    dump(i.CBG, 'CBG')
+  rescue
+    dump(i, 'CBG')
+  end
+end

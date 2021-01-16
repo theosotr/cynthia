@@ -1,1 +1,13 @@
 ret1 = Listing.select("min('8') as \"aJZXPcub\"").select("(listing.sale_price/(listing.sale_price-listing.yearly_rent)) as \"KWpgDGBLp\"").group("(listing.sale_price/(listing.sale_price-listing.yearly_rent))", "Listing.sale_price", "Listing.yearly_rent").all
+for i in ret1
+  begin
+    dump(i.aJZXPcub, 'aJZXPcub')
+  rescue
+    dump(i, 'aJZXPcub')
+  end
+  begin
+    dump(i.KWpgDGBLp, 'KWpgDGBLp')
+  rescue
+    dump(i, 'KWpgDGBLp')
+  end
+end

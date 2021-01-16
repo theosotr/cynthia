@@ -2,3 +2,9 @@ QpUmZQeX = ExpressionWrapper(Count(F('id'), output_field=FloatField()), output_f
 dvdddN = ExpressionWrapper((Value('p4d') * Value('qYCGT')), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().annotate(QpUmZQeX=QpUmZQeX).values('QpUmZQeX')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('QpUmZQeX', None), 'QpUmZQeX')
+    else:
+        dump(getattr(r, 'QpUmZQeX', None), 'QpUmZQeX')

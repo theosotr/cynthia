@@ -1,0 +1,5 @@
+Review_Book = aliased(Book)
+ret1 = session.query(Review)
+ret2 = ret1.join(Review_Book, Review.book).filter(Review.rating >= literal(2)).group_by().order_by(desc(Review_Book.title),asc(Review.reviewer_name),desc(Review.id)).slice(1, 1 + 3)
+for r in ret2:
+    dump(getattr(r,'_default', None), '_default')

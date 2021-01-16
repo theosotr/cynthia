@@ -1,0 +1,31 @@
+Review = require('./review.js')(sequelize, Sequelize)
+Book = require('./book.js')(sequelize, Sequelize)
+Author = require('./author.js')(sequelize, Sequelize)
+Book.hasMany(Review, {foreignKey: 'book_id'})
+Review.belongsTo(Book, {as: Book.tableName, foreignKey: 'book_id'})
+Author.hasMany(Book, {foreignKey: 'author_id'})
+Book.belongsTo(Author, {as: Author.tableName, foreignKey: 'author_id'})
+mul_cynthia = sequelize.cast(sequelize.literal(`(review.rating * -1)`),'float')
+name_cynthia = sequelize.cast(sequelize.col('book.author.first_name'),'varchar(100)')
+ret1 = Review.findAll({
+include: [
+{model: Book, as: Book.tableName, include: [
+{model: Author, as: Author.tableName}
+]}
+],
+attributes: [
+ [mul_cynthia, 'mul'],
+    [name_cynthia, 'name']],
+where: {
+  [Op.and]: [
+    {[Op.and]: [{'$review.rating$': {[Op.gte]: sequelize.literal(2)}},{'$book.author.first_name$': {[Op.lte]: sequelize.literal(`\'Z\'`)}}]}  ]
+},
+offset: 0
+})
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.mul, 'mul')
+  dump(x === null ? x : x.dataValues.name, 'name')
+  })
+}).catch(x => { sequelize.close(); throw x; })

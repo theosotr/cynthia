@@ -2,3 +2,5 @@ heTkuJqO_cynthia = ((((Listing.id + fn.min((Listing.sale_price * Listing.sale_pr
 BIKnH_cynthia = (heTkuJqO_cynthia.alias()).coerce(False).alias('BIKnH')
 ret1 = Listing.select(BIKnH_cynthia)
 ret2 = ret1.group_by(Listing.id, Listing.sale_price).objects()
+for r in ret2:
+    dump(getattr(r, 'BIKnH', None), 'BIKnH')

@@ -1,2 +1,3 @@
 ret1 = session.query(type_coerce(func.sum((Listing.yearly_rent - Listing.sale_price)), types.Float).label('sum')).select_from(Listing)
 ret2 = ret1.group_by().first()
+dump(getattr(ret2,'sum', None), 'sum')

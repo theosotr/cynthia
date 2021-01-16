@@ -1,2 +1,7 @@
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().aggregate(sum=ExpressionWrapper(Sum((F('yearly_rent') - F('sale_price')), output_field=FloatField()), output_field=FloatField()))
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('sum', None), 'sum')
+else:
+    dump(getattr(ret2, 'sum', None), 'sum')

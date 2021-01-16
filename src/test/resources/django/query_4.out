@@ -4,3 +4,9 @@ ret3 = Listing.objects.using('default')
 ret4 = ret3.values()
 ret5 = ret2.union(ret4)
 ret6 = ret5
+for r in ret6:
+
+    if(isinstance(r, dict)):
+        dump(r.get('_default', None), '_default')
+    else:
+        dump(getattr(r, '_default', None), '_default')

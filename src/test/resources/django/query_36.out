@@ -3,3 +3,9 @@ ij = ExpressionWrapper(F('sale_price'), output_field=FloatField())
 FPCwjJlb = ExpressionWrapper(jJqOpWLil, output_field=IntegerField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().annotate(FPCwjJlb=FPCwjJlb).values('FPCwjJlb')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('FPCwjJlb', None), 'FPCwjJlb')
+    else:
+        dump(getattr(r, 'FPCwjJlb', None), 'FPCwjJlb')

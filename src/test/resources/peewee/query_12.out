@@ -1,2 +1,3 @@
 ret1 = Listing.select((fn.sum((Listing.yearly_rent - Listing.sale_price))).coerce(False).alias('sum'))
 ret2 = ret1.group_by().objects().first()
+dump(getattr(ret2, 'sum', None), 'sum')

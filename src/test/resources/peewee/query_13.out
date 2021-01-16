@@ -1,3 +1,5 @@
 custom_cynthia = ((Listing.yearly_rent + Listing.sale_price)).coerce(False).alias('custom')
 ret1 = Listing.select(custom_cynthia)
 ret2 = ret1.where(custom_cynthia.alias() >= Value(50, converter=False)).group_by().objects()
+for r in ret2:
+    dump(getattr(r, 'custom', None), 'custom')

@@ -7,3 +7,8 @@ attributes: [
     [min_cynthia, 'min']],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+    dump(x[0] === null ? x[0] : x[0].dataValues.max, 'max')
+  dump(x[0] === null ? x[0] : x[0].dataValues.min, 'min')
+}).catch(x => { sequelize.close(); throw x; })

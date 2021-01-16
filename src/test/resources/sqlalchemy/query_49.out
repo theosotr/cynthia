@@ -1,0 +1,6 @@
+Review_Book_Author = aliased(Author)
+Review_Book = aliased(Book)
+ret1 = session.query(Review)
+ret2 = ret1.join(Review_Book, Review.book).join(Review_Book_Author, Review_Book.author).filter(Review_Book_Author.surname==literal('Coecker')).group_by()
+for r in ret2:
+    dump(getattr(r,'_default', None), '_default')

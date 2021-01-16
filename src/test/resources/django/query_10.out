@@ -1,2 +1,17 @@
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().aggregate(complex_add=ExpressionWrapper(((Sum(F('sale_price'), output_field=FloatField()) * Avg(F('yearly_rent'), output_field=FloatField())) + (Max(F('sale_price'), output_field=FloatField()) / Min(F('sale_price'), output_field=FloatField()))), output_field=FloatField()),yearly=ExpressionWrapper(Sum(F('yearly_rent'), output_field=FloatField()), output_field=FloatField()),complex_sub=ExpressionWrapper((Min(F('yearly_rent'), output_field=FloatField()) - (Avg(F('sale_price'), output_field=FloatField()) + Max(F('sale_price'), output_field=FloatField()))), output_field=FloatField()))
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('complex_add', None), 'complex_add')
+else:
+    dump(getattr(ret2, 'complex_add', None), 'complex_add')
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('yearly', None), 'yearly')
+else:
+    dump(getattr(ret2, 'yearly', None), 'yearly')
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('complex_sub', None), 'complex_sub')
+else:
+    dump(getattr(ret2, 'complex_sub', None), 'complex_sub')

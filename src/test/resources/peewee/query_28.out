@@ -2,3 +2,6 @@ WXDdG_cynthia = (Value(3, converter=False)).coerce(False).alias('WXDdG')
 CBG_cynthia = ((fn.sum((Listing.id + Value(2, converter=False))) * Listing.id)).coerce(False).alias('CBG')
 ret1 = Listing.select(WXDdG_cynthia,CBG_cynthia)
 ret2 = ret1.group_by(Listing.id).objects()
+for r in ret2:
+    dump(getattr(r, 'WXDdG', None), 'WXDdG')
+    dump(getattr(r, 'CBG', None), 'CBG')

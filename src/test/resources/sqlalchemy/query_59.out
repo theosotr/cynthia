@@ -1,0 +1,8 @@
+YUA_cynthia = type_coerce(((((func.min(literal('T26')).op('+')(Author.first_name)) - literal(5)) * literal(8)).op('+')((Author.first_name.op('+')(func.avg(literal(4)))))), types.String).label('YUA')
+oD_cynthia = type_coerce(func.avg((literal('2BRyR3') / literal(3))), types.String).label('oD')
+C_cynthia = type_coerce(literal(7), types.String).label('C')
+ret1 = session.query(YUA_cynthia,oD_cynthia).select_from(Author)
+ret2 = ret1.group_by(Author.first_name)
+for r in ret2:
+    dump(getattr(r,'YUA', None), 'YUA')
+    dump(getattr(r,'oD', None), 'oD')

@@ -1,3 +1,4 @@
 EfLr_cynthia = (((Listing.id + (((Value(9, converter=False) / Value('n3zKcdj2', converter=False)) + (((Value(8, converter=False) / Value(1, converter=False)) / Listing.id) + Listing.yearly_rent)) / Value('px5me', converter=False))) - (Value('y1e8rj', converter=False) - Value('f1cay92kV', converter=False)))).coerce(False).alias('EfLr')
 ret1 = Listing.select((fn.count(EfLr_cynthia.alias())).coerce(False).alias('KiqJoUU'))
 ret2 = ret1.group_by().objects().first()
+dump(getattr(ret2, 'KiqJoUU', None), 'KiqJoUU')

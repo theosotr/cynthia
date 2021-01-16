@@ -1,2 +1,4 @@
 ret1 = session.query(Listing)
 ret2 = ret1.filter(not_(Listing.foo==literal('bar'))).group_by()
+for r in ret2:
+    dump(getattr(r,'_default', None), '_default')

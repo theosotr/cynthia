@@ -1,0 +1,13 @@
+ret1 = Review.joins({book:[:author]}).where(["((review.rating >= ?) AND (author.first_name <= ?))", 2, 'Z']).select("(review.rating*-1) as \"mul\"").select("author.first_name as \"name\"").all
+for i in ret1
+  begin
+    dump(i.mul, 'mul')
+  rescue
+    dump(i, 'mul')
+  end
+  begin
+    dump(i.name, 'name')
+  rescue
+    dump(i, 'name')
+  end
+end

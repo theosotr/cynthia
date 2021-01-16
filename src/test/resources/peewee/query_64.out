@@ -1,0 +1,8 @@
+vICp_cynthia = (Value('SBkK', converter=False)).coerce(False).alias('vICp')
+OIeH_cynthia = ((Review.content + (vICp_cynthia.alias() / vICp_cynthia.alias()))).coerce(False).alias('OIeH')
+sEwe_cynthia = (vICp_cynthia.alias()).coerce(False).alias('sEwe')
+KB_cynthia = ((Review.id * Review.id)).coerce(False).alias('KB')
+JFSL_cynthia = (Value(4, converter=False)).coerce(False).alias('JFSL')
+ret1 = Review.select((fn.count(Review.content)).coerce(False).alias('g'))
+ret2 = ret1.group_by().objects().first()
+dump(getattr(ret2, 'g', None), 'g')

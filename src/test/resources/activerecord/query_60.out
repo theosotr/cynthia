@@ -1,0 +1,8 @@
+ret1 = Review.joins(:book).order("review.id ASC","review.reviewer_name DESC","review.content DESC","book.id DESC").select("0 as \"V\"").all
+for i in ret1
+  begin
+    dump(i.V, 'V')
+  rescue
+    dump(i, 'V')
+  end
+end

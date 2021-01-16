@@ -1,0 +1,9 @@
+Book_Author = Author.alias()
+e_cynthia = (Book.title).coerce(False).alias('e')
+YejRlb_cynthia = (Value('', converter=False)).coerce(False).alias('YejRlb')
+aqVzP_cynthia = ((YejRlb_cynthia.alias() - Book.isbn)).coerce(False).alias('aqVzP')
+PYBKyS_cynthia = (Value(0, converter=False)).coerce(False).alias('PYBKyS')
+ret1 = Book.select(aqVzP_cynthia)
+ret2 = ret1.switch(Book).join(Book_Author).group_by().order_by(Book_Author.id.asc(),Book.isbn.asc(),Book.id.desc()).objects()
+for r in ret2:
+    dump(getattr(r, 'aqVzP', None), 'aqVzP')

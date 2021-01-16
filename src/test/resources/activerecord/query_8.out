@@ -1,1 +1,2 @@
 ret1 = Listing.all
+dump(ret1.count, 'count')

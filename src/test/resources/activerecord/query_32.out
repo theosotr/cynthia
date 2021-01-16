@@ -1,1 +1,8 @@
 ret1 = Listing.select("(((listing.id+min((listing.sale_price*listing.sale_price)))-7)+(listing.sale_price+(((min('e5LIn')+listing.sale_price)+count(listing.id))/listing.sale_price))) as \"BIKnH\"").group("Listing.id", "Listing.sale_price").all
+for i in ret1
+  begin
+    dump(i.BIKnH, 'BIKnH')
+  rescue
+    dump(i, 'BIKnH')
+  end
+end

@@ -1,0 +1,6 @@
+Review_Book_Author = Author.alias()
+Review_Book = Book.alias()
+ret1 = Review.select()
+ret2 = ret1.switch(Review).join(Review_Book).switch(Review_Book).join(Review_Book_Author).where(Review_Book_Author.surname==Value('Coecker', converter=False)).group_by().objects()
+for r in ret2:
+    dump(getattr(r, '_default', None), '_default')

@@ -4,3 +4,7 @@ Rp_cynthia = (fn.min(Listing.sale_price)).coerce(False).alias('Rp')
 blny_cynthia = (fn.sum(GTfzOMrj_cynthia.alias())).coerce(False).alias('blny')
 ret1 = Listing.select(lqA_cynthia,Rp_cynthia,blny_cynthia)
 ret2 = ret1.group_by(lqA_cynthia.alias(), Listing.sale_price).objects()
+for r in ret2:
+    dump(getattr(r, 'lqA', None), 'lqA')
+    dump(getattr(r, 'Rp', None), 'Rp')
+    dump(getattr(r, 'blny', None), 'blny')

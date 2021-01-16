@@ -2,3 +2,14 @@ sales = ExpressionWrapper(F('sale_price'), output_field=FloatField())
 max = ExpressionWrapper(Max((F('yearly_rent') + Value(10)), output_field=FloatField()), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(sales=sales).values('sales', 'sale_price').annotate(max=max).filter(max__gte=(Value(10) + F('sales'))).values('sales', 'max')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('sales', None), 'sales')
+    else:
+        dump(getattr(r, 'sales', None), 'sales')
+
+    if(isinstance(r, dict)):
+        dump(r.get('max', None), 'max')
+    else:
+        dump(getattr(r, 'max', None), 'max')

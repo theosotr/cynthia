@@ -4,3 +4,7 @@ Rp_cynthia = type_coerce(func.min(Listing.sale_price), types.String).label('Rp')
 blny_cynthia = type_coerce(func.sum(GTfzOMrj_cynthia), types.String).label('blny')
 ret1 = session.query(lqA_cynthia,Rp_cynthia,blny_cynthia).select_from(Listing)
 ret2 = ret1.group_by(lqA_cynthia, Listing.sale_price)
+for r in ret2:
+    dump(getattr(r,'lqA', None), 'lqA')
+    dump(getattr(r,'Rp', None), 'Rp')
+    dump(getattr(r,'blny', None), 'blny')

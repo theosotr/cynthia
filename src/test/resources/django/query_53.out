@@ -1,0 +1,7 @@
+ret1 = Review.objects.using('default')
+ret2 = ret1.filter(Q(rating__gte=Value(2)), Q(book__author__surname__contains='o')).order_by('-book__title','reviewer_name','-id').values().first()
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('_default', None), '_default')
+else:
+    dump(getattr(ret2, '_default', None), '_default')

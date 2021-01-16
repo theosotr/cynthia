@@ -1,0 +1,16 @@
+YUA = ExpressionWrapper(((((Min(Value('T26'), output_field=FloatField()) + F('first_name')) - Value(5)) * Value(8)) + (F('first_name') + Avg(Value(4), output_field=FloatField()))), output_field=FloatField())
+oD = ExpressionWrapper(Avg((Value('2BRyR3') / Value(3)), output_field=FloatField()), output_field=FloatField())
+C = ExpressionWrapper(Value(7), output_field=IntegerField())
+ret1 = Author.objects.using('default')
+ret2 = ret1.values('first_name').annotate(oD=oD).annotate(YUA=YUA).values('YUA', 'oD')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('YUA', None), 'YUA')
+    else:
+        dump(getattr(r, 'YUA', None), 'YUA')
+
+    if(isinstance(r, dict)):
+        dump(r.get('oD', None), 'oD')
+    else:
+        dump(getattr(r, 'oD', None), 'oD')

@@ -1,0 +1,8 @@
+ret1 = Book.joins(:author).order("author.id ASC","book.isbn ASC","book.id DESC").select("(''-book.isbn) as \"aqVzP\"").all
+for i in ret1
+  begin
+    dump(i.aqVzP, 'aqVzP')
+  rescue
+    dump(i, 'aqVzP')
+  end
+end

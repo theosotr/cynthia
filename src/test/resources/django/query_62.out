@@ -1,0 +1,15 @@
+RvimPPZOm = ExpressionWrapper((F('author__first_name') - F('title')), output_field=FloatField())
+Izi = ExpressionWrapper(Max(Value('Xl950'), output_field=FloatField()), output_field=TextField())
+ret1 = Book.objects.using('default')
+ret2 = ret1.annotate(RvimPPZOm=RvimPPZOm).values('RvimPPZOm', 'id', 'isbn', 'title', 'author__first_name', 'author__id').annotate(Izi=Izi).order_by('-isbn','-Izi','author__id','-id').values('RvimPPZOm', 'Izi')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('RvimPPZOm', None), 'RvimPPZOm')
+    else:
+        dump(getattr(r, 'RvimPPZOm', None), 'RvimPPZOm')
+
+    if(isinstance(r, dict)):
+        dump(r.get('Izi', None), 'Izi')
+    else:
+        dump(getattr(r, 'Izi', None), 'Izi')

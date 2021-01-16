@@ -2,3 +2,14 @@ WXDdG = ExpressionWrapper(Value(3), output_field=IntegerField())
 CBG = ExpressionWrapper((Sum((F('id') + Value(2)), output_field=FloatField()) * F('id')), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(WXDdG=WXDdG).values('id', 'WXDdG').annotate(CBG=CBG).values('WXDdG', 'CBG')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('WXDdG', None), 'WXDdG')
+    else:
+        dump(getattr(r, 'WXDdG', None), 'WXDdG')
+
+    if(isinstance(r, dict)):
+        dump(r.get('CBG', None), 'CBG')
+    else:
+        dump(getattr(r, 'CBG', None), 'CBG')

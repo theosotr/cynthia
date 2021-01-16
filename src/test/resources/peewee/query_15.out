@@ -2,3 +2,6 @@ sales_cynthia = (Listing.sale_price).coerce(False).alias('sales')
 sum_cynthia = (fn.sum(Listing.yearly_rent)).coerce(False).alias('sum')
 ret1 = Listing.select(sales_cynthia,sum_cynthia)
 ret2 = ret1.group_by(sales_cynthia.alias(), Listing.sale_price).objects()
+for r in ret2:
+    dump(getattr(r, 'sales', None), 'sales')
+    dump(getattr(r, 'sum', None), 'sum')

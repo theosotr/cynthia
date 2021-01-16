@@ -1,0 +1,12 @@
+vICp = ExpressionWrapper(Value('SBkK'), output_field=TextField())
+OIeH = ExpressionWrapper((F('content') + (F('vICp') / F('vICp'))), output_field=FloatField())
+sEwe = ExpressionWrapper(F('vICp'), output_field=TextField())
+KB = ExpressionWrapper((F('id') * F('id')), output_field=FloatField())
+JFSL = ExpressionWrapper(Value(4), output_field=IntegerField())
+ret1 = Review.objects.using('default')
+ret2 = ret1.annotate(vICp=vICp).annotate(OIeH=OIeH).annotate(JFSL=JFSL).annotate(KB=KB).annotate(sEwe=sEwe).values('JFSL', 'KB', 'OIeH', 'sEwe', 'vICp').aggregate(g=ExpressionWrapper(Count(F('content'), output_field=IntegerField()), output_field=IntegerField()))
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('g', None), 'g')
+else:
+    dump(getattr(ret2, 'g', None), 'g')

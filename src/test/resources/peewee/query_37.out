@@ -2,3 +2,5 @@ yVmbvGHWe_cynthia = ((fn.min(Value(0, converter=False)) / Listing.sale_price)).c
 Te_cynthia = ((yVmbvGHWe_cynthia.alias() + yVmbvGHWe_cynthia.alias())).coerce(False).alias('Te')
 ret1 = Listing.select(Te_cynthia)
 ret2 = ret1.group_by(Listing.sale_price).objects()
+for r in ret2:
+    dump(getattr(r, 'Te', None), 'Te')

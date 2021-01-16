@@ -1,1 +1,13 @@
 ret1 = Listing.select("sum(listing.yearly_rent) as \"I\"").select("sum(listing.yearly_rent) as \"eqQy\"").group("Listing.id").all
+for i in ret1
+  begin
+    dump(i.eqQy, 'eqQy')
+  rescue
+    dump(i, 'eqQy')
+  end
+  begin
+    dump(i.I, 'I')
+  rescue
+    dump(i, 'I')
+  end
+end

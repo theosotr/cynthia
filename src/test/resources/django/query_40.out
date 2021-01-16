@@ -6,3 +6,14 @@ TPH = ExpressionWrapper(F('sale_price'), output_field=FloatField())
 bqZCpnWO = ExpressionWrapper(Value(5), output_field=IntegerField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().annotate(eqQy=eqQy).annotate(I=I).values('eqQy', 'I')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('eqQy', None), 'eqQy')
+    else:
+        dump(getattr(r, 'eqQy', None), 'eqQy')
+
+    if(isinstance(r, dict)):
+        dump(r.get('I', None), 'I')
+    else:
+        dump(getattr(r, 'I', None), 'I')

@@ -1,0 +1,9 @@
+Book_Author = Author.alias()
+Book_Author = Author.alias()
+RvimPPZOm_cynthia = ((Book_Author.first_name - Book.title)).coerce(False).alias('RvimPPZOm')
+Izi_cynthia = (fn.max(Value('Xl950', converter=False))).coerce(False).alias('Izi')
+ret1 = Book.select(RvimPPZOm_cynthia,Izi_cynthia)
+ret2 = ret1.switch(Book).join(Book_Author).group_by(Book.title, Book.id, Book.isbn, Book_Author.id, Book_Author.first_name, RvimPPZOm_cynthia.alias()).order_by(Book.isbn.desc(),Izi_cynthia.alias().desc(),Book_Author.id.asc(),Book.id.desc()).objects()
+for r in ret2:
+    dump(getattr(r, 'RvimPPZOm', None), 'RvimPPZOm')
+    dump(getattr(r, 'Izi', None), 'Izi')

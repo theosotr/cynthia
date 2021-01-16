@@ -5,3 +5,8 @@ uBnSWipsi = ExpressionWrapper(((Value(8) * F('id')) / Value('PHoJX5b')), output_
 OAYwxOOET = ExpressionWrapper((Value(9) / (Value('') + Value(1))), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(R=R).annotate(vlrkx=vlrkx).annotate(mUoSMAxdl=mUoSMAxdl).annotate(OAYwxOOET=OAYwxOOET).annotate(uBnSWipsi=uBnSWipsi).values('R', 'vlrkx', 'OAYwxOOET', 'uBnSWipsi', 'mUoSMAxdl').aggregate(R=ExpressionWrapper(Count(F('R'), output_field=IntegerField()), output_field=IntegerField()))
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('R', None), 'R')
+else:
+    dump(getattr(ret2, 'R', None), 'R')

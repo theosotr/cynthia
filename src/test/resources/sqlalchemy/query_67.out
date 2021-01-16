@@ -1,0 +1,8 @@
+Review_Book_Author = aliased(Author)
+Review_Book = aliased(Book)
+dqBZvjQX_cynthia = type_coerce(literal(3), types.String).label('dqBZvjQX')
+TbPEVGKp_cynthia = type_coerce(Review_Book_Author.first_name, types.String).label('TbPEVGKp')
+ret1 = session.query(TbPEVGKp_cynthia).select_from(Review)
+ret2 = ret1.join(Review_Book, Review.book).join(Review_Book_Author, Review_Book.author).group_by().distinct()
+for r in ret2:
+    dump(getattr(r,'TbPEVGKp', None), 'TbPEVGKp')

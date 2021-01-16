@@ -40,12 +40,22 @@ class TranslatorTest extends AnyFunSuite {
   def translateQuery(name: String, qid: Int, q: Query) = {
     val s = QueryInterpreter(q)
     val (first, offset, limit) = getQueryParams(q)
-    val qStr = getTranslator(name).constructQuery(
-      s, first, offset, limit).toString
+    val dfields = s.fields.values.filter { !FieldDecl.hidden(_) }.toSeq match {
+      case Seq() => Seq("_default") // Here is the default field
+      case f     => (f map FieldDecl.as).toSeq
+    }
+    val translator = getTranslator(name)
+    val qStr = translator.constructQuery(
+      s, first, offset, limit)
+    val actualQStr = qStr.ret match {
+      case None => qStr.toString
+      case Some(ret) => qStr.toString + "\n" + translator.emitPrint(
+        q, dfields, ret)
+    }
     val expectedQStr = Source.fromFile(
       getClass.getResource(
         name + "/query_" + (qid + 1) + ".out").getFile()).mkString
-    (qStr, expectedQStr)
+    (actualQStr, expectedQStr)
   }
 
   TestQueries.queries.zipWithIndex.foreach {case (q, i) =>
@@ -55,20 +65,33 @@ class TranslatorTest extends AnyFunSuite {
     }
 
     test("testing DjangoTranslator in query " + (i + 1)) {
-      val (qStr, expectedQStr) = translateQuery("django", i, q)
-      assert(qStr == expectedQStr)
-
+       val invalidQueries = List(66, 68)
+       if (invalidQueries.contains(i + 1)) {
+         assertThrows[UnsupportedException] {
+           translateQuery("django", i, q)
+         }
+       } else {
+         val (qStr, expectedQStr) = translateQuery("django", i, q)
+         assert(qStr == expectedQStr)
+       }
     }
 
     test("testing SQLAlchemyTranslator in query " + (i + 1)) {
-      val (qStr, expectedQStr) = translateQuery("sqlalchemy", i, q)
-      assert(qStr == expectedQStr)
+       val invalidQueries = List(66, 68)
+       if (invalidQueries.contains(i + 1)) {
+         assertThrows[UnsupportedException] {
+           translateQuery("sqlalchemy", i, q)
+         }
+       } else {
+         val (qStr, expectedQStr) = translateQuery("sqlalchemy", i, q)
+         assert(qStr == expectedQStr)
+       }
     }
 
     test("testing SequelizeTranslator in query " + (i + 1)) {
       val invalidQueries = List(
         1, 2, 4, 6, 10, 16, 20, 23, 24, 28, 29, 32, 34, 37,
-        38, 42, 44, 45)
+        38, 42, 44, 45, 58, 59, 63, 64, 66, 67, 68)
 
       if (invalidQueries.contains(i + 1)) {
         assertThrows[UnsupportedException] {
@@ -81,7 +104,7 @@ class TranslatorTest extends AnyFunSuite {
     }
 
     test("testing ActiveRecordTranslator in query " + (i + 1)) {
-      val invalidQueries = List(1, 2, 4, 6, 18, 19)
+      val invalidQueries = List(1, 2, 4, 6, 10, 18, 19, 66, 68)
       if (invalidQueries.contains(i + 1)) {
         assertThrows[UnsupportedException] {
           translateQuery("activerecord", i, q)

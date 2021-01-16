@@ -2,3 +2,6 @@ custom_cynthia = ((Value(5, converter=False) + Value(15, converter=False))).coer
 text_cynthia = (Value('foobar', converter=False)).coerce(False).alias('text')
 ret1 = Listing.select(custom_cynthia,text_cynthia)
 ret2 = ret1.where((custom_cynthia.alias()==Value(20, converter=False)) & (text_cynthia.alias()==Value('foobar', converter=False))).group_by().objects()
+for r in ret2:
+    dump(getattr(r, 'custom', None), 'custom')
+    dump(getattr(r, 'text', None), 'text')

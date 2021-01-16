@@ -5,3 +5,19 @@ hj = ExpressionWrapper(F('WrTj'), output_field=FloatField())
 cCqQb = ExpressionWrapper(Value(0), output_field=IntegerField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(WrTj=WrTj).annotate(cCqQb=cCqQb).values('yearly_rent', 'id', 'WrTj', 'sale_price', 'cCqQb').annotate(jcVbPimsG=jcVbPimsG).order_by('-id').values('WrTj', 'jcVbPimsG', 'cCqQb')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('WrTj', None), 'WrTj')
+    else:
+        dump(getattr(r, 'WrTj', None), 'WrTj')
+
+    if(isinstance(r, dict)):
+        dump(r.get('jcVbPimsG', None), 'jcVbPimsG')
+    else:
+        dump(getattr(r, 'jcVbPimsG', None), 'jcVbPimsG')
+
+    if(isinstance(r, dict)):
+        dump(r.get('cCqQb', None), 'cCqQb')
+    else:
+        dump(getattr(r, 'cCqQb', None), 'cCqQb')

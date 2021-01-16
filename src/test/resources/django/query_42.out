@@ -7,3 +7,29 @@ SNzkSd = ExpressionWrapper(Value('NZ2'), output_field=TextField())
 MdHFe = ExpressionWrapper(Avg(F('yearly_rent'), output_field=FloatField()), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(xoOkrOnc=xoOkrOnc).annotate(UBXB=UBXB).annotate(SNzkSd=SNzkSd).values('sale_price', 'xoOkrOnc', 'UBXB', 'SNzkSd').annotate(MdHFe=MdHFe).annotate(lxg=lxg).values('lxg', 'xoOkrOnc', 'MdHFe', 'SNzkSd', 'UBXB')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('lxg', None), 'lxg')
+    else:
+        dump(getattr(r, 'lxg', None), 'lxg')
+
+    if(isinstance(r, dict)):
+        dump(r.get('xoOkrOnc', None), 'xoOkrOnc')
+    else:
+        dump(getattr(r, 'xoOkrOnc', None), 'xoOkrOnc')
+
+    if(isinstance(r, dict)):
+        dump(r.get('UBXB', None), 'UBXB')
+    else:
+        dump(getattr(r, 'UBXB', None), 'UBXB')
+
+    if(isinstance(r, dict)):
+        dump(r.get('SNzkSd', None), 'SNzkSd')
+    else:
+        dump(getattr(r, 'SNzkSd', None), 'SNzkSd')
+
+    if(isinstance(r, dict)):
+        dump(r.get('MdHFe', None), 'MdHFe')
+    else:
+        dump(getattr(r, 'MdHFe', None), 'MdHFe')

@@ -2,3 +2,6 @@ irOHtSumD_cynthia = (fn.avg(Value(1, converter=False))).coerce(False).alias('irO
 jiAtXcec_cynthia = (irOHtSumD_cynthia.alias()).coerce(False).alias('jiAtXcec')
 ret1 = Listing.select(irOHtSumD_cynthia,jiAtXcec_cynthia)
 ret2 = ret1.group_by(Listing.id).objects()
+for r in ret2:
+    dump(getattr(r, 'irOHtSumD', None), 'irOHtSumD')
+    dump(getattr(r, 'jiAtXcec', None), 'jiAtXcec')

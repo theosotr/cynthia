@@ -2,3 +2,6 @@ y_cynthia = (Value('6quxR', converter=False)).coerce(False).alias('y')
 WIhPq_cynthia = (fn.sum((y_cynthia.alias() / Value(2, converter=False)))).coerce(False).alias('WIhPq')
 ret1 = Listing.select(y_cynthia,WIhPq_cynthia)
 ret2 = ret1.group_by(Listing.id).objects()
+for r in ret2:
+    dump(getattr(r, 'y', None), 'y')
+    dump(getattr(r, 'WIhPq', None), 'WIhPq')

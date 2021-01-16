@@ -1,0 +1,9 @@
+DniIHgWk = ExpressionWrapper((Value(8) - Sum((Value('t7nVx') + F('content')), output_field=FloatField())), output_field=FloatField())
+ret1 = Review.objects.using('default')
+ret2 = ret1.values('id', 'content', 'book__id', 'reviewer_name').annotate(DniIHgWk=DniIHgWk).order_by('content','book__id','id','reviewer_name').values('DniIHgWk')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('DniIHgWk', None), 'DniIHgWk')
+    else:
+        dump(getattr(r, 'DniIHgWk', None), 'DniIHgWk')

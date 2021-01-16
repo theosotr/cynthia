@@ -1,0 +1,7 @@
+Review_Book = Book.alias()
+TkhJ_cynthia = (fn.sum((Review.rating / Review_Book.title))).coerce(False).alias('TkhJ')
+II_cynthia = ((Review.rating - TkhJ_cynthia.alias())).coerce(False).alias('II')
+ret1 = Review.select(TkhJ_cynthia)
+ret2 = ret1.switch(Review).join(Review_Book).group_by(Review.id).objects()
+for r in ret2:
+    dump(getattr(r, 'TkhJ', None), 'TkhJ')

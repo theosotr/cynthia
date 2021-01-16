@@ -8,3 +8,8 @@ ret7 = ret4.union(ret6)
 ret8 = ret7
 ret9 = ret2.union(ret8)
 ret10 = ret9
+
+if(isinstance(ret10, dict)):
+    dump(ret10.get('count', None), 'count')
+else:
+    dump(getattr(ret10, 'count', None), 'count')

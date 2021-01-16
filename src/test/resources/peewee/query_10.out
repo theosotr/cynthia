@@ -1,2 +1,5 @@
 ret1 = Listing.select((((fn.sum(Listing.sale_price) * fn.avg(Listing.yearly_rent)) + (fn.max(Listing.sale_price) / fn.min(Listing.sale_price)))).coerce(False).alias('complex_add'), (fn.sum(Listing.yearly_rent)).coerce(False).alias('yearly'), ((fn.min(Listing.yearly_rent) - (fn.avg(Listing.sale_price) + fn.max(Listing.sale_price)))).coerce(False).alias('complex_sub'))
 ret2 = ret1.group_by().objects().first()
+dump(getattr(ret2, 'complex_add', None), 'complex_add')
+dump(getattr(ret2, 'yearly', None), 'yearly')
+dump(getattr(ret2, 'complex_sub', None), 'complex_sub')

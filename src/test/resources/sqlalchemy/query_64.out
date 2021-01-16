@@ -1,0 +1,8 @@
+vICp_cynthia = type_coerce(literal('SBkK'), types.String).label('vICp')
+OIeH_cynthia = type_coerce((Review.content.op('+')((vICp_cynthia / vICp_cynthia))), types.String).label('OIeH')
+sEwe_cynthia = type_coerce(vICp_cynthia, types.String).label('sEwe')
+KB_cynthia = type_coerce((Review.id * Review.id), types.String).label('KB')
+JFSL_cynthia = type_coerce(literal(4), types.String).label('JFSL')
+ret1 = session.query(type_coerce(func.count(Review.content), types.Integer).label('g')).select_from(Review)
+ret2 = ret1.group_by().first()
+dump(getattr(ret2,'g', None), 'g')

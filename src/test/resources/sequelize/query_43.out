@@ -14,3 +14,11 @@ order: [
   ['id', 'DESC']],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.WrTj, 'WrTj')
+  dump(x === null ? x : x.dataValues.jcVbPimsG, 'jcVbPimsG')
+  dump(x === null ? x : x.dataValues.cCqQb, 'cCqQb')
+  })
+}).catch(x => { sequelize.close(); throw x; })

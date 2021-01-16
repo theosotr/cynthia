@@ -1,0 +1,24 @@
+Book = require('./book.js')(sequelize, Sequelize)
+Author = require('./author.js')(sequelize, Sequelize)
+Author.hasMany(Book, {foreignKey: 'author_id'})
+Book.belongsTo(Author, {as: Author.tableName, foreignKey: 'author_id'})
+e_cynthia = sequelize.cast(sequelize.col('book.title'),'varchar(100)')
+YejRlb_cynthia = sequelize.cast(sequelize.literal(`\'\'`),'varchar(100)')
+aqVzP_cynthia = sequelize.cast(sequelize.literal(`(${getC(YejRlb_cynthia)} - book.isbn)`),'float')
+PYBKyS_cynthia = sequelize.cast(sequelize.literal(0),'signed')
+ret1 = Book.findAll({
+include: [
+{model: Author, as: Author.tableName}
+],
+attributes: [
+ [aqVzP_cynthia, 'aqVzP']],
+order: [
+  [Author,'id', 'ASC'],  ['isbn', 'ASC'],  ['id', 'DESC']],
+offset: 0
+})
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.aqVzP, 'aqVzP')
+  })
+}).catch(x => { sequelize.close(); throw x; })

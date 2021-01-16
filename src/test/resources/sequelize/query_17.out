@@ -8,3 +8,10 @@ attributes: [
 group: ['sales', 'listing.sale_price'],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.sales, 'sales')
+  dump(x === null ? x : x.dataValues.squared, 'squared')
+  })
+}).catch(x => { sequelize.close(); throw x; })

@@ -1,1 +1,8 @@
 ret1 = Listing.select("count(listing.id) as \"QpUmZQeX\"").group("Listing.id").all
+for i in ret1
+  begin
+    dump(i.QpUmZQeX, 'QpUmZQeX')
+  rescue
+    dump(i, 'QpUmZQeX')
+  end
+end

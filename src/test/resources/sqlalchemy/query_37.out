@@ -2,3 +2,5 @@ yVmbvGHWe_cynthia = type_coerce((func.min(literal(0)) / Listing.sale_price), typ
 Te_cynthia = type_coerce((yVmbvGHWe_cynthia.op('+')(yVmbvGHWe_cynthia)), types.String).label('Te')
 ret1 = session.query(Te_cynthia).select_from(Listing)
 ret2 = ret1.group_by(Listing.sale_price)
+for r in ret2:
+    dump(getattr(r,'Te', None), 'Te')

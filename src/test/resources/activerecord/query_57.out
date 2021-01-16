@@ -1,0 +1,8 @@
+ret1 = Review.joins({book:[:author]}).select("author.first_name as \"TbPEVGKp\"").all
+for i in ret1
+  begin
+    dump(i.TbPEVGKp, 'TbPEVGKp')
+  rescue
+    dump(i, 'TbPEVGKp')
+  end
+end

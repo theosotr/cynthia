@@ -1,1 +1,13 @@
 ret1 = Listing.select("avg(1) as \"irOHtSumD\"").select("avg(1) as \"jiAtXcec\"").group("Listing.id").all
+for i in ret1
+  begin
+    dump(i.irOHtSumD, 'irOHtSumD')
+  rescue
+    dump(i, 'irOHtSumD')
+  end
+  begin
+    dump(i.jiAtXcec, 'jiAtXcec')
+  rescue
+    dump(i, 'jiAtXcec')
+  end
+end

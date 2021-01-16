@@ -1,1 +1,2 @@
 ret1 = Listing.select("(listing.sale_price/listing.sale_price) as \"mUoSMAxdl\"").select("listing.sale_price as \"R\"").select("(9/(''+1)) as \"OAYwxOOET\"").select("(listing.sale_price/listing.sale_price) as \"vlrkx\"").select("((8*listing.id)/'PHoJX5b') as \"uBnSWipsi\"").all
+dump(ret1.count("listing.sale_price"), 'R')

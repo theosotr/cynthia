@@ -1,0 +1,12 @@
+e = ExpressionWrapper(F('title'), output_field=TextField())
+YejRlb = ExpressionWrapper(Value(''), output_field=TextField())
+aqVzP = ExpressionWrapper((YejRlb - F('isbn')), output_field=FloatField())
+PYBKyS = ExpressionWrapper(Value(0), output_field=IntegerField())
+ret1 = Book.objects.using('default')
+ret2 = ret1.annotate(aqVzP=aqVzP).order_by('author__id','isbn','-id').values('aqVzP')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('aqVzP', None), 'aqVzP')
+    else:
+        dump(getattr(r, 'aqVzP', None), 'aqVzP')

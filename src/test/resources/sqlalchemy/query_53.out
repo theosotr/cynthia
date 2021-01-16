@@ -1,0 +1,6 @@
+Review_Book_Author = aliased(Author)
+Review_Book = aliased(Book)
+Review_Book = aliased(Book)
+ret1 = session.query(Review)
+ret2 = ret1.join(Review_Book, Review.book).join(Review_Book_Author, Review_Book.author).filter(and_(Review.rating >= literal(2), Review_Book_Author.surname.contains('o', autoescape=True))).group_by().order_by(desc(Review_Book.title),asc(Review.reviewer_name),desc(Review.id)).first()
+dump(getattr(ret2,'_default', None), '_default')

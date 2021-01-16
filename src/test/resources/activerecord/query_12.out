@@ -1,1 +1,2 @@
 ret1 = Listing.all
+dump(ret1.sum("(listing.yearly_rent-listing.sale_price)"), 'sum')

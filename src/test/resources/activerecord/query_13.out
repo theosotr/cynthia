@@ -1,1 +1,8 @@
 ret1 = Listing.where(["(listing.yearly_rent+listing.sale_price) >= ?", 50]).select("(listing.yearly_rent+listing.sale_price) as \"custom\"").all
+for i in ret1
+  begin
+    dump(i.custom, 'custom')
+  rescue
+    dump(i, 'custom')
+  end
+end

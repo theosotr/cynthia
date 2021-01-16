@@ -1,1 +1,8 @@
 ret1 = Listing.order("listing.foo DESC","listing.sale_price ASC","listing.id DESC").all
+for i in ret1
+  begin
+    dump(i._default, '_default')
+  rescue
+    dump(i, '_default')
+  end
+end

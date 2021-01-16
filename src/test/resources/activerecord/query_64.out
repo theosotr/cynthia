@@ -1,0 +1,2 @@
+ret1 = Review.select("(review.content+('SBkK'/'SBkK')) as \"OIeH\"").select("4 as \"JFSL\"").select("(review.id*review.id) as \"KB\"").select("'SBkK' as \"sEwe\"").select("'SBkK' as \"vICp\"").all
+dump(ret1.count("review.content"), 'g')

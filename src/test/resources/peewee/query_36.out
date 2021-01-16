@@ -3,3 +3,5 @@ ij_cynthia = (Listing.sale_price).coerce(False).alias('ij')
 FPCwjJlb_cynthia = (jJqOpWLil_cynthia.alias()).coerce(False).alias('FPCwjJlb')
 ret1 = Listing.select(FPCwjJlb_cynthia)
 ret2 = ret1.group_by(Listing.id).objects()
+for r in ret2:
+    dump(getattr(r, 'FPCwjJlb', None), 'FPCwjJlb')

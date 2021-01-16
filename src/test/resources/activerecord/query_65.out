@@ -1,0 +1,8 @@
+ret1 = Review.joins(:book).select("sum((review.rating/book.title)) as \"TkhJ\"").group("Review.id").all
+for i in ret1
+  begin
+    dump(i.TkhJ, 'TkhJ')
+  rescue
+    dump(i, 'TkhJ')
+  end
+end

@@ -2,3 +2,9 @@ heTkuJqO = ExpressionWrapper((((F('id') + Min((F('sale_price') * F('sale_price')
 BIKnH = ExpressionWrapper(heTkuJqO, output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values('id', 'sale_price').annotate(BIKnH=BIKnH).values('BIKnH')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('BIKnH', None), 'BIKnH')
+    else:
+        dump(getattr(r, 'BIKnH', None), 'BIKnH')

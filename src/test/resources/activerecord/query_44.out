@@ -1,1 +1,2 @@
 ret1 = Listing.select("((listing.id+(((9/'n3zKcdj2')+(((8/1)/listing.id)+listing.yearly_rent))/'px5me'))-('y1e8rj'-'f1cay92kV')) as \"EfLr\"").all
+dump(ret1.count("((listing.id+(((9/'n3zKcdj2')+(((8/1)/listing.id)+listing.yearly_rent))/'px5me'))-('y1e8rj'-'f1cay92kV'))"), 'KiqJoUU')

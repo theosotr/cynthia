@@ -1,1 +1,13 @@
 ret1 = Listing.select("listing.sale_price as \"sales\"").select("avg((listing.sale_price*listing.sale_price)) as \"squared\"").group("listing.sale_price", "Listing.sale_price").all
+for i in ret1
+  begin
+    dump(i.sales, 'sales')
+  rescue
+    dump(i, 'sales')
+  end
+  begin
+    dump(i.squared, 'squared')
+  rescue
+    dump(i, 'squared')
+  end
+end

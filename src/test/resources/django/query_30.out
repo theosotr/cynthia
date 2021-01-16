@@ -2,3 +2,14 @@ y = ExpressionWrapper(Value('6quxR'), output_field=TextField())
 WIhPq = ExpressionWrapper(Sum((F('y') / Value(2)), output_field=FloatField()), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(y=y).values('id', 'y').annotate(WIhPq=WIhPq).values('y', 'WIhPq')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('y', None), 'y')
+    else:
+        dump(getattr(r, 'y', None), 'y')
+
+    if(isinstance(r, dict)):
+        dump(r.get('WIhPq', None), 'WIhPq')
+    else:
+        dump(getattr(r, 'WIhPq', None), 'WIhPq')

@@ -1,1 +1,18 @@
 ret1 = Listing.select("(sum('pD1B')/listing.sale_price) as \"othaPT\"").select("6 as \"ORsHBgQ\"").select("(sum('pD1B')/listing.sale_price) as \"gOtzP\"").group("Listing.sale_price").all
+for i in ret1
+  begin
+    dump(i.ORsHBgQ, 'ORsHBgQ')
+  rescue
+    dump(i, 'ORsHBgQ')
+  end
+  begin
+    dump(i.othaPT, 'othaPT')
+  rescue
+    dump(i, 'othaPT')
+  end
+  begin
+    dump(i.gOtzP, 'gOtzP')
+  rescue
+    dump(i, 'gOtzP')
+  end
+end

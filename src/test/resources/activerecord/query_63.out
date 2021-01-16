@@ -1,0 +1,18 @@
+ret1 = Book.order("book.isbn DESC","book.title DESC","sum((0/'VY')) DESC","book.id DESC").select("(sum(book.title)+max(book.isbn)) as \"caxccB\"").select("8 as \"VUV\"").select("sum((0/'VY')) as \"ODQw\"").group("Book.isbn", "Book.title", "Book.id").all
+for i in ret1
+  begin
+    dump(i.caxccB, 'caxccB')
+  rescue
+    dump(i, 'caxccB')
+  end
+  begin
+    dump(i.VUV, 'VUV')
+  rescue
+    dump(i, 'VUV')
+  end
+  begin
+    dump(i.ODQw, 'ODQw')
+  rescue
+    dump(i, 'ODQw')
+  end
+end

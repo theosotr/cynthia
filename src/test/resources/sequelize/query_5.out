@@ -4,3 +4,9 @@ order: [
   ['foo', 'DESC'],  ['sale_price', 'ASC'],  ['id', 'DESC']],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues._default, '_default')
+  })
+}).catch(x => { sequelize.close(); throw x; })

@@ -1,1 +1,13 @@
 ret1 = Listing.select("avg(listing.id) as \"Szgw\"").select("listing.sale_price as \"ee\"").group("listing.sale_price", "Listing.sale_price").all
+for i in ret1
+  begin
+    dump(i.Szgw, 'Szgw')
+  rescue
+    dump(i, 'Szgw')
+  end
+  begin
+    dump(i.ee, 'ee')
+  rescue
+    dump(i, 'ee')
+  end
+end

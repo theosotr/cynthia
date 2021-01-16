@@ -1,2 +1,12 @@
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().aggregate(max=ExpressionWrapper(Max(F('foo'), output_field=TextField()), output_field=TextField()),min=ExpressionWrapper(Min(F('foo'), output_field=TextField()), output_field=TextField()))
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('max', None), 'max')
+else:
+    dump(getattr(ret2, 'max', None), 'max')
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('min', None), 'min')
+else:
+    dump(getattr(ret2, 'min', None), 'min')

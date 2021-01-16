@@ -3,3 +3,7 @@ rrW_cynthia = type_coerce((wduesdvc_cynthia - wduesdvc_cynthia), types.String).l
 bCGVwr_cynthia = type_coerce((literal(2).op('+')(Listing.sale_price)), types.String).label('bCGVwr')
 ret1 = session.query(wduesdvc_cynthia,rrW_cynthia,bCGVwr_cynthia).select_from(Listing)
 ret2 = ret1.group_by()
+for r in ret2:
+    dump(getattr(r,'wduesdvc', None), 'wduesdvc')
+    dump(getattr(r,'rrW', None), 'rrW')
+    dump(getattr(r,'bCGVwr', None), 'bCGVwr')

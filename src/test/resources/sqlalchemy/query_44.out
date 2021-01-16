@@ -1,3 +1,4 @@
 EfLr_cynthia = type_coerce(((Listing.id.op('+')((((literal(9) / literal('n3zKcdj2')).op('+')((((literal(8) / literal(1)) / Listing.id).op('+')(Listing.yearly_rent)))) / literal('px5me')))) - (literal('y1e8rj') - literal('f1cay92kV'))), types.String).label('EfLr')
 ret1 = session.query(type_coerce(func.count(EfLr_cynthia), types.Integer).label('KiqJoUU')).select_from(Listing)
 ret2 = ret1.group_by().first()
+dump(getattr(ret2,'KiqJoUU', None), 'KiqJoUU')

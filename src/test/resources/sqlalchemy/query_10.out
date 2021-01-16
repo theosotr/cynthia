@@ -1,2 +1,5 @@
 ret1 = session.query(type_coerce(((func.sum(Listing.sale_price) * func.avg(Listing.yearly_rent)).op('+')((func.max(Listing.sale_price) / func.min(Listing.sale_price)))), types.Float).label('complex_add'), type_coerce(func.sum(Listing.yearly_rent), types.Float).label('yearly'), type_coerce((func.min(Listing.yearly_rent) - (func.avg(Listing.sale_price).op('+')(func.max(Listing.sale_price)))), types.Float).label('complex_sub')).select_from(Listing)
 ret2 = ret1.group_by().first()
+dump(getattr(ret2,'complex_add', None), 'complex_add')
+dump(getattr(ret2,'yearly', None), 'yearly')
+dump(getattr(ret2,'complex_sub', None), 'complex_sub')

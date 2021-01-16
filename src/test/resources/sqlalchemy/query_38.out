@@ -6,3 +6,7 @@ x_cynthia = type_coerce(literal(4), types.String).label('x')
 G_cynthia = type_coerce(gOtzP_cynthia, types.String).label('G')
 ret1 = session.query(ORsHBgQ_cynthia,othaPT_cynthia,gOtzP_cynthia).select_from(Listing)
 ret2 = ret1.group_by(Listing.sale_price)
+for r in ret2:
+    dump(getattr(r,'ORsHBgQ', None), 'ORsHBgQ')
+    dump(getattr(r,'othaPT', None), 'othaPT')
+    dump(getattr(r,'gOtzP', None), 'gOtzP')

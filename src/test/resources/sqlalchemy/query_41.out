@@ -3,3 +3,6 @@ aJZXPcub_cynthia = type_coerce(func.min(literal('8')), types.String).label('aJZX
 KWpgDGBLp_cynthia = type_coerce((Listing.sale_price / EoDFfvD_cynthia), types.String).label('KWpgDGBLp')
 ret1 = session.query(aJZXPcub_cynthia,KWpgDGBLp_cynthia).select_from(Listing)
 ret2 = ret1.group_by(KWpgDGBLp_cynthia, Listing.sale_price, Listing.yearly_rent)
+for r in ret2:
+    dump(getattr(r,'aJZXPcub', None), 'aJZXPcub')
+    dump(getattr(r,'KWpgDGBLp', None), 'KWpgDGBLp')

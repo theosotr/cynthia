@@ -3,3 +3,7 @@ sales_cynthia = (Listing.sale_price).coerce(False).alias('sales')
 max_cynthia = (fn.max((Listing.yearly_rent + Value(10, converter=False)))).coerce(False).alias('max')
 ret1 = Listing.select(fooF_cynthia,sales_cynthia,max_cynthia)
 ret2 = ret1.group_by(fooF_cynthia.alias(), sales_cynthia.alias(), Listing.foo, Listing.sale_price).having((fooF_cynthia.alias()==Value('baz', converter=False)) & (max_cynthia.alias() >= (Value(10, converter=False) + sales_cynthia.alias()))).objects()
+for r in ret2:
+    dump(getattr(r, 'fooF', None), 'fooF')
+    dump(getattr(r, 'sales', None), 'sales')
+    dump(getattr(r, 'max', None), 'max')

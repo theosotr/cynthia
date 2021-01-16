@@ -1,1 +1,13 @@
 ret1 = Listing.where(["(((5+15) = ?) AND ('foobar' = ?))", 20, 'foobar']).select("(5+15) as \"custom\"").select("'foobar' as \"text\"").all
+for i in ret1
+  begin
+    dump(i.custom, 'custom')
+  rescue
+    dump(i, 'custom')
+  end
+  begin
+    dump(i.text, 'text')
+  rescue
+    dump(i, 'text')
+  end
+end

@@ -1,1 +1,28 @@
 ret1 = Listing.select("avg(listing.yearly_rent) as \"MdHFe\"").select("((count(listing.id)/((('M0rf'-(listing.sale_price*max(listing.yearly_rent)))/listing.sale_price)/'7G'))*((('M0rf'-(listing.sale_price*max(listing.yearly_rent)))/listing.sale_price)+'ilkQN')) as \"lxg\"").select("'L' as \"xoOkrOnc\"").select("'L' as \"UBXB\"").select("'NZ2' as \"SNzkSd\"").group("Listing.sale_price").all
+for i in ret1
+  begin
+    dump(i.lxg, 'lxg')
+  rescue
+    dump(i, 'lxg')
+  end
+  begin
+    dump(i.xoOkrOnc, 'xoOkrOnc')
+  rescue
+    dump(i, 'xoOkrOnc')
+  end
+  begin
+    dump(i.UBXB, 'UBXB')
+  rescue
+    dump(i, 'UBXB')
+  end
+  begin
+    dump(i.SNzkSd, 'SNzkSd')
+  rescue
+    dump(i, 'SNzkSd')
+  end
+  begin
+    dump(i.MdHFe, 'MdHFe')
+  rescue
+    dump(i, 'MdHFe')
+  end
+end

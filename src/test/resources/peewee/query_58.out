@@ -1,0 +1,6 @@
+Review_Book = Book.alias()
+DniIHgWk_cynthia = ((Value(8, converter=False) - fn.sum((Value('t7nVx', converter=False) + Review.content)))).coerce(False).alias('DniIHgWk')
+ret1 = Review.select(DniIHgWk_cynthia)
+ret2 = ret1.switch(Review).join(Review_Book).group_by(Review.id, Review.content, Review_Book.id, Review.reviewer_name).order_by(Review.content.asc(),Review_Book.id.asc(),Review.id.asc(),Review.reviewer_name.asc()).objects()
+for r in ret2:
+    dump(getattr(r, 'DniIHgWk', None), 'DniIHgWk')

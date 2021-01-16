@@ -2,3 +2,6 @@ custom_cynthia = type_coerce((literal(5).op('+')(literal(15))), types.String).la
 text_cynthia = type_coerce(literal('foobar'), types.String).label('text')
 ret1 = session.query(custom_cynthia,text_cynthia).select_from(Listing)
 ret2 = ret1.filter(and_(custom_cynthia==literal(20), text_cynthia==literal('foobar'))).group_by()
+for r in ret2:
+    dump(getattr(r,'custom', None), 'custom')
+    dump(getattr(r,'text', None), 'text')

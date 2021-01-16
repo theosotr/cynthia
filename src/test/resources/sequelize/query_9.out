@@ -11,3 +11,10 @@ attributes: [
     [avg_sale_cynthia, 'avg_sale']],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+    dump(x[0] === null ? x[0] : x[0].dataValues.sum_sale, 'sum_sale')
+  dump(x[0] === null ? x[0] : x[0].dataValues.max_sale, 'max_sale')
+  dump(x[0] === null ? x[0] : x[0].dataValues.min_sale, 'min_sale')
+  dump(x[0] === null ? x[0] : x[0].dataValues.avg_sale, 'avg_sale')
+}).catch(x => { sequelize.close(); throw x; })

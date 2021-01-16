@@ -3,3 +3,14 @@ cn = ExpressionWrapper(Value(1), output_field=IntegerField())
 FJOKGoi = ExpressionWrapper(Min((Value('qdbiycgpD') + Value('3WnBi')), output_field=FloatField()), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(Jble=Jble).values('id', 'Jble').annotate(FJOKGoi=FJOKGoi).values('Jble', 'FJOKGoi')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('Jble', None), 'Jble')
+    else:
+        dump(getattr(r, 'Jble', None), 'Jble')
+
+    if(isinstance(r, dict)):
+        dump(r.get('FJOKGoi', None), 'FJOKGoi')
+    else:
+        dump(getattr(r, 'FJOKGoi', None), 'FJOKGoi')

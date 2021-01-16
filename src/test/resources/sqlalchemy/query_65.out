@@ -1,0 +1,7 @@
+Review_Book = aliased(Book)
+TkhJ_cynthia = type_coerce(func.sum((Review.rating / Review_Book.title)), types.String).label('TkhJ')
+II_cynthia = type_coerce((Review.rating - TkhJ_cynthia), types.String).label('II')
+ret1 = session.query(TkhJ_cynthia).select_from(Review)
+ret2 = ret1.join(Review_Book, Review.book).group_by(Review.id)
+for r in ret2:
+    dump(getattr(r,'TkhJ', None), 'TkhJ')

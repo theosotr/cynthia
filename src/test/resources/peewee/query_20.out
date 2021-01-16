@@ -3,3 +3,6 @@ mul_cynthia = ((Listing.sale_price * Listing.sale_price)).coerce(False).alias('m
 squared_cynthia = ((fn.avg(mul_cynthia.alias()) - Value(10, converter=False))).coerce(False).alias('squared')
 ret1 = Listing.select(sales_cynthia,squared_cynthia)
 ret2 = ret1.group_by(sales_cynthia.alias(), Listing.sale_price).objects()
+for r in ret2:
+    dump(getattr(r, 'sales', None), 'sales')
+    dump(getattr(r, 'squared', None), 'squared')

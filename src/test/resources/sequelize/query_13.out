@@ -9,3 +9,9 @@ where: {
 },
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.custom, 'custom')
+  })
+}).catch(x => { sequelize.close(); throw x; })

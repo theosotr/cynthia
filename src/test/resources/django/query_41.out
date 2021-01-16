@@ -3,3 +3,14 @@ aJZXPcub = ExpressionWrapper(Min(Value('8'), output_field=FloatField()), output_
 KWpgDGBLp = ExpressionWrapper((F('sale_price') / EoDFfvD), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(KWpgDGBLp=KWpgDGBLp).values('KWpgDGBLp', 'sale_price', 'yearly_rent').annotate(aJZXPcub=aJZXPcub).values('aJZXPcub', 'KWpgDGBLp')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('aJZXPcub', None), 'aJZXPcub')
+    else:
+        dump(getattr(r, 'aJZXPcub', None), 'aJZXPcub')
+
+    if(isinstance(r, dict)):
+        dump(r.get('KWpgDGBLp', None), 'KWpgDGBLp')
+    else:
+        dump(getattr(r, 'KWpgDGBLp', None), 'KWpgDGBLp')

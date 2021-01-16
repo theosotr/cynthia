@@ -1,0 +1,6 @@
+Review_Book = aliased(Book)
+V_cynthia = type_coerce(literal(0), types.String).label('V')
+ret1 = session.query(V_cynthia).select_from(Review)
+ret2 = ret1.join(Review_Book, Review.book).group_by().order_by(asc(Review.id),desc(Review.reviewer_name),desc(Review.content),desc(Review_Book.id))
+for r in ret2:
+    dump(getattr(r,'V', None), 'V')

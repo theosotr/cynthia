@@ -1,3 +1,5 @@
 mul_cynthia = type_coerce((func.avg(Listing.yearly_rent) * func.avg(Listing.sale_price)), types.String).label('mul')
 ret1 = session.query(mul_cynthia).select_from(Listing)
 ret2 = ret1.group_by(Listing.id)
+for r in ret2:
+    dump(getattr(r,'mul', None), 'mul')

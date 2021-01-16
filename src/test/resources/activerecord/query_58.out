@@ -1,0 +1,8 @@
+ret1 = Review.joins(:book).order("review.content ASC","book.id ASC","review.id ASC","review.reviewer_name ASC").select("(8-sum(('t7nVx'+review.content))) as \"DniIHgWk\"").group("Review.id", "Review.content", "book.id", "Review.reviewer_name").all
+for i in ret1
+  begin
+    dump(i.DniIHgWk, 'DniIHgWk')
+  rescue
+    dump(i, 'DniIHgWk')
+  end
+end

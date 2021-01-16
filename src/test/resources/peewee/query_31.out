@@ -3,3 +3,5 @@ XcRfBTT_cynthia = (Bypp_cynthia.alias()).coerce(False).alias('XcRfBTT')
 PsJ_cynthia = (Value('duySFSo3w', converter=False)).coerce(False).alias('PsJ')
 ret1 = Listing.select(XcRfBTT_cynthia)
 ret2 = ret1.group_by(Listing.id).objects()
+for r in ret2:
+    dump(getattr(r, 'XcRfBTT', None), 'XcRfBTT')

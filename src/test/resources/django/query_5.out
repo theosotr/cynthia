@@ -1,2 +1,8 @@
 ret1 = Listing.objects.using('default')
 ret2 = ret1.order_by('-foo','sale_price','-id').values()
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('_default', None), '_default')
+    else:
+        dump(getattr(r, '_default', None), '_default')

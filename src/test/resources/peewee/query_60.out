@@ -1,0 +1,6 @@
+Review_Book = Book.alias()
+V_cynthia = (Value(0, converter=False)).coerce(False).alias('V')
+ret1 = Review.select(V_cynthia)
+ret2 = ret1.switch(Review).join(Review_Book).group_by().order_by(Review.id.asc(),Review.reviewer_name.desc(),Review.content.desc(),Review_Book.id.desc()).objects()
+for r in ret2:
+    dump(getattr(r, 'V', None), 'V')

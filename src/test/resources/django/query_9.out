@@ -1,2 +1,22 @@
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().aggregate(sum_sale=ExpressionWrapper(Sum(F('sale_price'), output_field=FloatField()), output_field=FloatField()),max_sale=ExpressionWrapper(Max(F('sale_price'), output_field=FloatField()), output_field=FloatField()),min_sale=ExpressionWrapper(Min(F('sale_price'), output_field=FloatField()), output_field=FloatField()),avg_sale=ExpressionWrapper(Avg(F('sale_price'), output_field=FloatField()), output_field=FloatField()))
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('sum_sale', None), 'sum_sale')
+else:
+    dump(getattr(ret2, 'sum_sale', None), 'sum_sale')
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('max_sale', None), 'max_sale')
+else:
+    dump(getattr(ret2, 'max_sale', None), 'max_sale')
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('min_sale', None), 'min_sale')
+else:
+    dump(getattr(ret2, 'min_sale', None), 'min_sale')
+
+if(isinstance(ret2, dict)):
+    dump(ret2.get('avg_sale', None), 'avg_sale')
+else:
+    dump(getattr(ret2, 'avg_sale', None), 'avg_sale')

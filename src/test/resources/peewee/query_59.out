@@ -1,0 +1,8 @@
+YUA_cynthia = (((((fn.min(Value('T26', converter=False)) + Author.first_name) - Value(5, converter=False)) * Value(8, converter=False)) + (Author.first_name + fn.avg(Value(4, converter=False))))).coerce(False).alias('YUA')
+oD_cynthia = (fn.avg((Value('2BRyR3', converter=False) / Value(3, converter=False)))).coerce(False).alias('oD')
+C_cynthia = (Value(7, converter=False)).coerce(False).alias('C')
+ret1 = Author.select(YUA_cynthia,oD_cynthia)
+ret2 = ret1.group_by(Author.first_name).objects()
+for r in ret2:
+    dump(getattr(r, 'YUA', None), 'YUA')
+    dump(getattr(r, 'oD', None), 'oD')

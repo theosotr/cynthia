@@ -1,2 +1,4 @@
 ret1 = Listing.select()
 ret2 = ret1.where(~(Listing.foo==Value('bar', converter=False))).group_by().objects()
+for r in ret2:
+    dump(getattr(r, '_default', None), '_default')

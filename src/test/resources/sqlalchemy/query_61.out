@@ -1,0 +1,9 @@
+Book_Author = aliased(Author)
+e_cynthia = type_coerce(Book.title, types.String).label('e')
+YejRlb_cynthia = type_coerce(literal(''), types.String).label('YejRlb')
+aqVzP_cynthia = type_coerce((YejRlb_cynthia - Book.isbn), types.String).label('aqVzP')
+PYBKyS_cynthia = type_coerce(literal(0), types.String).label('PYBKyS')
+ret1 = session.query(aqVzP_cynthia).select_from(Book)
+ret2 = ret1.join(Book_Author, Book.author).group_by().order_by(asc(Book_Author.id),asc(Book.isbn),desc(Book.id))
+for r in ret2:
+    dump(getattr(r,'aqVzP', None), 'aqVzP')

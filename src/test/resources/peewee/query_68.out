@@ -1,0 +1,12 @@
+Review_Book_Author = Author.alias()
+Review_Book = Book.alias()
+Review_Book_Author = Author.alias()
+Review_Book = Book.alias()
+Review_Book_Author = Author.alias()
+Review_Book = Book.alias()
+dqBZvjQX_cynthia = (Value(3, converter=False)).coerce(False).alias('dqBZvjQX')
+TbPEVGKp_cynthia = (Review_Book_Author.first_name).coerce(False).alias('TbPEVGKp')
+ret1 = Review.select(TbPEVGKp_cynthia,Review_Book_Author.first_name,Review.id)
+ret2 = ret1.switch(Review).join(Review_Book).switch(Review_Book).join(Review_Book_Author).group_by().order_by(Review_Book_Author.first_name.desc(),Review.id.desc()).distinct(Review_Book_Author.first_name).objects()
+for r in ret2:
+    dump(getattr(r, 'TbPEVGKp', None), 'TbPEVGKp')

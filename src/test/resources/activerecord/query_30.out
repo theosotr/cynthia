@@ -1,1 +1,13 @@
 ret1 = Listing.select("'6quxR' as \"y\"").select("sum(('6quxR'/2)) as \"WIhPq\"").group("Listing.id").all
+for i in ret1
+  begin
+    dump(i.y, 'y')
+  rescue
+    dump(i, 'y')
+  end
+  begin
+    dump(i.WIhPq, 'WIhPq')
+  rescue
+    dump(i, 'WIhPq')
+  end
+end

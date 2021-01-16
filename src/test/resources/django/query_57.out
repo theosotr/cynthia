@@ -1,0 +1,10 @@
+dqBZvjQX = ExpressionWrapper(Value(3), output_field=IntegerField())
+TbPEVGKp = ExpressionWrapper(F('book__author__first_name'), output_field=TextField())
+ret1 = Review.objects.using('default')
+ret2 = ret1.annotate(TbPEVGKp=TbPEVGKp).values('TbPEVGKp')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('TbPEVGKp', None), 'TbPEVGKp')
+    else:
+        dump(getattr(r, 'TbPEVGKp', None), 'TbPEVGKp')

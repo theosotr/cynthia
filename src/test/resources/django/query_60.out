@@ -1,0 +1,9 @@
+V = ExpressionWrapper(Value(0), output_field=IntegerField())
+ret1 = Review.objects.using('default')
+ret2 = ret1.annotate(V=V).order_by('id','-reviewer_name','-content','-book__id').values('V')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('V', None), 'V')
+    else:
+        dump(getattr(r, 'V', None), 'V')

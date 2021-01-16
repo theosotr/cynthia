@@ -749,6 +749,315 @@ object TestQueries {
             )
           )
         )
+      ),
+
+      SetRes(New("Book", Seq())),
+
+      SetRes(
+        Apply(
+          Sort(Seq(("Review.rating", Desc))),
+          New("Review", Seq())
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Filter(Eq("Review.book.title", Constant("Random book", Quoted))),
+          New("Review", Seq())
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Filter(Eq("Review.book.author.surname", Constant("Coecker", Quoted))),
+          New("Review", Seq())
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc))
+          ),
+          New("Review", Seq())
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc),
+            ("Review.reviewer_name", Asc))
+          ),
+          New("Review", Seq())
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc),
+            ("Review.reviewer_name", Asc))
+          ),
+          Apply(
+            Filter(
+              And(
+                Gte("Review.rating", Constant("2", UnQuoted)),
+                Lte("Review.rating", Constant("4", UnQuoted))
+              )
+            ),
+            New("Review", Seq())
+          )
+        )
+      ),
+
+      FirstRes(
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc),
+            ("Review.reviewer_name", Asc))
+          ),
+          Apply(
+            Filter(
+              And(
+                Gte("Review.rating", Constant("2", UnQuoted)),
+                Contains("Review.book.author.surname", "o")
+              )
+            ),
+            New("Review", Seq())
+          )
+        )
+      ),
+
+      SubsetRes(
+        1,
+        Some(3),
+        Apply(
+          Sort(Seq(
+            ("Review.book.title", Desc),
+            ("Review.reviewer_name", Asc))
+          ),
+          Apply(
+            Filter(
+              Gte("Review.rating", Constant("2", UnQuoted))
+            ),
+            New("Review", Seq())
+          )
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Filter(
+            And (
+              Gte("Review.rating", Constant("2", UnQuoted)),
+              Lte("Review.book.author.first_name", Constant("Z", Quoted))
+            )
+          ),
+          New("Review", Seq(
+            FieldDecl(
+              Mul(
+                F("Review.rating"),
+                Constant("-1", UnQuoted)
+              ),
+              "mul", DoubleF
+            ),
+            FieldDecl(F("Review.book.author.first_name"), "name", StringF)
+          ))
+        )
+      ),
+
+      SetRes(
+        New(
+          "Review",
+          List(
+            FieldDecl(Constant("3", UnQuoted), "dqBZvjQX", IntF, true),
+            FieldDecl(F("Review.book.author.first_name"), "TbPEVGKp", StringF, false)
+          )
+        )
+      ),
+
+      SetRes(
+        New(
+          "Review",
+          List(
+            FieldDecl(Constant("3", UnQuoted), "dqBZvjQX", IntF, true),
+            FieldDecl(F("Review.book.author.first_name"), "TbPEVGKp", StringF, false)
+          )
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(
+            List(
+              ("Review.content", Asc),
+              ("Review.book.id", Asc),
+              ("Review.id", Asc),
+              ("Review.reviewer_name", Asc)
+            )
+          ),
+          New(
+            "Review",
+            List(
+              FieldDecl(
+                Sub(Constant("8", UnQuoted), Sum(Add(Constant("t7nVx", Quoted), F("Review.content")))),
+                "DniIHgWk",
+                DoubleF,
+                false
+              )
+            )
+          )
+        )
+      ),
+
+      SetRes(
+        New(
+          "Author",
+          List(
+            FieldDecl(
+              Add(
+                Mul(
+                  Sub(Add(Min(Constant("T26", Quoted)), F("Author.first_name")), Constant("5", UnQuoted)),
+                  Constant("8", UnQuoted)
+                ),
+                Add(F("Author.first_name"), Avg(Constant("4", UnQuoted)))
+              ),
+              "YUA",
+              DoubleF,
+              false
+            ),
+            FieldDecl(Avg(Div(Constant("2BRyR3", Quoted), Constant("3", UnQuoted))), "oD", DoubleF, false),
+            FieldDecl(Constant("7", UnQuoted), "C", IntF, true)
+          )
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(
+            List(
+              ("Review.id", Asc),
+              ("V", Desc),
+              ("Review.reviewer_name", Desc),
+              ("Review.content", Desc),
+              ("Review.book.id", Desc)
+            )
+          ),
+          New("Review", List(FieldDecl(Constant("0", UnQuoted), "V", IntF, false)))
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(List(("Book.author.id", Asc), ("Book.isbn", Asc), ("Book.id", Desc))),
+          New(
+            "Book",
+            List(
+              FieldDecl(F("Book.title"), "e", StringF, true),
+              FieldDecl(Constant("", Quoted), "YejRlb", StringF, true),
+              FieldDecl(Sub(F("YejRlb"), F("Book.isbn")), "aqVzP", DoubleF, false),
+              FieldDecl(Constant("0", UnQuoted), "PYBKyS", IntF, true)
+            )
+          )
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(List(("Book.isbn", Desc), ("Izi", Desc), ("Book.author.id", Asc))),
+          New(
+            "Book",
+            List(
+              FieldDecl(Sub(F("Book.author.first_name"), F("Book.title")), "RvimPPZOm", DoubleF, false),
+              FieldDecl(Max(Constant("Xl950", Quoted)), "Izi", StringF, false)
+            )
+          )
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(List(("Book.isbn", Desc), ("Book.title", Desc), ("ODQw", Desc), ("Book.id", Desc))),
+          New(
+            "Book",
+            List(
+              FieldDecl(Constant("0", UnQuoted), "gLMHoT", IntF, true),
+              FieldDecl(Add(Sum(F("Book.title")), Max(F("Book.isbn"))), "caxccB", DoubleF, false),
+              FieldDecl(Constant("8", UnQuoted), "VUV", IntF, false),
+              FieldDecl(Sum(Div(F("gLMHoT"), Constant("VY", Quoted))), "ODQw", DoubleF, false)
+            )
+          )
+        )
+      ),
+
+      AggrRes(
+        List(FieldDecl(Count(Some(F("Review.content"))), "g", IntF, false)),
+        New(
+          "Review",
+          List(
+            FieldDecl(Constant("SBkK", Quoted), "vICp", StringF, false),
+            FieldDecl(Add(F("Review.content"), Div(F("vICp"), F("vICp"))), "OIeH", DoubleF, false),
+            FieldDecl(F("vICp"), "sEwe", StringF, false),
+            FieldDecl(Mul(F("Review.id"), F("Review.id")), "KB", DoubleF, false),
+            FieldDecl(Constant("4", UnQuoted), "JFSL", IntF, false)
+          )
+        )
+      ),
+
+      SetRes(
+        New(
+          "Review",
+          List(
+            FieldDecl(Sum(Div(F("Review.rating"), F("Review.book.title"))), "TkhJ", DoubleF, false),
+            FieldDecl(Sub(F("Review.rating"), F("TkhJ")), "II", DoubleF, true)
+          )
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(List(("TbPEVGKp", Desc))),
+          Apply(
+            Distinct(Some("TbPEVGKp")),
+            New(
+              "Review",
+              List(
+                FieldDecl(Constant("3", UnQuoted), "dqBZvjQX", IntF, true),
+                FieldDecl(F("Review.book.author.first_name"), "TbPEVGKp", StringF, false)
+              )
+            )
+          )
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Distinct(None),
+          New(
+            "Review",
+            List(
+              FieldDecl(Constant("3", UnQuoted), "dqBZvjQX", IntF, true),
+              FieldDecl(F("Review.book.author.first_name"), "TbPEVGKp", StringF, false)
+            )
+          )
+        )
+      ),
+
+      SetRes(
+        Apply(
+          Sort(List(("Review.book.author.first_name", Desc))),
+          Apply(
+            Distinct(Some("Review.book.author.first_name")),
+            New(
+              "Review",
+              List(
+                FieldDecl(Constant("3", UnQuoted), "dqBZvjQX", IntF, true),
+                FieldDecl(F("Review.book.author.first_name"), "TbPEVGKp", StringF, false)
+              )
+            )
+          )
+        )
       )
     )
 } 

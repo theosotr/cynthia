@@ -1,2 +1,6 @@
 ret1 = session.query(type_coerce(func.sum(Listing.sale_price), types.Float).label('sum_sale'), type_coerce(func.max(Listing.sale_price), types.Float).label('max_sale'), type_coerce(func.min(Listing.sale_price), types.Float).label('min_sale'), type_coerce(func.avg(Listing.sale_price), types.Float).label('avg_sale')).select_from(Listing)
 ret2 = ret1.group_by().first()
+dump(getattr(ret2,'sum_sale', None), 'sum_sale')
+dump(getattr(ret2,'max_sale', None), 'max_sale')
+dump(getattr(ret2,'min_sale', None), 'min_sale')
+dump(getattr(ret2,'avg_sale', None), 'avg_sale')

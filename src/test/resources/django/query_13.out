@@ -1,3 +1,9 @@
 custom = ExpressionWrapper((F('yearly_rent') + F('sale_price')), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(custom=custom).filter(custom__gte=Value(50)).values('custom')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('custom', None), 'custom')
+    else:
+        dump(getattr(r, 'custom', None), 'custom')

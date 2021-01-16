@@ -3,3 +3,14 @@ K = ExpressionWrapper(Value('VWSKU7'), output_field=TextField())
 ee = ExpressionWrapper(F('sale_price'), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(ee=ee).values('ee', 'sale_price').annotate(Szgw=Szgw).values('Szgw', 'ee')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('Szgw', None), 'Szgw')
+    else:
+        dump(getattr(r, 'Szgw', None), 'Szgw')
+
+    if(isinstance(r, dict)):
+        dump(r.get('ee', None), 'ee')
+    else:
+        dump(getattr(r, 'ee', None), 'ee')

@@ -5,3 +5,7 @@ hj_cynthia = (WrTj_cynthia.alias()).coerce(False).alias('hj')
 cCqQb_cynthia = (Value(0, converter=False)).coerce(False).alias('cCqQb')
 ret1 = Listing.select(WrTj_cynthia,jcVbPimsG_cynthia,cCqQb_cynthia)
 ret2 = ret1.group_by(Listing.yearly_rent, WrTj_cynthia.alias(), Listing.id, Listing.sale_price).order_by(Listing.id.desc()).objects()
+for r in ret2:
+    dump(getattr(r, 'WrTj', None), 'WrTj')
+    dump(getattr(r, 'jcVbPimsG', None), 'jcVbPimsG')
+    dump(getattr(r, 'cCqQb', None), 'cCqQb')

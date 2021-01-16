@@ -3,3 +3,7 @@ jjG_cynthia = type_coerce((Listing.id * V_cynthia), types.String).label('jjG')
 qmIqh_cynthia = type_coerce(((Listing.id / jjG_cynthia) * func.min((V_cynthia - literal(7)))), types.String).label('qmIqh')
 ret1 = session.query(V_cynthia,jjG_cynthia,qmIqh_cynthia).select_from(Listing)
 ret2 = ret1.group_by(V_cynthia, jjG_cynthia, Listing.sale_price, Listing.id)
+for r in ret2:
+    dump(getattr(r,'V', None), 'V')
+    dump(getattr(r,'jjG', None), 'jjG')
+    dump(getattr(r,'qmIqh', None), 'qmIqh')

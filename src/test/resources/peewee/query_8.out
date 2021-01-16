@@ -1,2 +1,3 @@
 ret1 = Listing.select()
 ret2 = ret1.group_by().objects().count()
+dump(ret2, 'count')

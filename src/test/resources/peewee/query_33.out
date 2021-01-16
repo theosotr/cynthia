@@ -3,3 +3,6 @@ K_cynthia = (Value('VWSKU7', converter=False)).coerce(False).alias('K')
 ee_cynthia = (Listing.sale_price).coerce(False).alias('ee')
 ret1 = Listing.select(Szgw_cynthia,ee_cynthia)
 ret2 = ret1.group_by(ee_cynthia.alias(), Listing.sale_price).objects()
+for r in ret2:
+    dump(getattr(r, 'Szgw', None), 'Szgw')
+    dump(getattr(r, 'ee', None), 'ee')

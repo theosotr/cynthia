@@ -1,0 +1,10 @@
+gLMHoT_cynthia = (Value(0, converter=False)).coerce(False).alias('gLMHoT')
+caxccB_cynthia = ((fn.sum(Book.title) + fn.max(Book.isbn))).coerce(False).alias('caxccB')
+VUV_cynthia = (Value(8, converter=False)).coerce(False).alias('VUV')
+ODQw_cynthia = (fn.sum((gLMHoT_cynthia.alias() / Value('VY', converter=False)))).coerce(False).alias('ODQw')
+ret1 = Book.select(caxccB_cynthia,VUV_cynthia,ODQw_cynthia)
+ret2 = ret1.group_by(Book.isbn, Book.title, Book.id).order_by(Book.isbn.desc(),Book.title.desc(),ODQw_cynthia.alias().desc(),Book.id.desc()).objects()
+for r in ret2:
+    dump(getattr(r, 'caxccB', None), 'caxccB')
+    dump(getattr(r, 'VUV', None), 'VUV')
+    dump(getattr(r, 'ODQw', None), 'ODQw')

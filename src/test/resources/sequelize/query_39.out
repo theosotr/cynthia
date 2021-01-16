@@ -8,3 +8,10 @@ attributes: [
 group: ['listing.id'],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.irOHtSumD, 'irOHtSumD')
+  dump(x === null ? x : x.dataValues.jiAtXcec, 'jiAtXcec')
+  })
+}).catch(x => { sequelize.close(); throw x; })

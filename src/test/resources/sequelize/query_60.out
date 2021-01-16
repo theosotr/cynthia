@@ -1,0 +1,21 @@
+Review = require('./review.js')(sequelize, Sequelize)
+Book = require('./book.js')(sequelize, Sequelize)
+Book.hasMany(Review, {foreignKey: 'book_id'})
+Review.belongsTo(Book, {as: Book.tableName, foreignKey: 'book_id'})
+V_cynthia = sequelize.cast(sequelize.literal(0),'signed')
+ret1 = Review.findAll({
+include: [
+{model: Book, as: Book.tableName}
+],
+attributes: [
+ [V_cynthia, 'V']],
+order: [
+  ['id', 'ASC'],  ['reviewer_name', 'DESC'],  ['content', 'DESC'],  [Book,'id', 'DESC']],
+offset: 0
+})
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.V, 'V')
+  })
+}).catch(x => { sequelize.close(); throw x; })

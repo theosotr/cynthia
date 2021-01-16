@@ -9,3 +9,11 @@ attributes: [
     [bCGVwr_cynthia, 'bCGVwr']],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.wduesdvc, 'wduesdvc')
+  dump(x === null ? x : x.dataValues.rrW, 'rrW')
+  dump(x === null ? x : x.dataValues.bCGVwr, 'bCGVwr')
+  })
+}).catch(x => { sequelize.close(); throw x; })

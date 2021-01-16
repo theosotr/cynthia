@@ -2,3 +2,6 @@ y_cynthia = type_coerce(literal('6quxR'), types.String).label('y')
 WIhPq_cynthia = type_coerce(func.sum((y_cynthia / literal(2))), types.String).label('WIhPq')
 ret1 = session.query(y_cynthia,WIhPq_cynthia).select_from(Listing)
 ret2 = ret1.group_by(Listing.id)
+for r in ret2:
+    dump(getattr(r,'y', None), 'y')
+    dump(getattr(r,'WIhPq', None), 'WIhPq')

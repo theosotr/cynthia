@@ -6,3 +6,19 @@ x = ExpressionWrapper(Value(4), output_field=IntegerField())
 G = ExpressionWrapper(F('gOtzP'), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(ORsHBgQ=ORsHBgQ).values('sale_price', 'ORsHBgQ').annotate(othaPT=othaPT).annotate(gOtzP=gOtzP).values('ORsHBgQ', 'othaPT', 'gOtzP')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('ORsHBgQ', None), 'ORsHBgQ')
+    else:
+        dump(getattr(r, 'ORsHBgQ', None), 'ORsHBgQ')
+
+    if(isinstance(r, dict)):
+        dump(r.get('othaPT', None), 'othaPT')
+    else:
+        dump(getattr(r, 'othaPT', None), 'othaPT')
+
+    if(isinstance(r, dict)):
+        dump(r.get('gOtzP', None), 'gOtzP')
+    else:
+        dump(getattr(r, 'gOtzP', None), 'gOtzP')

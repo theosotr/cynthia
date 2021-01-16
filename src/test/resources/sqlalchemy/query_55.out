@@ -1,0 +1,11 @@
+Review_Book_Author = aliased(Author)
+Review_Book = aliased(Book)
+Review_Book_Author = aliased(Author)
+Review_Book = aliased(Book)
+mul_cynthia = type_coerce((Review.rating * literal(-1)), types.String).label('mul')
+name_cynthia = type_coerce(Review_Book_Author.first_name, types.String).label('name')
+ret1 = session.query(mul_cynthia,name_cynthia).select_from(Review)
+ret2 = ret1.join(Review_Book, Review.book).join(Review_Book_Author, Review_Book.author).filter(and_(Review.rating >= literal(2), Review_Book_Author.first_name <= literal('Z'))).group_by()
+for r in ret2:
+    dump(getattr(r,'mul', None), 'mul')
+    dump(getattr(r,'name', None), 'name')

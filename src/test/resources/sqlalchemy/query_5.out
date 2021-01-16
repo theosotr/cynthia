@@ -1,2 +1,4 @@
 ret1 = session.query(Listing)
 ret2 = ret1.group_by().order_by(desc(Listing.foo),asc(Listing.sale_price),desc(Listing.id))
+for r in ret2:
+    dump(getattr(r,'_default', None), '_default')

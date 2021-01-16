@@ -6,3 +6,6 @@ TPH_cynthia = (Listing.sale_price).coerce(False).alias('TPH')
 bqZCpnWO_cynthia = (Value(5, converter=False)).coerce(False).alias('bqZCpnWO')
 ret1 = Listing.select(eqQy_cynthia,I_cynthia)
 ret2 = ret1.group_by(Listing.id).objects()
+for r in ret2:
+    dump(getattr(r, 'eqQy', None), 'eqQy')
+    dump(getattr(r, 'I', None), 'I')

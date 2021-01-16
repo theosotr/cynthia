@@ -1,1 +1,13 @@
 ret1 = Listing.select("'JB' as \"Jble\"").select("min(('qdbiycgpD'+'3WnBi')) as \"FJOKGoi\"").group("Listing.id").all
+for i in ret1
+  begin
+    dump(i.Jble, 'Jble')
+  rescue
+    dump(i, 'Jble')
+  end
+  begin
+    dump(i.FJOKGoi, 'FJOKGoi')
+  rescue
+    dump(i, 'FJOKGoi')
+  end
+end

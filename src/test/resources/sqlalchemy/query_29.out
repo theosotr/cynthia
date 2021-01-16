@@ -4,3 +4,8 @@ wdVXax_cynthia = type_coerce(Listing.sale_price, types.String).label('wdVXax')
 wmWMTQf_cynthia = type_coerce(((Listing.id.op('+')(func.min(Listing.sale_price))) - (SsJNcy_cynthia / (SsJNcy_cynthia - literal('HYQvPq')))), types.String).label('wmWMTQf')
 ret1 = session.query(QutFiZgOg_cynthia,SsJNcy_cynthia,wdVXax_cynthia,wmWMTQf_cynthia).select_from(Listing)
 ret2 = ret1.group_by(wdVXax_cynthia, Listing.yearly_rent, Listing.id, Listing.sale_price)
+for r in ret2:
+    dump(getattr(r,'QutFiZgOg', None), 'QutFiZgOg')
+    dump(getattr(r,'SsJNcy', None), 'SsJNcy')
+    dump(getattr(r,'wdVXax', None), 'wdVXax')
+    dump(getattr(r,'wmWMTQf', None), 'wmWMTQf')

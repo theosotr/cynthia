@@ -1,0 +1,11 @@
+Review_Book_Author = Author.alias()
+Review_Book = Book.alias()
+Review_Book_Author = Author.alias()
+Review_Book = Book.alias()
+mul_cynthia = ((Review.rating * Value(-1, converter=False))).coerce(False).alias('mul')
+name_cynthia = (Review_Book_Author.first_name).coerce(False).alias('name')
+ret1 = Review.select(mul_cynthia,name_cynthia)
+ret2 = ret1.switch(Review).join(Review_Book).switch(Review_Book).join(Review_Book_Author).where((Review.rating >= Value(2, converter=False)) & (Review_Book_Author.first_name <= Value('Z', converter=False))).group_by().objects()
+for r in ret2:
+    dump(getattr(r, 'mul', None), 'mul')
+    dump(getattr(r, 'name', None), 'name')

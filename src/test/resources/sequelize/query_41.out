@@ -9,3 +9,10 @@ attributes: [
 group: ['KWpgDGBLp', 'listing.sale_price', 'listing.yearly_rent'],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.aJZXPcub, 'aJZXPcub')
+  dump(x === null ? x : x.dataValues.KWpgDGBLp, 'KWpgDGBLp')
+  })
+}).catch(x => { sequelize.close(); throw x; })

@@ -1,0 +1,13 @@
+ret1 = Book.joins(:author).order("book.isbn DESC","max('Xl950') DESC","author.id ASC","book.id DESC").select("(author.first_name-book.title) as \"RvimPPZOm\"").select("max('Xl950') as \"Izi\"").group("Book.title", "Book.id", "author.id", "Book.isbn", "author.first_name", "(author.first_name-book.title)").all
+for i in ret1
+  begin
+    dump(i.RvimPPZOm, 'RvimPPZOm')
+  rescue
+    dump(i, 'RvimPPZOm')
+  end
+  begin
+    dump(i.Izi, 'Izi')
+  rescue
+    dump(i, 'Izi')
+  end
+end

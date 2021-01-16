@@ -1,1 +1,18 @@
 ret1 = Listing.select("'EcwE' as \"wduesdvc\"").select("('EcwE'-'EcwE') as \"rrW\"").select("(2+listing.sale_price) as \"bCGVwr\"").all
+for i in ret1
+  begin
+    dump(i.wduesdvc, 'wduesdvc')
+  rescue
+    dump(i, 'wduesdvc')
+  end
+  begin
+    dump(i.rrW, 'rrW')
+  rescue
+    dump(i, 'rrW')
+  end
+  begin
+    dump(i.bCGVwr, 'bCGVwr')
+  rescue
+    dump(i, 'bCGVwr')
+  end
+end

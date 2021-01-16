@@ -9,3 +9,10 @@ attributes: [
 group: ['ee', 'listing.sale_price'],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.Szgw, 'Szgw')
+  dump(x === null ? x : x.dataValues.ee, 'ee')
+  })
+}).catch(x => { sequelize.close(); throw x; })

@@ -3,3 +3,6 @@ K_cynthia = type_coerce(literal('VWSKU7'), types.String).label('K')
 ee_cynthia = type_coerce(Listing.sale_price, types.String).label('ee')
 ret1 = session.query(Szgw_cynthia,ee_cynthia).select_from(Listing)
 ret2 = ret1.group_by(ee_cynthia, Listing.sale_price)
+for r in ret2:
+    dump(getattr(r,'Szgw', None), 'Szgw')
+    dump(getattr(r,'ee', None), 'ee')

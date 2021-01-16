@@ -3,3 +3,6 @@ aJZXPcub_cynthia = (fn.min(Value('8', converter=False))).coerce(False).alias('aJ
 KWpgDGBLp_cynthia = ((Listing.sale_price / EoDFfvD_cynthia.alias())).coerce(False).alias('KWpgDGBLp')
 ret1 = Listing.select(aJZXPcub_cynthia,KWpgDGBLp_cynthia)
 ret2 = ret1.group_by(KWpgDGBLp_cynthia.alias(), Listing.sale_price, Listing.yearly_rent).objects()
+for r in ret2:
+    dump(getattr(r, 'aJZXPcub', None), 'aJZXPcub')
+    dump(getattr(r, 'KWpgDGBLp', None), 'KWpgDGBLp')

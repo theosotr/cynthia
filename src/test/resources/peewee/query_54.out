@@ -1,0 +1,5 @@
+Review_Book = Book.alias()
+ret1 = Review.select()
+ret2 = ret1.switch(Review).join(Review_Book).where(Review.rating >= Value(2, converter=False)).group_by().order_by(Review_Book.title.desc(),Review.reviewer_name.asc(),Review.id.desc()).objects().offset(1).limit(3)
+for r in ret2:
+    dump(getattr(r, '_default', None), '_default')

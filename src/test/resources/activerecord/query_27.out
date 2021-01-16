@@ -1,1 +1,18 @@
 ret1 = Listing.select("(listing.sale_price-(listing.sale_price-listing.sale_price)) as \"lqA\"").select("min(listing.sale_price) as \"Rp\"").select("sum((listing.sale_price-listing.sale_price)) as \"blny\"").group("(listing.sale_price-(listing.sale_price-listing.sale_price))", "Listing.sale_price").all
+for i in ret1
+  begin
+    dump(i.lqA, 'lqA')
+  rescue
+    dump(i, 'lqA')
+  end
+  begin
+    dump(i.Rp, 'Rp')
+  rescue
+    dump(i, 'Rp')
+  end
+  begin
+    dump(i.blny, 'blny')
+  rescue
+    dump(i, 'blny')
+  end
+end

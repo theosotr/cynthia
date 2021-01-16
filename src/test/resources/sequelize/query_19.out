@@ -14,3 +14,11 @@ having: {
 group: ['fooF', 'sales', 'listing.foo', 'listing.sale_price'],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.fooF, 'fooF')
+  dump(x === null ? x : x.dataValues.sales, 'sales')
+  dump(x === null ? x : x.dataValues.max, 'max')
+  })
+}).catch(x => { sequelize.close(); throw x; })

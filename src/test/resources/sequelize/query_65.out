@@ -1,0 +1,21 @@
+Review = require('./review.js')(sequelize, Sequelize)
+Book = require('./book.js')(sequelize, Sequelize)
+Book.hasMany(Review, {foreignKey: 'book_id'})
+Review.belongsTo(Book, {as: Book.tableName, foreignKey: 'book_id'})
+TkhJ_cynthia = sequelize.cast(sequelize.fn('sum', sequelize.literal(`(review.rating / \"book\".title)`)),'float')
+II_cynthia = sequelize.cast(sequelize.literal(`(review.rating - ${getC(TkhJ_cynthia)})`),'float')
+ret1 = Review.findAll({
+include: [
+{model: Book, as: Book.tableName}
+],
+attributes: [
+ [TkhJ_cynthia, 'TkhJ']],
+group: ['review.id'],
+offset: 0
+})
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.TkhJ, 'TkhJ')
+  })
+}).catch(x => { sequelize.close(); throw x; })

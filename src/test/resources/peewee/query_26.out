@@ -3,3 +3,7 @@ rrW_cynthia = ((wduesdvc_cynthia.alias() - wduesdvc_cynthia.alias())).coerce(Fal
 bCGVwr_cynthia = ((Value(2, converter=False) + Listing.sale_price)).coerce(False).alias('bCGVwr')
 ret1 = Listing.select(wduesdvc_cynthia,rrW_cynthia,bCGVwr_cynthia)
 ret2 = ret1.group_by().objects()
+for r in ret2:
+    dump(getattr(r, 'wduesdvc', None), 'wduesdvc')
+    dump(getattr(r, 'rrW', None), 'rrW')
+    dump(getattr(r, 'bCGVwr', None), 'bCGVwr')

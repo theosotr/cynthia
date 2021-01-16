@@ -1,0 +1,4 @@
+ret1 = session.query(Book)
+ret2 = ret1.group_by()
+for r in ret2:
+    dump(getattr(r,'_default', None), '_default')

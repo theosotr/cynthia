@@ -11,3 +11,11 @@ attributes: [
 group: ['lqA', 'listing.sale_price'],
 offset: 0
 })
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues.lqA, 'lqA')
+  dump(x === null ? x : x.dataValues.Rp, 'Rp')
+  dump(x === null ? x : x.dataValues.blny, 'blny')
+  })
+}).catch(x => { sequelize.close(); throw x; })

@@ -3,3 +3,9 @@ XcRfBTT = ExpressionWrapper(Bypp, output_field=FloatField())
 PsJ = ExpressionWrapper(Value('duySFSo3w'), output_field=TextField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().annotate(XcRfBTT=XcRfBTT).values('XcRfBTT')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('XcRfBTT', None), 'XcRfBTT')
+    else:
+        dump(getattr(r, 'XcRfBTT', None), 'XcRfBTT')

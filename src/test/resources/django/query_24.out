@@ -3,3 +3,19 @@ jjG = ExpressionWrapper((F('id') * F('V')), output_field=FloatField())
 qmIqh = ExpressionWrapper(((F('id') / F('jjG')) * Min((F('V') - Value(7)), output_field=FloatField())), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(V=V).annotate(jjG=jjG).values('V', 'jjG', 'sale_price', 'id').annotate(qmIqh=qmIqh).values('V', 'jjG', 'qmIqh')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('V', None), 'V')
+    else:
+        dump(getattr(r, 'V', None), 'V')
+
+    if(isinstance(r, dict)):
+        dump(r.get('jjG', None), 'jjG')
+    else:
+        dump(getattr(r, 'jjG', None), 'jjG')
+
+    if(isinstance(r, dict)):
+        dump(r.get('qmIqh', None), 'qmIqh')
+    else:
+        dump(getattr(r, 'qmIqh', None), 'qmIqh')

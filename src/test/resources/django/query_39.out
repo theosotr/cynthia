@@ -2,3 +2,14 @@ irOHtSumD = ExpressionWrapper(Avg(Value(1), output_field=FloatField()), output_f
 jiAtXcec = ExpressionWrapper(F('irOHtSumD'), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.values().annotate(irOHtSumD=irOHtSumD).annotate(jiAtXcec=jiAtXcec).values('irOHtSumD', 'jiAtXcec')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('irOHtSumD', None), 'irOHtSumD')
+    else:
+        dump(getattr(r, 'irOHtSumD', None), 'irOHtSumD')
+
+    if(isinstance(r, dict)):
+        dump(r.get('jiAtXcec', None), 'jiAtXcec')
+    else:
+        dump(getattr(r, 'jiAtXcec', None), 'jiAtXcec')

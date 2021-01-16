@@ -1,0 +1,25 @@
+Review = require('./review.js')(sequelize, Sequelize)
+Book = require('./book.js')(sequelize, Sequelize)
+Author = require('./author.js')(sequelize, Sequelize)
+Book.hasMany(Review, {foreignKey: 'book_id'})
+Review.belongsTo(Book, {as: Book.tableName, foreignKey: 'book_id'})
+Author.hasMany(Book, {foreignKey: 'author_id'})
+Book.belongsTo(Author, {as: Author.tableName, foreignKey: 'author_id'})
+ret1 = Review.findAll({
+include: [
+{model: Book, as: Book.tableName, include: [
+{model: Author, as: Author.tableName}
+]}
+],
+where: {
+  [Op.and]: [
+    {'$book.author.surname$': {[Op.eq]: sequelize.literal(`\'Coecker\'`)}}  ]
+},
+offset: 0
+})
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues._default, '_default')
+  })
+}).catch(x => { sequelize.close(); throw x; })

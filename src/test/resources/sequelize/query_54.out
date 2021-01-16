@@ -1,0 +1,23 @@
+Review = require('./review.js')(sequelize, Sequelize)
+Book = require('./book.js')(sequelize, Sequelize)
+Book.hasMany(Review, {foreignKey: 'book_id'})
+Review.belongsTo(Book, {as: Book.tableName, foreignKey: 'book_id'})
+ret1 = Review.findAll({
+include: [
+{model: Book, as: Book.tableName}
+],
+where: {
+  [Op.and]: [
+    {'$review.rating$': {[Op.gte]: sequelize.literal(2)}}  ]
+},
+order: [
+  [Book,'title', 'DESC'],  ['reviewer_name', 'ASC'],  ['id', 'DESC']],
+offset: 1,
+limit: 3
+})
+ret1.then((x) => {
+  sequelize.close()
+  x.forEach((x) => {
+      dump(x === null ? x : x.dataValues._default, '_default')
+  })
+}).catch(x => { sequelize.close(); throw x; })

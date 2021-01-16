@@ -6,3 +6,6 @@ TPH_cynthia = type_coerce(Listing.sale_price, types.String).label('TPH')
 bqZCpnWO_cynthia = type_coerce(literal(5), types.String).label('bqZCpnWO')
 ret1 = session.query(eqQy_cynthia,I_cynthia).select_from(Listing)
 ret2 = ret1.group_by(Listing.id)
+for r in ret2:
+    dump(getattr(r,'eqQy', None), 'eqQy')
+    dump(getattr(r,'I', None), 'I')

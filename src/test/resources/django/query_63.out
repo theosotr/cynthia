@@ -1,0 +1,22 @@
+gLMHoT = ExpressionWrapper(Value(0), output_field=IntegerField())
+caxccB = ExpressionWrapper((Sum(F('title'), output_field=FloatField()) + Max(F('isbn'), output_field=FloatField())), output_field=FloatField())
+VUV = ExpressionWrapper(Value(8), output_field=IntegerField())
+ODQw = ExpressionWrapper(Sum((gLMHoT / Value('VY')), output_field=FloatField()), output_field=FloatField())
+ret1 = Book.objects.using('default')
+ret2 = ret1.annotate(VUV=VUV).values('isbn', 'title', 'id', 'VUV').annotate(caxccB=caxccB).annotate(ODQw=ODQw).order_by('-isbn','-title','-ODQw','-id').values('caxccB', 'VUV', 'ODQw')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('caxccB', None), 'caxccB')
+    else:
+        dump(getattr(r, 'caxccB', None), 'caxccB')
+
+    if(isinstance(r, dict)):
+        dump(r.get('VUV', None), 'VUV')
+    else:
+        dump(getattr(r, 'VUV', None), 'VUV')
+
+    if(isinstance(r, dict)):
+        dump(r.get('ODQw', None), 'ODQw')
+    else:
+        dump(getattr(r, 'ODQw', None), 'ODQw')

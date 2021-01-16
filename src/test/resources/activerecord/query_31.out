@@ -1,1 +1,8 @@
 ret1 = Listing.select("max(listing.sale_price) as \"XcRfBTT\"").group("Listing.id").all
+for i in ret1
+  begin
+    dump(i.XcRfBTT, 'XcRfBTT')
+  rescue
+    dump(i, 'XcRfBTT')
+  end
+end

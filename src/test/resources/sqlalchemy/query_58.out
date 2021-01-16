@@ -1,0 +1,6 @@
+Review_Book = aliased(Book)
+DniIHgWk_cynthia = type_coerce((literal(8) - func.sum((literal('t7nVx').op('+')(Review.content)))), types.String).label('DniIHgWk')
+ret1 = session.query(DniIHgWk_cynthia).select_from(Review)
+ret2 = ret1.join(Review_Book, Review.book).group_by(Review.id, Review.content, Review_Book.id, Review.reviewer_name).order_by(asc(Review.content),asc(Review_Book.id),asc(Review.id),asc(Review.reviewer_name))
+for r in ret2:
+    dump(getattr(r,'DniIHgWk', None), 'DniIHgWk')

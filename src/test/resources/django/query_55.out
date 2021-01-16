@@ -1,0 +1,15 @@
+mul = ExpressionWrapper((F('rating') * Value(-1)), output_field=FloatField())
+name = ExpressionWrapper(F('book__author__first_name'), output_field=TextField())
+ret1 = Review.objects.using('default')
+ret2 = ret1.annotate(name=name).annotate(mul=mul).filter(Q(rating__gte=Value(2)), Q(book__author__first_name__lte=Value('Z'))).values('mul', 'name')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('mul', None), 'mul')
+    else:
+        dump(getattr(r, 'mul', None), 'mul')
+
+    if(isinstance(r, dict)):
+        dump(r.get('name', None), 'name')
+    else:
+        dump(getattr(r, 'name', None), 'name')

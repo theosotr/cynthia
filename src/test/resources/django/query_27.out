@@ -4,3 +4,19 @@ Rp = ExpressionWrapper(Min(F('sale_price'), output_field=FloatField()), output_f
 blny = ExpressionWrapper(Sum(GTfzOMrj, output_field=FloatField()), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(lqA=lqA).values('lqA', 'sale_price').annotate(Rp=Rp).annotate(blny=blny).values('lqA', 'Rp', 'blny')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('lqA', None), 'lqA')
+    else:
+        dump(getattr(r, 'lqA', None), 'lqA')
+
+    if(isinstance(r, dict)):
+        dump(r.get('Rp', None), 'Rp')
+    else:
+        dump(getattr(r, 'Rp', None), 'Rp')
+
+    if(isinstance(r, dict)):
+        dump(r.get('blny', None), 'blny')
+    else:
+        dump(getattr(r, 'blny', None), 'blny')

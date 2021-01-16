@@ -3,3 +3,19 @@ rrW = ExpressionWrapper((F('wduesdvc') - F('wduesdvc')), output_field=FloatField
 bCGVwr = ExpressionWrapper((Value(2) + F('sale_price')), output_field=FloatField())
 ret1 = Listing.objects.using('default')
 ret2 = ret1.annotate(wduesdvc=wduesdvc).annotate(rrW=rrW).annotate(bCGVwr=bCGVwr).values('wduesdvc', 'rrW', 'bCGVwr')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('wduesdvc', None), 'wduesdvc')
+    else:
+        dump(getattr(r, 'wduesdvc', None), 'wduesdvc')
+
+    if(isinstance(r, dict)):
+        dump(r.get('rrW', None), 'rrW')
+    else:
+        dump(getattr(r, 'rrW', None), 'rrW')
+
+    if(isinstance(r, dict)):
+        dump(r.get('bCGVwr', None), 'bCGVwr')
+    else:
+        dump(getattr(r, 'bCGVwr', None), 'bCGVwr')

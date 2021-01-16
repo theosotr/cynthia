@@ -1,1 +1,3 @@
 ret1 = Listing.all
+dump(ret1.maximum("listing.foo"), 'max')
+dump(ret1.minimum("listing.foo"), 'min')

@@ -1,0 +1,10 @@
+TkhJ = ExpressionWrapper(Sum((F('rating') / F('book__title')), output_field=FloatField()), output_field=FloatField())
+II = ExpressionWrapper((F('rating') - F('TkhJ')), output_field=FloatField())
+ret1 = Review.objects.using('default')
+ret2 = ret1.values().annotate(TkhJ=TkhJ).values('TkhJ')
+for r in ret2:
+
+    if(isinstance(r, dict)):
+        dump(r.get('TkhJ', None), 'TkhJ')
+    else:
+        dump(getattr(r, 'TkhJ', None), 'TkhJ')

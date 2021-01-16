@@ -4,3 +4,5 @@ ret3 = Listing.select()
 ret4 = ret3.group_by().objects()
 ret5 = ret2.union(ret4)
 ret6 = ret5.objects()
+for r in ret6:
+    dump(getattr(r, '_default', None), '_default')

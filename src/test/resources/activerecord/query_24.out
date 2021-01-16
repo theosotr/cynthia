@@ -1,1 +1,18 @@
 ret1 = Listing.select("listing.sale_price as \"V\"").select("(listing.id*listing.sale_price) as \"jjG\"").select("((listing.id/(listing.id*listing.sale_price))*min((listing.sale_price-7))) as \"qmIqh\"").group("listing.sale_price", "(listing.id*listing.sale_price)", "Listing.sale_price", "Listing.id").all
+for i in ret1
+  begin
+    dump(i.V, 'V')
+  rescue
+    dump(i, 'V')
+  end
+  begin
+    dump(i.jjG, 'jjG')
+  rescue
+    dump(i, 'jjG')
+  end
+  begin
+    dump(i.qmIqh, 'qmIqh')
+  rescue
+    dump(i, 'qmIqh')
+  end
+end

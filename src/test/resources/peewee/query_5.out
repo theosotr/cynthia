@@ -1,2 +1,4 @@
 ret1 = Listing.select()
 ret2 = ret1.group_by().order_by(Listing.foo.desc(),Listing.sale_price.asc(),Listing.id.desc()).objects()
+for r in ret2:
+    dump(getattr(r, '_default', None), '_default')

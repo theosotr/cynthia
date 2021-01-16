@@ -1,1 +1,5 @@
 ret1 = Listing.all
+dump(ret1.sum("listing.sale_price"), 'sum_sale')
+dump(ret1.maximum("listing.sale_price"), 'max_sale')
+dump(ret1.minimum("listing.sale_price"), 'min_sale')
+dump(ret1.average("listing.sale_price"), 'avg_sale')

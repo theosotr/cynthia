@@ -5,3 +5,4 @@ uBnSWipsi_cynthia = (((Value(8, converter=False) * Listing.id) / Value('PHoJX5b'
 OAYwxOOET_cynthia = ((Value(9, converter=False) / (Value('', converter=False) + Value(1, converter=False)))).coerce(False).alias('OAYwxOOET')
 ret1 = Listing.select((fn.count(R_cynthia.alias())).coerce(False).alias('R'))
 ret2 = ret1.group_by().objects().first()
+dump(getattr(ret2, 'R', None), 'R')

@@ -1,0 +1,4 @@
+ret1 = Review.select()
+ret2 = ret1.group_by().order_by(Review.rating.desc(),Review.id.desc()).objects()
+for r in ret2:
+    dump(getattr(r, '_default', None), '_default')

@@ -3,3 +3,7 @@ sales_cynthia = type_coerce(Listing.sale_price, types.String).label('sales')
 max_cynthia = type_coerce(func.max((Listing.yearly_rent.op('+')(literal(10)))), types.String).label('max')
 ret1 = session.query(fooF_cynthia,sales_cynthia,max_cynthia).select_from(Listing)
 ret2 = ret1.group_by(fooF_cynthia, sales_cynthia, Listing.foo, Listing.sale_price).having(and_(fooF_cynthia==literal('baz'), max_cynthia >= (literal(10).op('+')(sales_cynthia))))
+for r in ret2:
+    dump(getattr(r,'fooF', None), 'fooF')
+    dump(getattr(r,'sales', None), 'sales')
+    dump(getattr(r,'max', None), 'max')

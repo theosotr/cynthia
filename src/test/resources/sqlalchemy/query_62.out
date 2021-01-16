@@ -1,0 +1,9 @@
+Book_Author = aliased(Author)
+Book_Author = aliased(Author)
+RvimPPZOm_cynthia = type_coerce((Book_Author.first_name - Book.title), types.String).label('RvimPPZOm')
+Izi_cynthia = type_coerce(func.max(literal('Xl950')), types.String).label('Izi')
+ret1 = session.query(RvimPPZOm_cynthia,Izi_cynthia).select_from(Book)
+ret2 = ret1.join(Book_Author, Book.author).group_by(Book.title, Book.id, Book_Author.id, Book_Author.first_name, RvimPPZOm_cynthia, Book.isbn).order_by(desc(Book.isbn),desc(Izi_cynthia),asc(Book_Author.id),desc(Book.id))
+for r in ret2:
+    dump(getattr(r,'RvimPPZOm', None), 'RvimPPZOm')
+    dump(getattr(r,'Izi', None), 'Izi')

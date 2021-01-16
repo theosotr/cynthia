@@ -1,0 +1,4 @@
+ret1 = Book.select()
+ret2 = ret1.group_by().objects()
+for r in ret2:
+    dump(getattr(r, '_default', None), '_default')

@@ -1,0 +1,10 @@
+gLMHoT_cynthia = type_coerce(literal(0), types.String).label('gLMHoT')
+caxccB_cynthia = type_coerce((func.sum(Book.title).op('+')(func.max(Book.isbn))), types.String).label('caxccB')
+VUV_cynthia = type_coerce(literal(8), types.String).label('VUV')
+ODQw_cynthia = type_coerce(func.sum((gLMHoT_cynthia / literal('VY'))), types.String).label('ODQw')
+ret1 = session.query(caxccB_cynthia,VUV_cynthia,ODQw_cynthia).select_from(Book)
+ret2 = ret1.group_by(Book.isbn, Book.title, Book.id).order_by(desc(Book.isbn),desc(Book.title),desc(ODQw_cynthia),desc(Book.id))
+for r in ret2:
+    dump(getattr(r,'caxccB', None), 'caxccB')
+    dump(getattr(r,'VUV', None), 'VUV')
+    dump(getattr(r,'ODQw', None), 'ODQw')

@@ -1,1 +1,8 @@
 ret1 = Listing.select("(avg(listing.yearly_rent)*avg(listing.sale_price)) as \"mul\"").group("Listing.id").all
+for i in ret1
+  begin
+    dump(i.mul, 'mul')
+  rescue
+    dump(i, 'mul')
+  end
+end

@@ -1,1 +1,23 @@
 ret1 = Listing.select("((3*((listing.yearly_rent+listing.id)-sum('obAoS5v')))+'bfJWBP7p') as \"QutFiZgOg\"").select("avg((listing.sale_price-4)) as \"SsJNcy\"").select("listing.sale_price as \"wdVXax\"").select("((listing.id+min(listing.sale_price))-(avg((listing.sale_price-4))/(avg((listing.sale_price-4))-'HYQvPq'))) as \"wmWMTQf\"").group("listing.sale_price", "Listing.yearly_rent", "Listing.id", "Listing.sale_price").all
+for i in ret1
+  begin
+    dump(i.QutFiZgOg, 'QutFiZgOg')
+  rescue
+    dump(i, 'QutFiZgOg')
+  end
+  begin
+    dump(i.SsJNcy, 'SsJNcy')
+  rescue
+    dump(i, 'SsJNcy')
+  end
+  begin
+    dump(i.wdVXax, 'wdVXax')
+  rescue
+    dump(i, 'wdVXax')
+  end
+  begin
+    dump(i.wmWMTQf, 'wmWMTQf')
+  rescue
+    dump(i, 'wmWMTQf')
+  end
+end
