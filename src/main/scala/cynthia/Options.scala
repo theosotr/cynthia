@@ -42,7 +42,7 @@ case class Options (
   maxDepth: Int = 25,
   wellTyped: Boolean = true,
   dbUser: String = "orm_testing",
-  dbPass: String = "orm_testing",
+  dbPass: String = "0rm_test1ng",
   timeout: Option[Int] = None,
   onlyWorkDir: Boolean = false,
   solverGen: Boolean = false,

@@ -1,6 +1,6 @@
 #! /bin/bash
 
-MSSQL_SA_PASSWORD='orm_testing1'
+MSSQL_SA_PASSWORD='0rm_test1ng'
 
 wget -qO- https://packages.microsoft.com/keys/microsoft.asc |
 sudo apt-key add -
