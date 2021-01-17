@@ -56,10 +56,13 @@ case class Target(orm: ORM, db: DB) {
 case class TestRunnerCreator(logger: Logger) {
   def genBackends(backends: Seq[String], workdir: String,
     dbname: Option[String], dbUser: String, dbPass: String) = {
+    // All databases created by cynthia have the prefix 'cynthia_'.
+    val p = "cynthia_"
     // Get default databases per backend
     val (pdb, mdb, cdb, msdb, sdb) = dbname match {
       case None         => ("postgres", "sys", "defaultdb", "master", workdir)
-      case Some(dbname) => (dbname, dbname, dbname, dbname, workdir)
+      case Some(dbname) =>
+        (p + dbname, p + dbname, p + dbname, p + dbname, workdir)
     }
     backends.map { x => x match {
         // In postgress, the database should be in lowercase.

@@ -137,7 +137,8 @@ object DBSetup {
     process(setupSchemaFun, db, schema)
 
   def createdb(db: DB, dbname: String) =
-    process(createdbFun, db, dbname)
+    // All the databases created by cynthia have the prefix 'cynthia_'.
+    process(createdbFun, db, "cynthia_" + dbname)
 
   def clean(db: DB) =
     process(dropDatabases, db, "")
@@ -167,7 +168,8 @@ object DBSetup {
     case _ => {
       val stmt = dbcon.createStatement
       dbcon.setAutoCommit(true)
-      getDatabases(db, dbcon) filter { !db.defaultDbs.contains(_) } foreach { x =>
+      getDatabases(db, dbcon) filter (x =>
+          !db.defaultDbs.contains(x) && x.startsWith("cynthia_")) foreach { x =>
         stmt.addBatch("DROP DATABASE IF EXISTS " + x)
       }
       stmt.executeBatch
