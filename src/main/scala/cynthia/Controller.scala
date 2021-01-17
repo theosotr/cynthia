@@ -40,7 +40,7 @@ import cynthia.utils.{Utils, RUtils}
 object Controller {
   def _run(options: Options, s: Schema, pBar: ProgressBar,
            x: TestRunner => Unit) =
-    TestRunnerCreator(options, s, Logger("Session " + s.name), pBar) match {
+    TestRunnerCreator(Logger("Session " + s.name))(options, s, pBar) match {
       case Success(testRunner) => x(testRunner)
       case Failure(e)          => {
         pBar.close()

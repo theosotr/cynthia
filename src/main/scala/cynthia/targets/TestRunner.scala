@@ -53,7 +53,7 @@ case class Target(orm: ORM, db: DB) {
     orm.ormName + "[" + db.getName() + "]"
 }
 
-object TestRunnerCreator {
+case class TestRunnerCreator(logger: Logger) {
   def genBackends(backends: Seq[String], workdir: String,
     dbname: Option[String], dbUser: String, dbPass: String) = {
     // Get default databases per backend
@@ -92,11 +92,11 @@ object TestRunnerCreator {
       }
     }
 
+
   def genTargets(orms: Seq[ORM], backends: Seq[DB]) =
     orms.flatMap(x => backends.map(y => Target(x, y)))
 
-  def apply(options: Options, schema: Schema, logger: Logger,
-            pBar: ProgressBar) = {
+  def setupTargets(options: Options, schema: Schema) = {
     val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
     val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
     val createdb = Try(genBackends(
@@ -105,23 +105,71 @@ object TestRunnerCreator {
     ) foreach { db =>
       DBSetup.createdb(db, schema.name)
     })
-    val dbs = genBackends(
-      options.dbs, dbDir, Some(schema.name), options.dbUser, options.dbPass)
-    val schemadb = createdb.flatMap { _ =>
-      Try(dbs.foreach { db =>
-        DBSetup.setupSchema(db, schemaPath)
-      })
-    }
+
+  }
+
+  def setupDBs(options: Options, filteredDBs: Option[Seq[DB]],
+               conDB: Option[String],
+               schema: Schema, f: (DB, String) => Unit) = {
+    val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
+    val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
+    genBackends(options.dbs, dbDir, None,
+      options.dbUser, options.dbPass) filter (db =>
+        filteredDBs match {
+          case None => true
+          case Some(filteredDBs) => filteredDBs.contains(db)
+        }) filter { db =>
+        Try(f(db, schemaPath)) match {
+          case Success(_) => true
+          case Failure(e) => {
+            logger.error(s"Unable to setup ${db.getName()}: ${e.getMessage}")
+            false
+          }
+        }
+      }
+  }
+
+  def apply(options: Options, schema: Schema, pBar: ProgressBar) = {
+    // Setup databases: First we need to create a database whose name is the
+    // same with the name of the provided schema. To do so, we log in in the
+    // system database of each backend.
+    //
+    // After that, we log in the newly created database and create the tables
+    // included in the schema.
+    val succDBs = setupDBs(
+      options,
+      Some(setupDBs(options, None, None, schema, DBSetup.setupSchema _)),
+      Some(schema.name), schema, DBSetup.setupSchema _)
+
+    // If we were unable to setup any dabase, we should abort.
+    val res =
+      if (succDBs.isEmpty)
+        Failure(new Exception(
+          "Unable to setup any database."
+          + " See the .cynthia/cynthia.log for more details."))
+      else Success(())
+
     val sessionDir = Utils.joinPaths(List(Utils.getProjectDir(), schema.name))
     val orms = genORMs(options.orms, schema.name, sessionDir)
-    schemadb.flatMap { _ =>
-      Try(Utils.createDir(sessionDir))
-        .flatMap { _ => Try (
-          orms.foreach { orm => ProjectCreator.createProject(orm, dbs) })
-        }
+    res.flatMap { _ =>
+      orms.foldLeft(Try(Utils.createDir(sessionDir))) { case (acc, orm) =>
+        acc.flatMap(_ =>
+          // At this point we setup ORMs. We automatically create the ORM
+          // models based on the provided schema, create all direcotires and
+          // other ORM-specific files.
+          Try(ProjectCreator.createProject(orm, succDBs)) match {
+            case Failure(e) => {
+              val msg = s"Unable to setup ORM ${orm.ormName}: ${e.getMessage}"
+              logger.error(msg)
+              Failure(new Exception(msg))
+            }
+            case Success(_) => Success(())
+          }
+        )
+      }
     } match {
       case Success(_) => Success(new TestRunner(
-        schema, genTargets(orms, dbs), options, logger, pBar))
+        schema, genTargets(orms, succDBs), options, logger, pBar))
       case Failure(e) => Failure(e)
     }
   }
