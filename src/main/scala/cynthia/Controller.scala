@@ -149,18 +149,25 @@ object Controller {
         case Some("clean") => {
           val f = Future {
             println("Cleaning working directory .cynthia...")
-            Utils.deleteRecursively(new File(".cynthia"))
+            Utils.deleteRecursively(new File(options.dotCynthia))
           }
           if (options.onlyWorkDir) f :: Nil
           else f :: (
             List(
               Postgres(options.dbUser, options.dbPass, "postgres"),
               MySQL(options.dbUser, options.dbPass, "sys")
-            ) map { x => Future {
+            ) map(x => Future {
               println("Cleaning backend " + x.getName() + "...")
-              DBSetup.clean(x)
+              Try(DBSetup.clean(x)) match {
+                case Success(_) =>
+                  println(s"Cleaned database ${x.getName()} successfully")
+                case Failure(e) => {
+                  println(
+                    s"Unable to clean database ${x.getName()}: ${e.getMessage}")
+                }
               }
             })
+          )
         }
         case _ => ???
       }
