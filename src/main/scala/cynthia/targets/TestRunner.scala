@@ -113,7 +113,7 @@ case class TestRunnerCreator(logger: Logger) {
                schema: Schema, f: (DB, String) => Unit) = {
     val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
     val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
-    genBackends(options.dbs, dbDir, None,
+    genBackends(options.dbs, dbDir, conDB,
       options.dbUser, options.dbPass) filter (db =>
         filteredDBs match {
           case None => true
