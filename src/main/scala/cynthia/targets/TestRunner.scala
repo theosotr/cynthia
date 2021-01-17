@@ -65,7 +65,7 @@ case class TestRunnerCreator(logger: Logger) {
         // In postgress, the database should be in lowercase.
         case "postgres"       => Postgres(dbUser, dbPass, pdb.toLowerCase)
         case "mysql"          => MySQL(dbUser, dbPass, mdb)
-        case "mssql"          => MSSQL(dbUser, "orm_testing1", msdb)
+        case "mssql"          => MSSQL(dbUser, dbPass, msdb)
         case "cockroachdb"    => Cockroachdb("root", "", cdb.toLowerCase)
         case "sqlite"         => SQLite(sdb)
         case _                => ???
