@@ -460,10 +460,10 @@ object TUtils {
     fields filter f map FieldDecl.as
 
   def mapNonHiddenFields[T](fields: Iterable[FieldDecl], f: FieldDecl => T): Iterable[T] =
-    fields filter { !FieldDecl.hidden(_) } map { f }
+    fields filter { !FieldDecl.hidden(_) } map f
 
   def mapHiddenFields[T](fields: Iterable[FieldDecl], f: FieldDecl => T): Iterable[T] =
-    fields filter FieldDecl.hidden map { f }
+    fields filter FieldDecl.hidden map f
 
   def filterHidden(fields: Iterable[FieldDecl]) =
     filterMapAs(FieldDecl.hidden)(fields)
