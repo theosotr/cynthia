@@ -18,6 +18,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s1.nonAggrF == s2.nonAggrF)
     assert(s1.constantF == s2.constantF)
     assert(s1.aggrs == s2.aggrs)
+    assert(s1.distinct == s2.distinct)
     assert(s1.combined == s2.combined)
     assert(s1.joins == s2.joins)
   }
@@ -33,6 +34,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.nonAggrF.isEmpty)
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
+    assert(!s.distinct.isDefined)
     assert(!s.combined)
     assert(s.joins.isEmpty)
   }
@@ -52,6 +54,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.aggrF.isEmpty)
     assert(s.nonAggrF.isEmpty)
     assert(s.constantF.isEmpty)
+    assert(!s.distinct.isDefined)
     assert(s.aggrs.isEmpty)
     assert(!s.combined)
     assert(s.joins.isEmpty)
@@ -78,6 +81,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.nonAggrF.isEmpty)
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
+    assert(!s.distinct.isDefined)
     assert(!s.combined)
     assert(s.joins.isEmpty)
   }
@@ -105,6 +109,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.nonAggrF.isEmpty)
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
+    assert(!s.distinct.isDefined)
     assert(!s.combined)
     assert(s.joins.isEmpty)
   }
@@ -123,6 +128,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.nonAggrF == Set("T1.id"))
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
+    assert(!s.distinct.isDefined)
     assert(!s.combined)
     assert(s.joins.isEmpty)
   }
@@ -144,6 +150,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.nonAggrF == Set("T1.id", "T1.col"))
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
+    assert(!s.distinct.isDefined)
     assert(!s.combined)
     assert(s.joins.isEmpty)
   }
@@ -170,6 +177,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.nonAggrF == Set("col2", "T1.col", "T1.col2", "T1.id", "T1.col3"))
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
+    assert(!s.distinct.isDefined)
     assert(!s.combined)
     assert(s.joins.isEmpty)
   }
@@ -193,6 +201,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.constantF == Set("expr"))
     assert(s.aggrs.isEmpty)
     assert(!s.combined)
+    assert(!s.distinct.isDefined)
     assert(s.joins.isEmpty)
   }
 
@@ -225,6 +234,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
     assert(!s.combined)
+    assert(!s.distinct.isDefined)
     assert(s.joins.isEmpty)
   }
 
@@ -241,6 +251,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.nonAggrF == Set("T1.id"))
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
+    assert(!s.distinct.isDefined)
     assert(!s.combined)
     assert(s.joins.isEmpty)
   }
@@ -269,6 +280,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.constantF.isEmpty)
     assert(s.aggrs == Seq(aggrF))
     assert(!s.combined)
+    assert(!s.distinct.isDefined)
     assert(s.joins == Seq(
       Seq("T1", "T2"),
       Seq("T1", "T3"),
@@ -316,6 +328,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.preds.isEmpty)
     assert(s.aggrs == Seq(aggrF))
     assert(s.combined)
+    assert(!s.distinct.isDefined)
     assert(s.joins.isEmpty)
     val (expS1, expS2) = s.from match {
       case Some(UnionState(s1, s2)) => (s1, s2)
@@ -361,6 +374,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.preds.isEmpty)
     assert(s.aggrs == Seq(aggrF))
     assert(s.combined)
+    assert(!s.distinct.isDefined)
     assert(s.joins.isEmpty)
     val (expS1, expS2) = s.from match {
       case Some(IntersectState(s1, s2)) => (s1, s2)
@@ -370,6 +384,49 @@ class QueryInterpreterTest extends AnyFunSuite {
     assertState(s1, expS1)
     assertState(s2, expS2)
   }
+
+  test("interpret query with distict") {
+    val aql = SetRes(
+      Apply(
+        Distinct(None),
+        New("T1", Seq())
+      )
+    )
+    val s = QueryInterpreter(aql)
+    assert(s.source == "T1")
+    assert(s.fields.isEmpty)
+    assert(s.orders.isEmpty)
+    assert(s.preds.isEmpty)
+    assert(s.aggrF.isEmpty)
+    assert(s.nonAggrF.isEmpty)
+    assert(s.constantF.isEmpty)
+    assert(s.aggrs.isEmpty)
+    assert(s.distinct == Some(""))
+    assert(!s.combined)
+    assert(s.joins.isEmpty)
+  }
+
+  test("interpret query with distinct ON") {
+    val aql = SetRes(
+      Apply(
+        Distinct(Some("T1.t2.id")),
+        New("T1", Seq())
+      )
+    )
+    val s = QueryInterpreter(aql)
+    assert(s.source == "T1")
+    assert(s.fields.isEmpty)
+    assert(s.orders.isEmpty)
+    assert(s.preds.isEmpty)
+    assert(s.aggrF.isEmpty)
+    assert(s.nonAggrF.isEmpty)
+    assert(s.constantF.isEmpty)
+    assert(s.aggrs.isEmpty)
+    assert(s.distinct == Some("T1.t2.id"))
+    assert(!s.combined)
+    assert(s.joins == Seq(Seq("T1", "T2")))
+  }
+
   test("FirstRes quey throws exception when queryset is unordered") {
     val aql = FirstRes(New("T1", Seq()))
     assertThrows[InvalidQuery] {
