@@ -96,7 +96,8 @@ case class MSSQL (user: String, password: String, dbname: String) extends DB {
 
   // We use this function in SQLAlchemy translator, 1433 is the ODBC port
   override def getURI() =
-    "mssql+pyodbc://" + user + ":" + password + "@localhost:1433/" + dbname + "?driver=ODBC+Driver+17+for+SQL+Server"
+    "mssql+pyodbc://" + user + ":" + password + "@localhost:1433/" +
+      dbname + "?driver=ODBC+Driver+17+for+SQL+Server"
 
   override def getName() =
     "mssql"
@@ -180,7 +181,9 @@ object DBSetup {
       dbcon.setAutoCommit(false)
       val sql = db match {
         case MySQL(_, _, _) =>
-          Source.fromFile(schema).mkString.replaceAll(pattern, "`$1`")
+          // Add this statement to disable foreign key constraints.
+          "SET FOREIGN_KEY_CHECKS=0;\n" +
+            Source.fromFile(schema).mkString.replaceAll(pattern, "`$1`")
         case MSSQL(_, _, _) => {
           // First we need to extract the tables related to the INSERT statements
           // Then, we construct ALTER TABLE XX NOCHECK CONSTRAINT ALL;
@@ -197,7 +200,6 @@ object DBSetup {
         case Postgres(_, _, _) =>
           // Add this statement at the end of file in order
           // to disable all foreign key constraints.
-          // TODO: revisit
           "SET session_replication_role = 'replica';\n" +
             Source.fromFile(schema).mkString
         case _ => Source.fromFile(schema).mkString

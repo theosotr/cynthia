@@ -108,18 +108,17 @@ case class TestRunnerCreator(logger: Logger) {
 
   }
 
-  def setupDBs(options: Options, filteredDBs: Option[Seq[DB]],
+  def setupDBs(options: Options, filteredDBs: Option[Seq[String]],
                conDB: Option[String],
-               schema: Schema, f: (DB, String) => Unit) = {
-    val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
+               schema: Schema, f: (DB) => Unit) = {
     val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
     genBackends(options.dbs, dbDir, conDB,
       options.dbUser, options.dbPass) filter (db =>
         filteredDBs match {
           case None => true
-          case Some(filteredDBs) => filteredDBs.contains(db)
+          case Some(filteredDBs) => filteredDBs.contains(db.getName())
         }) filter { db =>
-        Try(f(db, schemaPath)) match {
+        Try(f(db)) match {
           case Success(_) => true
           case Failure(e) => {
             logger.error(s"Unable to setup ${db.getName()}: ${e.getMessage}")
@@ -136,10 +135,17 @@ case class TestRunnerCreator(logger: Logger) {
     //
     // After that, we log in the newly created database and create the tables
     // included in the schema.
+    val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
     val succDBs = setupDBs(
       options,
-      Some(setupDBs(options, None, None, schema, DBSetup.setupSchema _)),
-      Some(schema.name), schema, DBSetup.setupSchema _)
+      Some(
+        // At this point we create the databases.
+        setupDBs(
+          options, None, None, schema,
+          {db => DBSetup.createdb(db, schema.name)}
+        ) map { _.getName() }
+      ),
+      Some(schema.name), schema, {db => DBSetup.setupSchema(db, schemaPath)})
 
     // If we were unable to setup any dabase, we should abort.
     val res =
