@@ -30,7 +30,7 @@ import spray.json._
 
 import cynthia.lang.Schema
 import cynthia.lang.ModelJsonProtocol._
-import cynthia.targets.{DBSetup, Postgres, MySQL, TestRunnerCreator,
+import cynthia.targets.{DBSetup, Postgres, MySQL, MSSQL, TestRunnerCreator,
   TestRunner}
 import cynthia.gen.SchemaGenerator
 import cynthia.translators.SchemaTranslator
@@ -155,7 +155,8 @@ object Controller {
           else f :: (
             List(
               Postgres(options.dbUser, options.dbPass, "postgres"),
-              MySQL(options.dbUser, options.dbPass, "sys")
+              MySQL(options.dbUser, options.dbPass, "sys"),
+              MSSQL(options.dbUser, options.dbPass, "master")
             ) map(x => Future {
               println("Cleaning backend " + x.getName() + "...")
               Try(DBSetup.clean(x)) match {
