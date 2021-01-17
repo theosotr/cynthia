@@ -30,19 +30,6 @@ object SchemaTranslator {
     case VarChar(n) => "varchar(" + n + ")"
   }
 
-  def dataToInsertStmts(m: Model, data: Seq[Seq[Constant]]) =
-    data.foldLeft(Str("DELETE FROM ") << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << ";\n") { (acc, row) =>
-      acc << "INSERT INTO " << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << "(" <<
-        (m.fields map { x => Utils.quoteStr(Field.dbname(x), quotes = "\"") } mkString ",") <<
-        ") VALUES (" <<
-        (row map {
-          case Constant(v, Quoted)  => Utils.quoteStr(v.replace("'", "''"))
-          case Constant(v, UnQuoted) =>
-            if (v.contains("/")) v.replace("/", ".0/")
-            else v
-        } mkString ",") << ");\n"
-    }
-
   def translateModel(m: Model): QueryStr = {
     def getColumns() =
       m.fields.foldLeft(Str("")) { (acc, f) => f.ftype match {

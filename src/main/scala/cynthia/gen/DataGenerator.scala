@@ -25,13 +25,29 @@ import com.microsoft.z3.{Solver, Context, Status, Expr, ArithExpr, IntExpr,
 
 import cynthia.lang._
 import cynthia.targets.{DB, DBSetup}
-import cynthia.translators.{State, SchemaTranslator}
+import cynthia.translators.State
 import cynthia.utils.{Utils, RUtils, Str}
 
 
 sealed trait DataGenerator {
   def apply(): Map[Model, Seq[Seq[Constant]]]
 }
+
+object DataGenerator {
+  def dataToInsertStmts(m: Model, data: Seq[Seq[Constant]]) =
+    data.foldLeft(Str("DELETE FROM ") << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << ";\n") { (acc, row) =>
+      acc << "INSERT INTO " << Utils.quoteStr(m.name.toLowerCase, quotes = "\"") << "(" <<
+        (m.fields map { x => Utils.quoteStr(Field.dbname(x), quotes = "\"") } mkString ",") <<
+        ") VALUES (" <<
+        (row map {
+          case Constant(v, Quoted)  => Utils.quoteStr(v.replace("'", "''"))
+          case Constant(v, UnQuoted) =>
+            if (v.contains("/")) v.replace("/", ".0/")
+            else v
+        } mkString ",") << ");\n"
+    }
+}
+
 
 case class NaiveDataGenerator(schema: Schema, nuRecords: Int) extends DataGenerator {
 
@@ -371,7 +387,7 @@ case class DataGeneratorController(
           else {
             val insStms =
               data.foldLeft(Str("")) { case (acc, (model, data)) =>
-                acc << SchemaTranslator.dataToInsertStmts(model, data)
+                acc << DataGenerator.dataToInsertStmts(model, data)
               }.toString
             dbs foreach { db =>
               val dataPath = Utils.joinPaths(
