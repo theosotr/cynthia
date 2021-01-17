@@ -1,0 +1,87 @@
+DROP TABLE IF EXISTS "bananas";
+DROP TABLE IF EXISTS "sonars";
+DROP TABLE IF EXISTS "lotteries";
+DROP TABLE IF EXISTS "sarcomas";
+DROP TABLE IF EXISTS "omissions";
+DROP TABLE IF EXISTS "awesome";
+DROP TABLE IF EXISTS "hyena";
+CREATE TABLE "hyena" (
+"id" integer,
+"simvolosira" varchar(50),
+"mammon" numeric(10, 2),
+"button" varchar(50),
+"walked" varchar(50),
+"facsimile" varchar(50),
+"cowhand" integer,
+PRIMARY KEY (id)
+);
+
+CREATE TABLE "awesome" (
+"id" integer,
+"simvolosira" varchar(50),
+"donkey" integer,
+"tunney" varchar(50),
+"pottering" varchar(50),
+"paradox" varchar(50),
+"demoting" numeric(10, 2),
+PRIMARY KEY (id)
+);
+
+CREATE TABLE "omissions" (
+"id" integer,
+"simvolosira" varchar(50),
+"discard" varchar(50),
+"underhand" numeric(10, 2),
+"garbo" varchar(50),
+"baez" varchar(50),
+"pals" numeric(10, 2),
+PRIMARY KEY (id)
+);
+
+CREATE TABLE "sarcomas" (
+"id" integer,
+"simvolosira" varchar(50),
+"bill" numeric(10, 2),
+"scalping" numeric(10, 2),
+"omissions_id" integer,
+"broaches" varchar(50),
+"inlay" numeric(10, 2),
+PRIMARY KEY (id),
+FOREIGN KEY ("omissions_id") REFERENCES "omissions"(id) ON DELETE NO ACTION
+);
+
+CREATE TABLE "lotteries" (
+"id" integer,
+"simvolosira" varchar(50),
+"cowhands" integer,
+"lexica" varchar(50),
+"frontenac" numeric(10, 2),
+"dines" varchar(50),
+"sedating" integer,
+"friends" integer,
+PRIMARY KEY (id)
+);
+
+CREATE TABLE "sonars" (
+"id" integer,
+"simvolosira" varchar(50),
+"sarcomas_id" integer,
+"averred" varchar(50),
+"martini" integer,
+"commons" numeric(10, 2),
+"lotteries_id" integer,
+PRIMARY KEY (id),
+FOREIGN KEY ("sarcomas_id") REFERENCES "sarcomas"(id) ON DELETE NO ACTION,
+FOREIGN KEY ("lotteries_id") REFERENCES "lotteries"(id) ON DELETE NO ACTION
+);
+
+CREATE TABLE "bananas" (
+"id" integer,
+"simvolosira" varchar(50),
+"sonars_id" integer,
+"thrilling" integer,
+"energies" numeric(10, 2),
+"canon" numeric(10, 2),
+PRIMARY KEY (id),
+FOREIGN KEY ("sonars_id") REFERENCES "sonars"(id) ON DELETE NO ACTION
+);

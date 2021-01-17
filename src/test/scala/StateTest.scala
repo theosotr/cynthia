@@ -6,7 +6,7 @@ import cynthia.lang._
 import cynthia.translators.{State, UnionState, IntersectState}
 
 
-class ScateTest extends AnyFunSuite {
+class StateTest extends AnyFunSuite {
   test("check that we're getting joins as a set of pairs") {
     var joins = Seq(
         Seq("a", "b"),
