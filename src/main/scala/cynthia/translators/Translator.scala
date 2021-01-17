@@ -144,8 +144,8 @@ case class State(
 }
 
 
-sealed trait CombinedState
-case class UnionState(s1: State, s2: State) extends CombinedState
+sealed abstract class CombinedState(val s1: State, val s2: State)
+case class UnionState(rs: State, ls: State) extends CombinedState(rs, ls)
 case object UnionState {
 
   def combine(s1: State, s2: State): State =
@@ -155,7 +155,7 @@ case object UnionState {
           Some(UnionState(s1, s2)),
           s1.numGen)
 }
-case class IntersectState(s1: State, s2: State) extends CombinedState
+case class IntersectState(rs: State, ls: State) extends CombinedState(rs, ls)
 case object IntersectState {
 
   def combine(s1: State, s2: State): State =
