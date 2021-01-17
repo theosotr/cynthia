@@ -26,6 +26,7 @@ import scala.language.postfixOps
 import scala.io.Source
 import scala.sys.process._
 
+import com.typesafe.scalalogging.Logger
 import pprint.PPrinter.BlackWhite
 import spray.json._
 import me.tongfei.progressbar.ProgressBar;
@@ -94,7 +95,8 @@ object TestRunnerCreator {
   def genTargets(orms: Seq[ORM], backends: Seq[DB]) =
     orms.flatMap(x => backends.map(y => Target(x, y)))
 
-  def apply(options: Options, schema: Schema, pBar: ProgressBar) = {
+  def apply(options: Options, schema: Schema, logger: Logger,
+            pBar: ProgressBar) = {
     val schemaPath = Utils.joinPaths(List(Utils.getSchemaDir(), schema.name))
     val dbDir = Utils.joinPaths(List(Utils.getDBDir(), schema.name))
     val createdb = Try(genBackends(
@@ -119,7 +121,7 @@ object TestRunnerCreator {
         }
     } match {
       case Success(_) => Success(new TestRunner(
-        schema, genTargets(orms, dbs), options, pBar))
+        schema, genTargets(orms, dbs), options, logger, pBar))
       case Failure(e) => Failure(e)
     }
   }
@@ -156,14 +158,14 @@ case class Stats(
             Stats(pBar, totalQ, mismatches, invalid, solverTimeouts + 1)
           else
             Stats(pBar, totalQ + 1, mismatches, invalid, solverTimeouts)
-      pBar.setExtraMessage(" " + toString())
+      pBar.setExtraMessage(" " + newStats.toString())
       newStats
   }
 }
 
 
 class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
-                 pBar: ProgressBar) {
+                 logger: Logger, pBar: ProgressBar) {
 
   private val genEnumerator = LazyList.from(1).iterator
 
@@ -379,6 +381,7 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
 
   def start(): Unit = {
     generateInitialData()
+    logger.info("Starting testing session")
     getQueries()
       .foldLeft(Stats(pBar)) { case (stats, (qid, q)) => {
         try {
@@ -410,5 +413,6 @@ class TestRunner(schema: Schema, targets: Seq[Target], options: Options,
         }
       }
     }
+    logger.info("Testing session ended")
   }
 }

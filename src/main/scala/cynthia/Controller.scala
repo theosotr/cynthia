@@ -24,6 +24,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.{Try, Success, Failure}
 
+import com.typesafe.scalalogging.Logger
 import me.tongfei.progressbar.ProgressBar;
 import spray.json._
 
@@ -39,7 +40,7 @@ import cynthia.utils.{Utils, RUtils}
 object Controller {
   def _run(options: Options, s: Schema, pBar: ProgressBar,
            x: TestRunner => Unit) =
-    TestRunnerCreator(options, s, pBar) match {
+    TestRunnerCreator(options, s, Logger("Session " + s.name), pBar) match {
       case Success(testRunner) => x(testRunner)
       case Failure(e)          => {
         pBar.close()
