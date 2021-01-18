@@ -465,8 +465,31 @@ case class SolverDataGenerator(
     }
     case Some(IntersectState(s1, s2)) => {
       // Get the constraints of each subquery and join them in an AND.
+      // Beyond that, there must be at least one row that is common
+      // in the results returned by each sub-query. In other words, there must
+      // be at least one row (i.e., i) for which the columns (aka fields)
+      // of the first subquery are the same with those of the second one.
+      // In terms of formula, we have
+      //
+      // (col1_q1_row1 = col1_q2_row ^ col2_q1_row1 = col2_q2_row) v
+      // (col1_q1_row2 = col1_q2_row2 ^ col2_q1_row2 = col2_q1_row2)
       val cons = getQueryConstraints(s1) ++ getQueryConstraints(s2)
-      Seq(ctx.mkAnd(cons: _*))
+      val (s1keys, s2keys) = (
+        s1.fields.view.keys.toSeq,
+        s2.fields.view.keys.toSeq
+      )
+      val eqs = List.range(0, nuRecords) map {
+        i => {
+          val cons = List.range(0, s1keys.size) map {
+            keyIndex => ctx.mkEq(
+              getVariable(s1keys(keyIndex), i),
+              getVariable(s2keys(keyIndex), i)
+            )
+          }
+          ctx.mkAnd(cons:_*)
+        }
+      }
+      Seq(ctx.mkAnd(cons: _*), ctx.mkOr(eqs:_*))
     }
   }
 
