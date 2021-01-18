@@ -164,7 +164,7 @@ object Controller {
                   println(s"Cleaned database ${x.getName()} successfully")
                 case Failure(e) => {
                   println(
-                    s"Unable to clean database ${x.getName()}: ${e.getMessage}")
+                    s"Unable to clean database ${x.getName()}...")
                 }
               }
             })
