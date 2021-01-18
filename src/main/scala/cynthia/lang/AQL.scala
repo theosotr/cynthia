@@ -257,12 +257,12 @@ case class Apply(op: Operation, q: QuerySet) extends QuerySet {
     q.combined()
 }
 case class Union(q1: QuerySet, q2: QuerySet) extends QuerySet {
-  def ordered() = q1.ordered() && q2.ordered()
+  def ordered() = false
   def filtered() = q1.filtered() || q2.filtered()
   def combined() = true
 }
 case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet {
-  def ordered() = q1.ordered() && q2.ordered()
+  def ordered() = false
   def filtered() = q1.filtered() || q2.filtered()
   def combined() = true
 }
