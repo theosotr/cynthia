@@ -1,4 +1,3 @@
-import java.nio.file.Paths
 import scala.io.Source
 
 import org.scalatest.funsuite.AnyFunSuite
@@ -21,7 +20,7 @@ import cynthia.translators.{
   ActiveRecordTranslator,
   UnsupportedException
 }
-import cynthia.utils.{Utils, RUtils}
+import cynthia.utils.RUtils
 
 class TranslatorTest extends AnyFunSuite {
   // Add a seed to make tests deterministic.
