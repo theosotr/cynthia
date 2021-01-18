@@ -17,6 +17,7 @@
 package cynthia
 
 import java.nio.file.{Paths, Files}
+import scala.util.{Success, Failure}
 
 import scopt.OParser
 
@@ -59,6 +60,50 @@ case class Options (
       case Some("test") | Some("generate") => true
       case _ => false
     }
+
+  def failure(msg: String) =
+    Failure(new Exception(msg))
+
+  def success =
+    Success(())
+
+  def validateSolverOption() =
+    if (solverGen && !wellTyped)
+      failure(
+        "The option --solver cannot be used with the option --no-well-typed"
+      )
+    else success
+
+  def validateOptions() =
+    mode match {
+      case Some("test") =>
+        if (dbs.length + orms.length < 3)
+          failure(
+            "Number of database backends + number of ORMs must be greather than 2.")
+        else success
+      case Some("generate") => success
+      case Some("run")      => success
+      case Some("replay")   =>
+        if (!Files.exists(Paths.get(dotCynthia)))
+          failure("Directory " + dotCynthia + " does not exist")
+        else if (!schema.isEmpty &&
+            !Files.exists(
+              Paths.get(
+                Utils.joinPaths(List(dotCynthia, "schemas", schema.get))
+              )
+            ))
+          failure("Schema " + schema.get + " does not exist")
+        else if (schema.isEmpty && !mismatches.isEmpty)
+          failure("You cannot use --mismatches option without --schema option")
+        else if (dbs.length + orms.length < 3)
+          failure(
+            "Number of database backends + number of ORMs must be greather than 2.")
+        else success
+      case Some("inspect") => success
+      case Some("clean") => success
+      case _ =>
+        failure("A sub-command is required.")
+    }
 }
 
 
@@ -84,28 +129,28 @@ object OptionParser {
     def backendsOption() =
       opt[Seq[String]]('d', "backends")
         .action((x, o) => o.copy(dbs = o.dbs ++ x))
-        .text("Database backends to store data (Default Value: sqlite)")
+        .text("Database backends to store data (default value: sqlite)")
         .validate(_.foldLeft (success) { (acc, x) => x match {
             case "mysql" | "postgres" | "cockroachdb" | "mssql" => acc
-            case "sqlite"             => failure ("SQLite is used by default")
-            case _                    => failure ("Database backend '" + x + "' is not supported")
+            case "sqlite" => failure ("SQLite is used by default")
+            case _ => failure ("Database backend '" + x + "' is not supported")
           }
         })
 
     def dbUserOption() =
       opt[String]('u', "db-user")
         .action((x, o) => o.copy(dbUser = x))
-        .text("Username to log in the databases")
+        .text("The username to log in the database")
 
     def dbPassOption() =
       opt[String]('p', "db-pass")
         .action((x, o) => o.copy(dbPass = x))
-        .text("Password to log in the databases")
+        .text("The password used to log in the database")
 
     def storeMatchesOption() =
       opt[Unit]('S', "store-matches")
         .action((x, o) => o.copy(storeMatches = true))
-        .text("Save matches")
+        .text("Save matches into the 'sessions' directory")
 
     def combinedOption() =
       opt[Unit]("combined")
@@ -124,7 +169,7 @@ object OptionParser {
     def minDepthOption() =
       opt[Int]("min-depth")
         .action((x, o) => o.copy(minDepth = x))
-        .text("Minimum depth of generated AQL queries")
+        .text("Minimum depth of the generated AQL queries")
         .validate(x =>
             if (x < 1) failure("Minimum depth must be greater than 1")
             else success)
@@ -132,7 +177,7 @@ object OptionParser {
     def maxDepthOption() =
       opt[Int]("max-depth")
         .action((x, o) => o.copy(maxDepth = x))
-        .text("Maximum depth of generated AQL queries")
+        .text("Maximum depth of the generated AQL queries")
         .validate(x =>
             if (x < 1) failure("Maximum depth must be greater than 1")
             else success)
@@ -174,14 +219,14 @@ object OptionParser {
     cmd("test") action { (_, c) => c.copy(mode = Some("test")) } children(
       opt[Int]('n', "queries")
         .action((x, o) => o.copy(nuqueries = x))
-        .text("Number of queries to generate for each schema (Default value: 200)")
+        .text("Number of queries to generate for each schema (default value: 200)")
         .validate(x =>
           if (x < 1) failure("You must generate at least one query")
           else success
         ),
       opt[Int]('s', "schemas")
         .action((x, o) => o.copy(schemas = x))
-        .text("Number of schemas to generate (Default value: 1)")
+        .text("Number of schemas to generate (default value: 1)")
         .validate(x =>
           if (x < 1) failure("You must generate at least one schema")
           else success
@@ -211,7 +256,7 @@ object OptionParser {
     cmd("generate") action { (_, c) => c.copy(mode = Some("generate")) } children(
       opt[Int]('n', "queries")
         .action((x, o) => o.copy(nuqueries = x))
-        .text("Number of queries to generate for each schema (Default value: 200)")
+        .text("Number of queries to generate for each schema (default value: 200)")
         .validate(x => {
           if (x < 1) failure("You must generate at least one query")
           else success
@@ -236,16 +281,16 @@ object OptionParser {
     cmd("replay") action { (_, c) => c.copy(mode = Some("replay")) } children(
       opt[String]('c', "cynthia")
         .action((x, o) => o.copy(dotCynthia = x))
-        .text("cynthia directory for replaying missmatches (default .cynthia)"),
+        .text("The cynthia directory for replaying missmatches (default value: .cynthia)"),
       opt[String]('s', "schema")
         .action((x, o) => o.copy(schema = Some(x)))
         .text("schema to replay"),
       opt[Unit]('a', "all")
         .action((x, o) => o.copy(all = true))
-        .text("Replay all queries. Always use it with --store-matches to not remove matches queries"),
+        .text("Replay all queries."),
       opt[Seq[Int]]('m', "mismatches")
         .action((x, o) => o.copy(mismatches = x))
-        .text("Mismatches to replay")
+        .text("Replay queries for which ORM previously produced different results")
         .validate(_.foldLeft (success) { (acc, x) => x match {
             case _ => acc
           }
@@ -266,7 +311,7 @@ object OptionParser {
       opt[String]('s', "sql")
         .required()
         .action((x, o) => o.copy(sql = Some(x)))
-        .text("File with the sql script to generate and feed the Database")
+        .text("File with the sql script to generate and feed the database")
         .validate(x => {
           if (!Files.exists(Paths.get(x)))
             failure("File " + x + " does not exist")
@@ -290,7 +335,7 @@ object OptionParser {
     cmd("inspect") action { (_, c) => c.copy(mode = Some("inspect")) } children(
       opt[String]('c', "cynthia")
         .action((x, o) => o.copy(dotCynthia = x))
-        .text("cynthia directory for inspecting missmatches (default .cynthia)"),
+        .text("The cynthia directory for inspecting missmatches (default value: .cynthia)"),
       opt[String]('s', "schema")
         .action((x, o) => o.copy(schema = Some(x)))
         .text("schema to inspect"),
@@ -301,36 +346,14 @@ object OptionParser {
     cmd("clean") action { (_, c) => c.copy(mode = Some("clean")) } children(
       opt[Unit]("only-workdir")
         .action((x, o) => o.copy(onlyWorkDir = true))
-        .text("Clean only the working directory .cynthia"),
+        .text("Clean only the working directory '.cynthia'"),
       dbUserOption(),
       dbPassOption()
     )
 
-    checkConfig(x =>
-      x.mode match {
-        case Some("test") =>
-          if (x.dbs.length + x.orms.length < 3)
-            failure(
-              "Number of database backends + number of ORMs must be greather than 2.")
-          else success
-        case Some("generate") => success
-        case Some("run")      => success
-        case Some("replay")   =>
-          if (!Files.exists(Paths.get(x.dotCynthia)))
-            failure("Directory " + x.dotCynthia + " does not exist")
-          else if (!x.schema.isEmpty && !Files.exists(Paths.get(Utils.joinPaths(List(x.dotCynthia, "schemas", x.schema.get)))))
-            failure("Schema " + x.schema.get + " does not exist")
-          else if (x.schema.isEmpty && !x.mismatches.isEmpty)
-            failure("You cannot use --mismatches option without --schema option")
-          else if (x.dbs.length + x.orms.length < 3)
-            failure(
-              "Number of database backends + number of ORMs must be greather than 2.")
-          else success
-        case Some("inspect") => success
-        case Some("clean") => success
-        case _ =>
-          failure("A sub-command is required.")
-      }
-    )
+    checkConfig(x => x.validateOptions() match {
+      case Failure(e) => failure(e.getMessage)
+      case Success(_) => success
+    })
   }
 }
