@@ -17,7 +17,6 @@
 package cynthia.lang
 
 import spray.json._
-import DefaultJsonProtocol._
 
 
 object ModelJsonProtocol extends DefaultJsonProtocol { 

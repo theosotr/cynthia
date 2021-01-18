@@ -16,12 +16,10 @@
 
 package cynthia.utils
 
-import java.io.{File, FileWriter, FileInputStream, FileOutputStream,
-                BufferedWriter}
+import java.io.{File, FileWriter, FileInputStream, FileOutputStream}
 import java.nio.file.{Files, Paths}
 
 import scala.reflect.io.Directory
-import scala.io.Source
 import scala.sys.process._
 
 import me.tongfei.progressbar.{ProgressBarStyle, ProgressBarBuilder};

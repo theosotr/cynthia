@@ -17,10 +17,9 @@
 package cynthia.gen
 
 import java.io.File
-import scala.sys.process._
 import scala.collection.immutable.ListMap
 
-import com.microsoft.z3.{Solver, Context, Status, Expr, ArithExpr, IntExpr,
+import com.microsoft.z3.{Solver, Context, Status, Expr, ArithExpr,
   SeqExpr, BoolExpr}
 
 import cynthia.lang._

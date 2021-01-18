@@ -16,8 +16,7 @@
 
 package cynthia.targets
 
-import java.io.File
-import java.sql.{Connection, DriverManager, ResultSet}
+import java.sql.{Connection, DriverManager}
 import scala.io.Source
 
 import cynthia.utils.Utils

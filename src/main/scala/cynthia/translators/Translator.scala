@@ -20,7 +20,6 @@ package cynthia.translators
 import cynthia.targets.Target
 import cynthia.lang._
 import cynthia.targets.{Django, Peewee, SQLAlchemy, ActiveRecord, Sequelize, Pony}
-import cynthia.utils.Utils
 
 
 final case class UnsupportedException(private val message: String)

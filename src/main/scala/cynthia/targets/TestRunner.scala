@@ -22,7 +22,6 @@ import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
-import scala.language.postfixOps
 import scala.io.Source
 import scala.sys.process._
 
@@ -37,7 +36,6 @@ import cynthia.lang.AQLJsonProtocol._
 import cynthia.gen.{
   SolverDataGenerator, NaiveDataGenerator, DataGeneratorController,
   DataGenSucc, DataExists, DataGenFailed, QueryGenerator}
-import cynthia.translators.SchemaTranslator
 import cynthia.utils.{Utils, Str}
 
 

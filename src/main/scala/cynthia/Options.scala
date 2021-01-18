@@ -110,7 +110,6 @@ case class Options (
 object OptionParser {
   val builder = OParser.builder[Options]
   val cliParser = new scopt.OptionParser[Options]("cynthia") {
-    import builder._
     head("cynthia", "0.1")
 
     // General options

@@ -17,7 +17,6 @@
 package cynthia
 
 import java.io.File
-import java.nio.file.{Paths, Files}
 import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

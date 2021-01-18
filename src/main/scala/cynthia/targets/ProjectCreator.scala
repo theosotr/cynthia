@@ -16,7 +16,6 @@
 
 package cynthia.targets
 
-import scala.sys.process._
 
 import cynthia.utils.Utils
 
