@@ -2,7 +2,10 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "gr.dmst.aueb.cynthia",
-      scalaVersion := "2.13.4"
+      scalaVersion := "2.13.4",
+      semanticdbEnabled := true,
+      semanticdbVersion := scalafixSemanticdb.revision,
+      scalacOptions := Seq("-Wunused:imports", "-unchecked", "-deprecation")
     )),
     name := "cynthia"
   )
@@ -24,4 +27,3 @@ libraryDependencies ++= Seq(
   "me.tongfei" % "progressbar" % "0.9.0" from "file://" + file("lib/progressbar-0.9.0.jar").getAbsolutePath,
   "com.microsoft.z3 " % "microsoft-z3" % "1.0" from "file://" + file("lib/com.microsoft.z3.jar").getAbsolutePath
 )
-scalacOptions := Seq("-unchecked", "-deprecation")
