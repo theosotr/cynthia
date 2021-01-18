@@ -280,7 +280,7 @@ class TestRunner(
 
   private val matchTxt = "MATCH"
 
-  private val invalidTxt = "INVALID"
+  private val unsupportedTxt = "UNSUPPORTED"
 
   val qGen = QueryGenerator(
     options.minDepth,
@@ -382,7 +382,7 @@ class TestRunner(
       Utils.joinPaths(List(sessionDir, "diff_test.out")),
       diffOut
     )
-    if (!diffOut.equals(invalidTxt))
+    if (!diffOut.equals(unsupportedTxt))
       results.foreach { case ((_, k), v) =>
         v.foreach { x =>
           // FIXME: For debugging purposes only.
@@ -498,7 +498,7 @@ class TestRunner(
         evalThunk(dataThunk)
         stats ++ (mism = true)
       } else if (failed.size == 0 && oks.size == 0) {
-        storeResults(q, oks ++ failed, sessionDir, invalidTxt)
+        storeResults(q, oks ++ failed, sessionDir, unsupportedTxt)
         stats ++ (invd = true)
       } else {
         if (options.storeMatches || options.mode.get.equals("replay")) {
