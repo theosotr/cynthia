@@ -4,25 +4,25 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import cynthia.lang._
 
-
 class StateTest extends AnyFunSuite {
   test("check that we're getting joins as a set of pairs") {
     var joins = Seq(
-        Seq("a", "b"),
-        Seq("a", "c"),
-        Seq("a", "b")
+      Seq("a", "b"),
+      Seq("a", "c"),
+      Seq("a", "b")
     )
     assert(State(joins = joins).getJoinPairs() == Set(("a", "b"), ("a", "c")))
-    
+
     joins = Seq(
-        Seq("a", "b", "c"),
-        Seq("a", "c"),
-        Seq("a", "b", "c"),
-        Seq("b", "c", "d", "e"),
-        Seq("a", "c", "e"),
+      Seq("a", "b", "c"),
+      Seq("a", "c"),
+      Seq("a", "b", "c"),
+      Seq("b", "c", "d", "e"),
+      Seq("a", "c", "e")
     )
-    assert(State(joins = joins).getJoinPairs() == Set(
-      ("b", "c"), ("a", "c"), ("d", "e"), ("c", "e"))
+    assert(
+      State(joins = joins)
+        .getJoinPairs() == Set(("b", "c"), ("a", "c"), ("d", "e"), ("c", "e"))
     )
   }
 
@@ -44,7 +44,7 @@ class StateTest extends AnyFunSuite {
       constantF = Set("f3"),
       distinct = Some("f"),
       aggrs = Seq(FieldDecl(Count(None), "a", IntF)),
-      joins = Seq(Seq("a", "b")),
+      joins = Seq(Seq("a", "b"))
     )
     val s2 = State(
       source = "t2",
@@ -54,7 +54,7 @@ class StateTest extends AnyFunSuite {
       aggrF = Set("f3"),
       constantF = Set("f4"),
       distinct = Some("a"),
-      aggrs = Seq(FieldDecl(Count(None), "a", IntF)),
+      aggrs = Seq(FieldDecl(Count(None), "a", IntF))
     )
     var s3 = UnionState.combine(s1, s2)
     assert(s3.source == s1.source)
@@ -82,5 +82,5 @@ class StateTest extends AnyFunSuite {
     assert(s3.combined)
     assert(s3.from == Some(IntersectState(s1, s2)))
   }
-  
+
 }

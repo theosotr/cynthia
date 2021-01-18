@@ -1,23 +1,22 @@
 /*
  * Copyright (c) 2020-2021 Thodoris Sotiropoulos, Stefanos Chaliasos
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package cynthia.lang
 
 import cynthia.targets.{DB, SQLite, MySQL, Postgres, MSSQL, Cockroachdb}
-
 
 sealed trait ConstantType
 case object Quoted extends ConstantType
@@ -151,7 +150,7 @@ case object Asc extends Order
 case object Desc extends Order
 
 sealed trait Operation
-case class Filter (pred: Predicate) extends Operation
+case class Filter(pred: Predicate) extends Operation
 case class Sort(spec: Seq[(String, Order)]) extends Operation
 case class Distinct(field: Option[String]) extends Operation
 
@@ -163,9 +162,9 @@ sealed trait FieldType {
 case object FieldType {
   def dataTypeToFieldType(t: DataType) = t match {
     case Int8 | Int16 | Int32 | Int64 | Serial | Foreign(_) => IntF
-    case VarChar(_) => StringF
-    case Numeric => DoubleF
-    case Bool => BooleanF
+    case VarChar(_)                                         => StringF
+    case Numeric                                            => DoubleF
+    case Bool                                               => BooleanF
   }
 }
 case object StringF extends FieldType {
@@ -179,8 +178,8 @@ case object StringF extends FieldType {
 }
 case object IntF extends FieldType {
   override def convertType(db: DB) = db match {
-    case Postgres(_, _, _) | Cockroachdb(_, _, _) | MSSQL(_, _, _)=> "integer"
-    case _ => "signed"
+    case Postgres(_, _, _) | Cockroachdb(_, _, _) | MSSQL(_, _, _) => "integer"
+    case _                                                         => "signed"
   }
 
   override def isNumeric() = true
@@ -208,7 +207,12 @@ case object DateTimeF extends FieldType {
   override def isStr() = false
 }
 
-case class FieldDecl(f: FieldExpr, as: String, ftype: FieldType, hidden: Boolean = false)
+case class FieldDecl(
+    f: FieldExpr,
+    as: String,
+    ftype: FieldType,
+    hidden: Boolean = false
+)
 object FieldDecl {
 
   def expr(fieldDecl: FieldDecl) = fieldDecl match {
@@ -269,6 +273,7 @@ case class Intersect(q1: QuerySet, q2: QuerySet) extends QuerySet {
 
 sealed abstract class Query(val queryset: QuerySet)
 case class FirstRes(qs: QuerySet) extends Query(qs)
-case class SubsetRes(offset: Int = 0, limit: Option[Int], qs: QuerySet) extends Query(qs)
+case class SubsetRes(offset: Int = 0, limit: Option[Int], qs: QuerySet)
+    extends Query(qs)
 case class SetRes(qs: QuerySet) extends Query(qs)
 case class AggrRes(aggrs: Seq[FieldDecl], qs: QuerySet) extends Query(qs)

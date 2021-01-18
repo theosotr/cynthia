@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2020-2021 Thodoris Sotiropoulos, Stefanos Chaliasos
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -29,7 +29,6 @@ import cynthia.lang.{Query, Schema}
 import cynthia.lang.AQLJsonProtocol._
 import cynthia.lang.ModelJsonProtocol._
 
-
 case class Str(str: String) {
   private val buff: StringBuilder = new StringBuilder(str)
 
@@ -45,7 +44,6 @@ case class Str(str: String) {
     buff.toString
 }
 
-
 object Utils {
   val cwdDir = ".cynthia"
   val dbDir = "dbs"
@@ -59,10 +57,10 @@ object Utils {
   def listFiles(dir: String, ext: String = ".sql"): Option[Array[String]] = {
     val file = new File(dir)
     if (file.isDirectory)
-      Some (
+      Some(
         file.listFiles
           .filter(x => x.getName().endsWith(ext))
-          .map (x => x.getName())
+          .map(x => x.getName())
       )
     else None
   }
@@ -80,10 +78,11 @@ object Utils {
 
   def joinPaths(paths: List[String]) =
     paths match {
-      case Nil    => ""
-      case h :: t => t.foldLeft(h) { (acc, x) =>
-        Paths.get(acc, x).normalize().toAbsolutePath().toString()
-      }
+      case Nil => ""
+      case h :: t =>
+        t.foldLeft(h) { (acc, x) =>
+          Paths.get(acc, x).normalize().toAbsolutePath().toString()
+        }
     }
 
   def appendToFile(path: String, str: String) = {
@@ -102,14 +101,18 @@ object Utils {
     new String(Files.readAllBytes(Paths.get(path)))
 
   def getListOfFiles(dir: String): List[String] = {
-    new File(dir).listFiles.filter(_.isFile)
-      .map(_.getPath).toList
+    new File(dir).listFiles
+      .filter(_.isFile)
+      .map(_.getPath)
+      .toList
   }
 
   def getListOfDirs(dir: String): List[String] = {
     if (Files.exists(Paths.get(dir))) {
-      new File(dir).listFiles.filter(_.isDirectory)
-        .map(_.getPath).toList
+      new File(dir).listFiles
+        .filter(_.isDirectory)
+        .map(_.getPath)
+        .toList
     } else {
       List[String]()
     }
@@ -146,13 +149,14 @@ object Utils {
   }
 
   def setWorkDir() = {
-     val workdir = getWorkdir()
-     List(dbDir, projectDir, sessionDir, schemaDir)
-       .foreach { dir => {
-           val fdir = Utils.joinPaths(List(workdir, dir))
-           createDir(fdir)
-         }
-       }
+    val workdir = getWorkdir()
+    List(dbDir, projectDir, sessionDir, schemaDir)
+      .foreach { dir =>
+        {
+          val fdir = Utils.joinPaths(List(workdir, dir))
+          createDir(fdir)
+        }
+      }
   }
 
   def deleteRecursively(file: File): Unit = {
@@ -172,17 +176,24 @@ object Utils {
   def quoteStr(str: String, quotes: String = "'") =
     quotes + str + quotes
 
-  def mergeMap[T1, T2](m1: Map[T1, Set[T2]],
-                       m2: Map[T1, Set[T2]]): Map[T1, Set[T2]] = {
+  def mergeMap[T1, T2](
+      m1: Map[T1, Set[T2]],
+      m2: Map[T1, Set[T2]]
+  ): Map[T1, Set[T2]] = {
     val grouped = (m1.toSeq ++ m2.toSeq).groupBy(_._1)
-    grouped.view.mapValues(_.foldLeft(Set[T2]()) { (acc, x) => acc ++ x._2 }).toMap
+    grouped.view
+      .mapValues(_.foldLeft(Set[T2]()) { (acc, x) => acc ++ x._2 })
+      .toMap
   }
 
   def topologicalSort(g: Map[String, Set[String]]): Seq[String] = {
-    def dfs(acc: (Set[String], Seq[String]), n: String): (Set[String], Seq[String]) = {
+    def dfs(
+        acc: (Set[String], Seq[String]),
+        n: String
+    ): (Set[String], Seq[String]) = {
       val (v, o) = acc
       g get n match {
-        case None    => (v + n, o :+ n)
+        case None => (v + n, o :+ n)
         case Some(e) =>
           if (e.isEmpty)
             (v + n, o :+ n)
@@ -197,11 +208,13 @@ object Utils {
       }
     }
 
-    g.keys.foldLeft((Set[String](), Seq[String]())) { (acc, n) =>
-      // Node is already visited
-      if (acc._1.contains(n)) acc
-      else dfs(acc, n)
-    }._2
+    g.keys
+      .foldLeft((Set[String](), Seq[String]())) { (acc, n) =>
+        // Node is already visited
+        if (acc._1.contains(n)) acc
+        else dfs(acc, n)
+      }
+      ._2
   }
 
   def loadQuery(path: String): Query =
@@ -211,7 +224,7 @@ object Utils {
     readFromFile(path).parseJson.convertTo[Schema]
 
   def basenameWithoutExtension(x: String) =
-      x.split(File.separator).last.split("\\.(?=[^\\.]+$)").head
+    x.split(File.separator).last.split("\\.(?=[^\\.]+$)").head
 
   def removeDups[T](l: Seq[T]): Seq[T] =
     l.foldLeft((Seq[T](), Set[T]())) { case ((acc, v), x) =>
@@ -231,7 +244,7 @@ object Utils {
       .setUpdateIntervalMillis(50)
       .setStyle(ProgressBarStyle.ASCII)
     max match {
-      case None => pbarBuilder.build()
+      case None      => pbarBuilder.build()
       case Some(max) => pbarBuilder.setInitialMax(max).build()
     }
   }

@@ -2,7 +2,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import cynthia.lang.QueryStr
 
-
 class QueryStrTest extends AnyFunSuite {
   test("check query str concatenation (1)") {
     val q1 = QueryStr(None, Some("stm"))

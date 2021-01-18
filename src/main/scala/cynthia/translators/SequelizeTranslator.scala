@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2020-2021 Thodoris Sotiropoulos, Stefanos Chaliasos
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -20,7 +20,6 @@ import cynthia.targets.Target
 import cynthia.lang._
 import cynthia.targets.{Postgres, MySQL, MSSQL, Cockroachdb, SQLite}
 import cynthia.utils.{Utils, RUtils, Str}
-
 
 case class SequelizeTranslator(target: Target) extends Translator {
   private val fieldDecls: scala.collection.mutable.Set[String] =
@@ -63,11 +62,14 @@ case class SequelizeTranslator(target: Target) extends Translator {
     "  define: { timestamps: false }\n});\n"
 
   val sequelizePreamble = "const {Op, Sequelize} = require('sequelize');"
-  val cockroachdbSequelizePreamble = "const {Op, Sequelize} = require('sequelize-cockroachdb');"
+  val cockroachdbSequelizePreamble =
+    "const {Op, Sequelize} = require('sequelize-cockroachdb');"
 
   val preamble =
     s"""
-    |${if (target.db.getName().equals("cockroachdb")) cockroachdbSequelizePreamble else sequelizePreamble}
+    |${if (target.db.getName().equals("cockroachdb"))
+      cockroachdbSequelizePreamble
+    else sequelizePreamble}
     |const sequelize = ${setstr.!}
     |
     |function toColumn(c) {
@@ -119,7 +121,7 @@ case class SequelizeTranslator(target: Target) extends Translator {
         s"${ident}dump($v === null ? $v : $v.dataValues.$as, '$as')"
       } mkString "\n"
     val str = q match {
-      case SetRes(_)  | SubsetRes(_, _, _) =>
+      case SetRes(_) | SubsetRes(_, _, _) =>
         s"""$ret.then((x) => {
         |  sequelize.close()
         |  x.forEach((x) => {
@@ -156,7 +158,7 @@ case class SequelizeTranslator(target: Target) extends Translator {
     field.split('.').toList match {
       case Nil | _ :: Nil  => _constructField(field)
       case h :: (f :: Nil) => _constructField(h.toLowerCase + "." + f)
-      case _ :: t          =>
+      case _ :: t =>
         if (dollarSign) "'$" + t.mkString(".") + "$'"
         else Utils.quoteStr(t mkString ".")
     }
@@ -165,13 +167,13 @@ case class SequelizeTranslator(target: Target) extends Translator {
   def getSeqOrderSpec(field: String) = {
     def _getSeqOrderSpec(segs: List[String], acc: List[String]): List[String] =
       segs match {
-        case Nil       => acc
-        case h :: Nil  => h :: acc
-        case h :: t    => _getSeqOrderSpec(t, h.capitalize :: acc)
+        case Nil      => acc
+        case h :: Nil => h :: acc
+        case h :: t   => _getSeqOrderSpec(t, h.capitalize :: acc)
       }
     field.split('.').toList match {
       case Nil | _ :: Nil => Utils.quoteStr(field)
-      case _ :: t         => {
+      case _ :: t => {
         val head :: tail = _getSeqOrderSpec(t, List())
         // Quote the first element, reverse the list and create the string.
         (Utils.quoteStr(head) :: tail).reverse mkString ","
@@ -180,99 +182,140 @@ case class SequelizeTranslator(target: Target) extends Translator {
   }
 
   def literalOrValue(v: String) =
-    RUtils.chooseFrom(Seq(
-      s"sequelize.literal(`${Utils.escapeSQLStr(v)}`)",
-      Utils.quoteStr(Utils.escapeStr(v), quotes = "`")
-    ))
+    RUtils.chooseFrom(
+      Seq(
+        s"sequelize.literal(`${Utils.escapeSQLStr(v)}`)",
+        Utils.quoteStr(Utils.escapeStr(v), quotes = "`")
+      )
+    )
 
   def translatePred(s: State, pred: Predicate): String = pred match {
     case Eq(k, e) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << constructFieldExpr(s, e) << "}").!
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.eq]: " << constructFieldExpr(
+        s,
+        e
+      ) << "}").!
     case Gt(k, e) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.gt]: " << constructFieldExpr(s, e) << "}").!
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.gt]: " << constructFieldExpr(
+        s,
+        e
+      ) << "}").!
     case Gte(k, e) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.gte]: " << constructFieldExpr(s, e) << "}").!
-    case Lt(k, e)  =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.lt]: " << constructFieldExpr(s, e) << "}").!
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.gte]: " << constructFieldExpr(
+        s,
+        e
+      ) << "}").!
+    case Lt(k, e) =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.lt]: " << constructFieldExpr(
+        s,
+        e
+      ) << "}").!
     case Lte(k, e) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << constructFieldExpr(s, e) << "}").!
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.lte]: " << constructFieldExpr(
+        s,
+        e
+      ) << "}").!
     case Contains(k, v) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: " << literalOrValue(v) << "}").!
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.substring]: " << literalOrValue(
+        v
+      ) << "}").!
     case StartsWith(k, v) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.startsWith]: " << literalOrValue(v) << "}").!
+      (Str(
+        getSeqFieldName(k)
+      ) << ": " << "{[Op.startsWith]: " << literalOrValue(v) << "}").!
     case EndsWith(k, v) =>
-      (Str(getSeqFieldName(k)) << ": " << "{[Op.endsWith]: " << literalOrValue(v) << "}").!
-    case Not(pred)                  =>
+      (Str(getSeqFieldName(k)) << ": " << "{[Op.endsWith]: " << literalOrValue(
+        v
+      ) << "}").!
+    case Not(pred) =>
       (Str("[Op.not]: {") << translatePred(s, pred) << "}").!
-    case Or(p1, p2)                 =>
+    case Or(p1, p2) =>
       (Str("[Op.or]: [") << "{" << translatePred(s, p1) << "}," <<
-          "{" << translatePred(s, p2) << "}" << "]").!
-    case And(p1, p2)                =>
+        "{" << translatePred(s, p2) << "}" << "]").!
+    case And(p1, p2) =>
       (Str("[Op.and]: [") << "{" << translatePred(s, p1) << "}," <<
-          "{" << translatePred(s, p2) << "}" << "]").!
+        "{" << translatePred(s, p2) << "}" << "]").!
   }
 
-  def constructFilter(s: State, preds: Set[Predicate], having: Boolean = false) = {
+  def constructFilter(
+      s: State,
+      preds: Set[Predicate],
+      having: Boolean = false
+  ) = {
     val method = if (having) "having" else "where"
     if (preds.isEmpty) ""
     else
       (Str(method) << ": {\n  [Op.and]: [\n" << (
-        preds map { x => "    {" + translatePred(s, x) + "}" } mkString(",")
-       ) << "  ]\n}"
-      ).!
+        preds map { x => "    {" + translatePred(s, x) + "}" } mkString (",")
+      ) << "  ]\n}").!
   }
 
-  def constructOrderBy(spec: Seq[(String, Order)],
-      fields: Map[String, FieldDecl]) = spec match {
+  def constructOrderBy(
+      spec: Seq[(String, Order)],
+      fields: Map[String, FieldDecl]
+  ) = spec match {
     case Seq() => ""
-    case _     =>
+    case _ =>
       (
         Str("order: [\n") << (
-          Utils.removeDups(spec) map { x => {
-            val name =
-              if (fields.contains(x._1)) TUtils.toFieldVar(x._1)
-              else getSeqOrderSpec(x._1)
-            x._2 match {
-              case Asc  => "  [" + name + ", 'ASC']"
-              case Desc => "  [" + name + ", 'DESC']"
+          Utils.removeDups(spec) map { x =>
+            {
+              val name =
+                if (fields.contains(x._1)) TUtils.toFieldVar(x._1)
+                else getSeqOrderSpec(x._1)
+              x._2 match {
+                case Asc  => "  [" + name + ", 'ASC']"
+                case Desc => "  [" + name + ", 'DESC']"
+              }
             }
-          }} mkString ","
+          } mkString ","
         ) << "]"
       ).!
   }
 
   def quoteDBName(name: String) = target.db match {
-    case MySQL(_, _, _) => Utils.quoteStr(name, quotes ="\\`")
+    case MySQL(_, _, _) => Utils.quoteStr(name, quotes = "\\`")
     case _              => Utils.quoteStr(name, quotes = "\\\"")
   }
 
-  def constructNestedFieldExpr(s: State, fexpr: FieldExpr, subCol: Boolean): String = {
+  def constructNestedFieldExpr(
+      s: State,
+      fexpr: FieldExpr,
+      subCol: Boolean
+  ): String = {
     def _f(expr: FieldExpr) = expr match {
       case Constant(v, UnQuoted) => v
       case Constant(v, Quoted)   => s"\\'${Utils.escapeSQLStr(v)}\\'"
-      case F(f)                  => s.fields get f match {
-        case None => {
-          val segs = (f split '.').toList
-          if (segs.size > 2) {
-            val prefix = quoteDBName(
-              segs.tail dropRight 1 mkString "->").toLowerCase
-            prefix + "." + segs(segs.size - 1)
-          } else
-            (segs mkString ".").toLowerCase
+      case F(f) =>
+        s.fields get f match {
+          case None => {
+            val segs = (f split '.').toList
+            if (segs.size > 2) {
+              val prefix = quoteDBName(
+                segs.tail dropRight 1 mkString "->"
+              ).toLowerCase
+              prefix + "." + segs(segs.size - 1)
+            } else
+              (segs mkString ".").toLowerCase
+          }
+          case _ => "${getC(" + TUtils.toFieldVar(f) + ")}"
         }
-        case _    => "${getC(" + TUtils.toFieldVar(f) + ")}"
-      }
-      case _ => throw new UnsupportedException(
-        "Unsupported field expression: " + fexpr.toString)
+      case _ =>
+        throw new UnsupportedException(
+          "Unsupported field expression: " + fexpr.toString
+        )
     }
 
     fexpr match {
       case Constant(v, UnQuoted) => "sequelize.literal(" + v + ")"
-      case Constant(v, Quoted)   =>
+      case Constant(v, Quoted) =>
         "sequelize.literal(" + Utils.quoteStr(
-          s"\\'${Utils.escapeSQLStr(v)}\\'", quotes = "`") + ")"
+          s"\\'${Utils.escapeSQLStr(v)}\\'",
+          quotes = "`"
+        ) + ")"
       case F(f) => {
-        val str = "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
+        val str =
+          "sequelize.col(" + getSeqFieldName(f, dollarSign = false) + ")"
         if (subCol && this.fieldDecls.contains(f)) TUtils.toFieldVar(f)
         else str
       }
@@ -284,30 +327,41 @@ case class SequelizeTranslator(target: Target) extends Translator {
         "sequelize.literal(`(" + _f(f1) + " * " + _f(f2) + ")`)"
       case Div(f1, f2) =>
         "sequelize.literal(`(" + _f(f1) + " / " + _f(f2) + ")`)"
-      case _ => throw new UnsupportedException(
-        "Unsupported field expression: " + fexpr.toString)
+      case _ =>
+        throw new UnsupportedException(
+          "Unsupported field expression: " + fexpr.toString
+        )
     }
   }
 
   def getType(ftype: FieldType) = Utils.quoteStr(ftype.convertType(target.db))
 
-  def constructFieldExpr(s: State, fexpr: FieldExpr, subCol: Boolean = false): String = {
+  def constructFieldExpr(
+      s: State,
+      fexpr: FieldExpr,
+      subCol: Boolean = false
+  ): String = {
     val (f, op) = fexpr match {
-      case Count(None)        => ("'*'", Some("'count'"))
-      case Count(Some(fexpr)) => (constructNestedFieldExpr(s, fexpr, subCol), Some("'count'"))
-      case Sum(fexpr)         => (constructNestedFieldExpr(s, fexpr, subCol), Some("'sum'"))
-      case Avg(fexpr)         => (constructNestedFieldExpr(s, fexpr, subCol), Some("'avg'"))
-      case Min(fexpr)         => (constructNestedFieldExpr(s, fexpr, subCol), Some("'min'"))
-      case Max(fexpr)         => (constructNestedFieldExpr(s, fexpr, subCol), Some("'max'"))
-      case _                  => (constructNestedFieldExpr(s, fexpr, subCol), None)
+      case Count(None) => ("'*'", Some("'count'"))
+      case Count(Some(fexpr)) =>
+        (constructNestedFieldExpr(s, fexpr, subCol), Some("'count'"))
+      case Sum(fexpr) =>
+        (constructNestedFieldExpr(s, fexpr, subCol), Some("'sum'"))
+      case Avg(fexpr) =>
+        (constructNestedFieldExpr(s, fexpr, subCol), Some("'avg'"))
+      case Min(fexpr) =>
+        (constructNestedFieldExpr(s, fexpr, subCol), Some("'min'"))
+      case Max(fexpr) =>
+        (constructNestedFieldExpr(s, fexpr, subCol), Some("'max'"))
+      case _ => (constructNestedFieldExpr(s, fexpr, subCol), None)
     }
     op match {
-      case None     => f
+      case None => f
       case Some(op) =>
         val str = Str("sequelize.fn(") << op
         f match {
           case "" => (str << ")").!
-          case _  =>
+          case _ =>
             (str << ", " << f << ")").!
         }
     }
@@ -317,64 +371,81 @@ case class SequelizeTranslator(target: Target) extends Translator {
     def castField(f: String, t: String) =
       (Str("sequelize.cast(") << f << "," << t << ")").!
 
-    fields.foldLeft(QueryStr()) { (acc, x) => {
-      val (qfield, as, t) = x match { case FieldDecl(f, l, t, _) => (f, l, t) }
-      val f = constructFieldExpr(s, qfield, subCol = true)
-      val qstr = castField(f, getType(t))
-      this.fieldDecls += as
-      acc >> QueryStr(
-        Some(TUtils.toFieldVar(as)),
-        Some(qstr)
-      )
-    }}
+    fields.foldLeft(QueryStr()) { (acc, x) =>
+      {
+        val (qfield, as, t) = x match {
+          case FieldDecl(f, l, t, _) => (f, l, t)
+        }
+        val f = constructFieldExpr(s, qfield, subCol = true)
+        val qstr = castField(f, getType(t))
+        this.fieldDecls += as
+        acc >> QueryStr(
+          Some(TUtils.toFieldVar(as)),
+          Some(qstr)
+        )
+      }
+    }
   }
 
   def constructAttributes(state: State) = {
     val aggrs = state.aggrs match {
       case Seq(FieldDecl(Count(None), _, _, _)) => Seq()
-      case _ => state.aggrs
+      case _                                    => state.aggrs
     }
     val attrStr = TUtils.mapNonHiddenFields(
       state.fields.values ++ aggrs,
       { case FieldDecl(_, as, _, _) =>
-        (Str("[") << TUtils.toFieldVar(as) << ", " << Utils.quoteStr(as) << "]").!
+        (Str("[") << TUtils.toFieldVar(as) << ", " << Utils.quoteStr(
+          as
+        ) << "]").!
       }
-    ) mkString(",\n    ")
+    ) mkString (",\n    ")
     attrStr match {
       case "" => ""
       case _  => "attributes: [\n " + attrStr + "]"
     }
   }
 
-  def importModels(joinedModels: Map[String, Set[String]], sourceModels: Set[String]) = {
-    val models = joinedModels.foldLeft(sourceModels) {
-      case (acc, (k, v)) => (acc + k) ++ v
+  def importModels(
+      joinedModels: Map[String, Set[String]],
+      sourceModels: Set[String]
+  ) = {
+    val models = joinedModels.foldLeft(sourceModels) { case (acc, (k, v)) =>
+      (acc + k) ++ v
     }
     models.foldLeft(QueryStr()) { (acc, x) =>
-      acc >> QueryStr(Some(x),
-        Some("require(" + Utils.quoteStr(
-          "./" + x.toLowerCase + ".js") + ")(sequelize, Sequelize)"))
+      acc >> QueryStr(
+        Some(x),
+        Some(
+          "require(" + Utils.quoteStr(
+            "./" + x.toLowerCase + ".js"
+          ) + ")(sequelize, Sequelize)"
+        )
+      )
     }
   }
 
   def createAssociations(joinedModels: Map[String, Set[String]]) =
     joinedModels.foldLeft(QueryStr()) { case (acc, (k, v)) =>
-      v.foldLeft(acc) { (acc, x) => {
-        val fk = s"foreignKey: '${x.toLowerCase}_id'"
-        acc >>
-          QueryStr(None, Some(s"$x.hasMany($k, {${fk}})")) >>
-          QueryStr(None, Some(
-            s"$k.belongsTo($x, {as: $x.tableName, ${fk}})"))
+      v.foldLeft(acc) { (acc, x) =>
+        {
+          val fk = s"foreignKey: '${x.toLowerCase}_id'"
+          acc >>
+            QueryStr(None, Some(s"$x.hasMany($k, {${fk}})")) >>
+            QueryStr(None, Some(s"$k.belongsTo($x, {as: $x.tableName, ${fk}})"))
         }
       }
     }
 
-  def constructIncludes(source: String, joinedModels: Map[String, Set[String]]) = {
+  def constructIncludes(
+      source: String,
+      joinedModels: Map[String, Set[String]]
+  ) = {
     def _findIncludes(n: String): String = {
       val str = s"model: $n, as: $n.tableName"
       joinedModels.get(n) match {
-        case None     => s"{$str}"
-        case Some(e)  => {
+        case None => s"{$str}"
+        case Some(e) => {
           val includes = e map { _findIncludes } mkString (",\n")
           if (source.equals(n)) includes
           else s"{$str, include: [\n${includes}\n]}"
@@ -388,30 +459,40 @@ case class SequelizeTranslator(target: Target) extends Translator {
   def constructGroupBy(groupBy: Set[String]) =
     if (groupBy.isEmpty) ""
     else
-      "group: [" + (
-      groupBy map { x => getSeqFieldName(x, false) } mkString ", ") + "]"
+      "group: [" + (groupBy map { x =>
+        getSeqFieldName(x, false)
+      } mkString ", ") + "]"
 
   def selectMethod(s: State, first: Boolean) =
     if (first) ".findOne"
-    else s.aggrs match {
-      case Seq(FieldDecl(Count(None), _, _, _)) => ".count"
-      case _ => ".findAll"
-    }
+    else
+      s.aggrs match {
+        case Seq(FieldDecl(Count(None), _, _, _)) => ".count"
+        case _                                    => ".findAll"
+      }
 
   override def constructCombinedQuery(s: State) =
-    throw new UnsupportedException("Sequelize does not support combined queries")
+    throw new UnsupportedException(
+      "Sequelize does not support combined queries"
+    )
 
-  override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
-      limit: Option[Int]) = {
+  override def constructNaiveQuery(
+      s: State,
+      first: Boolean,
+      offset: Int,
+      limit: Option[Int]
+  ) = {
     s.distinct match {
-      case Some(x) => throw new UnsupportedException("distinct is not supported")
-      case None    => ()
+      case Some(x) =>
+        throw new UnsupportedException("distinct is not supported")
+      case None => ()
     }
     val fieldVals = s.fields.values
     val (aggrNHidden, nonAggrHidden) = TUtils.getAggrAndNonAggr(fieldVals)
     val method = selectMethod(s, first)
     // Coverts set of pairs to map of lists.
-    val joinMap = s.getJoinPairs().groupBy(_._1).map { case (k,v) => (k, v.map(_._2)) }
+    val joinMap =
+      s.getJoinPairs().groupBy(_._1).map { case (k, v) => (k, v.map(_._2)) }
     val qStr = importModels(joinMap, Set(s.source)) <<
       createAssociations(joinMap) <<
       constructFieldDecls(s, fieldVals ++ s.aggrs)
@@ -430,10 +511,12 @@ case class SequelizeTranslator(target: Target) extends Translator {
             case None        => ""
             case Some(limit) => s"limit: $limit"
           }
-        ) filter (x => x match {
-          case "" => false
-          case _  => true
-        }) mkString(",\n")
+        ) filter (x =>
+          x match {
+            case "" => false
+            case _  => true
+          }
+        ) mkString (",\n")
       ) << "\n})").!
     qStr >> QueryStr(Some("ret" + s.numGen.next()), Some(q))
   }

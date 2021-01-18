@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2020-2021 Thodoris Sotiropoulos, Stefanos Chaliasos
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -22,7 +22,6 @@ import cynthia.targets.Target
 import cynthia.lang._
 import cynthia.targets.MSSQL
 import cynthia.utils.{Utils, Str}
-
 
 case class PonyTranslator(target: Target) extends Translator {
   target.db match {
@@ -57,19 +56,23 @@ case class PonyTranslator(target: Target) extends Translator {
     |with db_session:
     |""".stripMargin
 
-
   def getPonyFieldName(field: String) =
     field.split('.').toList match {
       case Nil | _ :: Nil => field
-      case t              =>
-        t takeRight(2) map { x => x.toLowerCase } mkString "."
+      case t =>
+        t takeRight (2) map { x => x.toLowerCase } mkString "."
     }
 
   override def emitPrint(q: Query, dFields: Seq[String], ret: String) = {
-    def _dumpField(v: String, fields: Iterable[String], ident: String = "",
-      isAggr: Boolean = false) = {
-        val counter: Iterator[Int] = LazyList.from(0).iterator
-        fields map { as => {
+    def _dumpField(
+        v: String,
+        fields: Iterable[String],
+        ident: String = "",
+        isAggr: Boolean = false
+    ) = {
+      val counter: Iterator[Int] = LazyList.from(0).iterator
+      fields map { as =>
+        {
           if (isAggr) {
             val index = counter.next().toString
             s"${ident}dump($v[$index], '$as')"
@@ -83,11 +86,11 @@ case class PonyTranslator(target: Target) extends Translator {
             s"${ident}dump(getattr($v, '$as', getattr($v[0], '$as', None) if isinstance($v, tuple) else None), '$as')"
           }
         }
-        } mkString "\n"
-      }
+      } mkString "\n"
+    }
 
     q match {
-      case SetRes(_)  => {
+      case SetRes(_) => {
         val trimmedRet = ret.trim
         s"    for r in $trimmedRet:\n${_dumpField("r", dFields, ident = " " * 8)}"
       }
@@ -101,11 +104,12 @@ case class PonyTranslator(target: Target) extends Translator {
         s"    for r in $trimmedRet$subset:\n${_dumpField("r", dFields, ident = " " * 8)}"
       }
       case FirstRes(_) => _dumpField(ret, dFields, ident = " " * 4)
-      case AggrRes (aggrs, _) => {
+      case AggrRes(aggrs, _) => {
         val trimmedRet = ret.trim
         val counter: Iterator[Int] = LazyList.from(-1).iterator
         aggrs match {
-          case Seq(FieldDecl(Count(None), _, _, _)) => s"    dump($ret, 'count')"
+          case Seq(FieldDecl(Count(None), _, _, _)) =>
+            s"    dump($ret, 'count')"
           case _ => {
             val aggrF = TUtils.mapNonHiddenFields(aggrs, FieldDecl.as)
             _dumpField(ret.trim, aggrF, ident = " " * 4, true)
@@ -122,13 +126,14 @@ case class PonyTranslator(target: Target) extends Translator {
 
   def constructPrimAggr(fexpr: FieldExpr) = {
     val (field, op, isConstantField) = fexpr match {
-      case Count(None)        => ("", "count", false)
-      case Count(Some(field)) => (constructFieldExpr(field), "count", isConstant(field))
-      case Sum(field)         => (constructFieldExpr(field), "sum", isConstant(field))
-      case Avg(field)         => (constructFieldExpr(field), "avg", isConstant(field))
-      case Min(field)         => (constructFieldExpr(field), "min", isConstant(field))
-      case Max(field)         => (constructFieldExpr(field), "max", isConstant(field))
-      case _                  => ??? // Unreachable case
+      case Count(None) => ("", "count", false)
+      case Count(Some(field)) =>
+        (constructFieldExpr(field), "count", isConstant(field))
+      case Sum(field) => (constructFieldExpr(field), "sum", isConstant(field))
+      case Avg(field) => (constructFieldExpr(field), "avg", isConstant(field))
+      case Min(field) => (constructFieldExpr(field), "min", isConstant(field))
+      case Max(field) => (constructFieldExpr(field), "max", isConstant(field))
+      case _          => ??? // Unreachable case
     }
     val fieldString = if (isConstantField) "[" + field + "]" else field
     op + "(" + fieldString + ")"
@@ -142,7 +147,8 @@ case class PonyTranslator(target: Target) extends Translator {
       case Div(a1, a2) => (a1, a2, " / ")
       case _           => ??? // Unreachable case
     }
-    val str = Str("(") << constructFieldExpr(a1) << op << constructFieldExpr(a2) << ")"
+    val str =
+      Str("(") << constructFieldExpr(a1) << op << constructFieldExpr(a2) << ")"
     str.!
   }
 
@@ -150,7 +156,7 @@ case class PonyTranslator(target: Target) extends Translator {
     case F(f)                  => getPonyFieldName(f)
     case Constant(v, UnQuoted) => v
     case Constant(v, Quoted)   => s""""${v}""""
-    case _    =>
+    case _ =>
       if (!fexpr.compound) constructPrimAggr(fexpr)
       else constructCompoundAggr(fexpr)
   }
@@ -167,11 +173,19 @@ case class PonyTranslator(target: Target) extends Translator {
     case Lte(k, e) =>
       (Str(getPonyFieldName(k)) << " <= " << constructFieldExpr(e)).!
     case Contains(k, e) =>
-      (Str(constructFieldExpr(Constant(e, Quoted))) << " in " << getPonyFieldName(k)).!
+      (Str(
+        constructFieldExpr(Constant(e, Quoted))
+      ) << " in " << getPonyFieldName(k)).!
     case StartsWith(k, v) =>
-      (Str(getPonyFieldName(k)) << ".startswith(" << Utils.quoteStr(Utils.escapeStr(v), "\"") << ")").!
+      (Str(getPonyFieldName(k)) << ".startswith(" << Utils.quoteStr(
+        Utils.escapeStr(v),
+        "\""
+      ) << ")").!
     case EndsWith(k, v) =>
-      (Str(getPonyFieldName(k)) << ".endswith(" << Utils.quoteStr(Utils.escapeStr(v), "\"") << ")").!
+      (Str(getPonyFieldName(k)) << ".endswith(" << Utils.quoteStr(
+        Utils.escapeStr(v),
+        "\""
+      ) << ")").!
     case Not(pred) =>
       (Str("not (") << translatePred(pred) << ")").!
     case Or(p1, p2) =>
@@ -184,53 +198,61 @@ case class PonyTranslator(target: Target) extends Translator {
   // field declarations to their expressions.
   def constructPrimField(acc: ListMap[String, String], fexpr: FieldExpr) = {
     val (field, op, isConstantField) = fexpr match {
-      case Count(None)        =>
+      case Count(None) =>
         ("", "count", false)
       case Count(Some(field)) =>
         (constructField(acc, field), "count", isConstant(field))
-      case Sum(field)         =>
+      case Sum(field) =>
         (constructField(acc, field), "sum", isConstant(field))
-      case Avg(field)         =>
+      case Avg(field) =>
         (constructField(acc, field), "avg", isConstant(field))
-      case Min(field)         =>
+      case Min(field) =>
         (constructField(acc, field), "min", isConstant(field))
-      case Max(field)         =>
+      case Max(field) =>
         (constructField(acc, field), "max", isConstant(field))
-      case _                  => ??? // Unreachable case
+      case _ => ??? // Unreachable case
     }
     val fieldString = if (isConstantField) "[" + field + "]" else field
     op + "(" + fieldString + ")"
   }
 
-  def constructField(acc: ListMap[String, String], fexpr: FieldExpr): String = fexpr match {
-    case F(f) => acc.get(f) match {
-      case None     => getPonyFieldName(f)
-      case Some(s)  => s
+  def constructField(acc: ListMap[String, String], fexpr: FieldExpr): String =
+    fexpr match {
+      case F(f) =>
+        acc.get(f) match {
+          case None    => getPonyFieldName(f)
+          case Some(s) => s
+        }
+      case Constant(v, UnQuoted) => v
+      case Constant(v, Quoted)   => Utils.quoteStr(v, "\"")
+      case Add(e1, e2) =>
+        "(" + constructField(acc, e1) + "+" + constructField(acc, e2) + ")"
+      case Sub(e1, e2) =>
+        "(" + constructField(acc, e1) + "-" + constructField(acc, e2) + ")"
+      case Mul(e1, e2) =>
+        "(" + constructField(acc, e1) + "*" + constructField(acc, e2) + ")"
+      case Div(e1, e2) =>
+        "(" + constructField(acc, e1) + "/" + constructField(acc, e2) + ")"
+      case _ => constructPrimField(acc, fexpr)
     }
-    case Constant(v, UnQuoted) => v
-    case Constant(v, Quoted)   => Utils.quoteStr(v, "\"")
-    case Add(e1, e2) => "(" + constructField(acc, e1) + "+" + constructField(acc, e2) + ")"
-    case Sub(e1, e2) => "(" + constructField(acc, e1) + "-" + constructField(acc, e2) + ")"
-    case Mul(e1, e2) => "(" + constructField(acc, e1) + "*" + constructField(acc, e2) + ")"
-    case Div(e1, e2) => "(" + constructField(acc, e1) + "/" + constructField(acc, e2) + ")"
-    case _    => constructPrimField(acc, fexpr)
-  }
 
   def extractFields(fields: Map[String, FieldDecl]): ListMap[String, String] = {
     val counter: Iterator[Int] = LazyList.from(0).iterator
-    fields.foldLeft(ListMap[String, String]()) ({ (acc, x) =>
-        x._2 match {
-          case FieldDecl(e, as, _, _) =>
-            acc + (as -> (constructField(acc, e)))
-        }
-      })
+    fields.foldLeft(ListMap[String, String]())({ (acc, x) =>
+      x._2 match {
+        case FieldDecl(e, as, _, _) =>
+          acc + (as -> (constructField(acc, e)))
+      }
+    })
   }
 
   def constructSelectedItems(source: String) = {
     if (!nonHiddenFieldsMap.isEmpty) {
-      val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
-        acc :+ x._2
-      }} mkString ","
+      val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) =>
+        {
+          acc :+ x._2
+        }
+      } mkString ","
       items + "," + source.toLowerCase
     } else
       source.toLowerCase
@@ -247,42 +269,50 @@ case class PonyTranslator(target: Target) extends Translator {
     }
 
   def constructJoins(joins: Seq[Seq[String]]) = {
-    joins.foldLeft(Seq[String]()) { (acc, x) => {
-      val (_, Seq(s, t)) = x splitAt (x.size - 2)
-      val tLow = t.toLowerCase
-      val sLow = s.toLowerCase
-      acc :+ s"for ${tLow} in ${sLow}.${tLow}_id"
-    }} mkString " "
+    joins.foldLeft(Seq[String]()) { (acc, x) =>
+      {
+        val (_, Seq(s, t)) = x splitAt (x.size - 2)
+        val tLow = t.toLowerCase
+        val sLow = s.toLowerCase
+        acc :+ s"for ${tLow} in ${sLow}.${tLow}_id"
+      }
+    } mkString " "
   }
 
   // select, join, filter
-  def constructQueryPrefix(s: State, selectedItems: String, joins: String,
-    filter: String) = {
-      val (prefix, without) = s.distinct match {
-        case Some("") => ("distinct", "")
-        case Some(x)  => throw UnsupportedException("Distinct on is not supported by Pony")
-        case _        => ("select", ".without_distinct()")
+  def constructQueryPrefix(
+      s: State,
+      selectedItems: String,
+      joins: String,
+      filter: String
+  ) = {
+    val (prefix, without) = s.distinct match {
+      case Some("") => ("distinct", "")
+      case Some(x) =>
+        throw UnsupportedException("Distinct on is not supported by Pony")
+      case _ => ("select", ".without_distinct()")
+    }
+    s.query match {
+      case None => {
+        val qstr =
+          s"${prefix}((${selectedItems}) for ${s.source.toLowerCase} in ${s.source} ${joins} ${filter})${without}"
+        QueryStr(
+          Some("    ret" + s.numGen.next().toString),
+          Some(qstr)
+        )
       }
-      s.query match {
-        case None    => {
-          val qstr = s"${prefix}((${selectedItems}) for ${s.source.toLowerCase} in ${s.source} ${joins} ${filter})${without}"
-          QueryStr(
-            Some("    ret" + s.numGen.next().toString),
-            Some(qstr)
-          )
-        }
-        case Some(q) => q
-      }
+      case Some(q) => q
+    }
   }
 
   def constructOrderBy(s: State, selectedItems: String) = {
     def _getFieldExprOrFieldName(f: String) = fieldsMap.get(f) match {
-      case None     => getPonyFieldName(f)
-      case Some(s)  => s
+      case None    => getPonyFieldName(f)
+      case Some(s) => s
     }
     s.orders match {
       case Seq() => ""
-      case spec  => {
+      case spec => {
         (
           Str("order_by(lambda: (") << (
             spec map { x =>
@@ -302,18 +332,22 @@ case class PonyTranslator(target: Target) extends Translator {
     if (s.aggrs.nonEmpty) {
       val selectedItems =
         if (!nonHiddenFieldsMap.isEmpty) {
-          val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) => {
-            acc :+ x._1
-          }} mkString ","
+          val items = nonHiddenFieldsMap.foldLeft(Seq[String]()) { (acc, x) =>
+            {
+              acc :+ x._1
+            }
+          } mkString ","
           items + "," + s.source.toLowerCase
         } else
           s.source.toLowerCase
-      val aggrFields = s.aggrs.foldLeft(Map[String, FieldDecl]())  {
-        (acc,f) => acc + (f.as -> f)
+      val aggrFields = s.aggrs.foldLeft(Map[String, FieldDecl]()) { (acc, f) =>
+        acc + (f.as -> f)
       }
       val aggrItems = extractFields(aggrFields) map (_._2) mkString ","
-      QueryStr(Some("    ret" + s.numGen.next().toString),
-        Some(s"select(($aggrItems) for $selectedItems in $ret)"))
+      QueryStr(
+        Some("    ret" + s.numGen.next().toString),
+        Some(s"select(($aggrItems) for $selectedItems in $ret)")
+      )
     } else
       QueryStr(Some("    ret" + s.numGen.next().toString), Some(ret))
   }
@@ -325,13 +359,20 @@ case class PonyTranslator(target: Target) extends Translator {
   override def constructCombinedQuery(s: State) =
     throw new UnsupportedException("unions are not supported in Pony")
 
-  override def constructNaiveQuery(s: State, first: Boolean, offset: Int,
-      limit: Option[Int]) = {
+  override def constructNaiveQuery(
+      s: State,
+      first: Boolean,
+      offset: Int,
+      limit: Option[Int]
+  ) = {
     def _filterNonHiddenFieldDecls(i: String) =
       !FieldDecl.hidden(s.fields.get(i).get)
     fieldsMap = extractFields(s.fields)
-    nonHiddenFieldsMap = (fieldsMap.view filterKeys _filterNonHiddenFieldDecls).toMap
-    val orderedJoins = s.joins.toSet.toSeq.sortWith { (x, y) => x.size < y.size }
+    nonHiddenFieldsMap =
+      (fieldsMap.view filterKeys _filterNonHiddenFieldDecls).toMap
+    val orderedJoins = s.joins.toSet.toSeq.sortWith { (x, y) =>
+      x.size < y.size
+    }
     val selectedItems = constructSelectedItems(s.source)
     val joins = constructJoins(orderedJoins)
     val (aggrP, nonAggrP) = s.preds partition { _.hasAggregate(s.fields) }
@@ -342,32 +383,34 @@ case class PonyTranslator(target: Target) extends Translator {
     // distinctQstr distinct or without_distinct
     // lastQstr first
     val mainQstr = constructQueryPrefix(s, selectedItems, joins, filter)
-    val bodyQstr = QueryStr(Some("    ret" + s.numGen.next().toString),
+    val bodyQstr = QueryStr(
+      Some("    ret" + s.numGen.next().toString),
       Some(
         Seq(
           mainQstr.ret.get.trim,
-          constructOrderBy(s, selectedItems),
+          constructOrderBy(s, selectedItems)
         ) filter {
           case "" => false
           case _  => true
-        }  mkString(".")
+        } mkString (".")
       )
     )
     val aggrsQstr = constructAggrs(s, bodyQstr)
-    val lastQstr = QueryStr(Some("    ret" + s.numGen.next().toString),
+    val lastQstr = QueryStr(
+      Some("    ret" + s.numGen.next().toString),
       Some(
         Seq(
           aggrsQstr.ret.get.trim,
           s.aggrs match {
-            case Seq() => ""
+            case Seq()                                => ""
             case Seq(FieldDecl(Count(None), _, _, _)) => "count()"
-            case _ => "first()"
+            case _                                    => "first()"
           },
-          constructFirst(first),
+          constructFirst(first)
         ) filter {
           case "" => false
           case _  => true
-        }  mkString(".")
+        } mkString (".")
       )
     )
     mainQstr >> bodyQstr >> aggrsQstr >> lastQstr

@@ -5,7 +5,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import cynthia.utils.Utils
 
-
 class UtilsTest extends AnyFunSuite {
   val cwd = Paths.get(".").normalize().toAbsolutePath.toString
   val sep = File.separator
@@ -23,26 +22,32 @@ class UtilsTest extends AnyFunSuite {
   test("check DB dir") {
     assert(Utils.getDBDir() == cwd + sep + Utils.cwdDir + sep + Utils.dbDir)
   }
-  
+
   test("check project dir") {
-    assert(Utils.getProjectDir() == cwd + sep + Utils.cwdDir
-      + sep + Utils.projectDir)
+    assert(
+      Utils.getProjectDir() == cwd + sep + Utils.cwdDir
+        + sep + Utils.projectDir
+    )
   }
 
   test("check schema dir") {
-    assert(Utils.getSchemaDir() == cwd + sep + Utils.cwdDir
-      + sep + Utils.schemaDir)
+    assert(
+      Utils.getSchemaDir() == cwd + sep + Utils.cwdDir
+        + sep + Utils.schemaDir
+    )
   }
 
   test("check session dir") {
-    assert(Utils.getSessionDir() == cwd + sep + Utils.cwdDir 
-      + sep + Utils.sessionDir)
+    assert(
+      Utils.getSessionDir() == cwd + sep + Utils.cwdDir
+        + sep + Utils.sessionDir
+    )
   }
 
   test("merging two maps with different keys") {
     val m1 = Map(
       "k1" -> Set("1", "2"),
-      "k2" -> Set("1") 
+      "k2" -> Set("1")
     )
     val m2 = Map(
       "k3" -> Set[String](),
@@ -50,7 +55,7 @@ class UtilsTest extends AnyFunSuite {
     )
     val expected = Map(
       "k1" -> Set("1", "2"),
-      "k2" -> Set("1"), 
+      "k2" -> Set("1"),
       "k3" -> Set[String](),
       "k4" -> Set("f")
     )
@@ -62,11 +67,11 @@ class UtilsTest extends AnyFunSuite {
     val m1 = Map[String, Set[String]]()
     val m2 = Map(
       "k1" -> Set("1", "2"),
-      "k2" -> Set("1") 
+      "k2" -> Set("1")
     )
     val expected = Map(
       "k1" -> Set("1", "2"),
-      "k2" -> Set("1"), 
+      "k2" -> Set("1")
     )
     val m3 = Utils.mergeMap(m1, m2)
     assert(m3 == expected)
@@ -75,14 +80,14 @@ class UtilsTest extends AnyFunSuite {
   test("merging two maps whose keys overlap") {
     val m1 = Map(
       "k1" -> Set("1", "2"),
-      "k2" -> Set("1") 
+      "k2" -> Set("1")
     )
     val m2 = Map(
-      "k2" -> Set[String]("2"),
+      "k2" -> Set[String]("2")
     )
     val expected = Map(
       "k1" -> Set("1", "2"),
-      "k2" -> Set("1", "2"), 
+      "k2" -> Set("1", "2")
     )
     val m3 = Utils.mergeMap(m1, m2)
     assert(m3 == expected)

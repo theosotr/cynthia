@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2020-2021 Thodoris Sotiropoulos, Stefanos Chaliasos
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
@@ -21,14 +21,13 @@ import scala.io.Source
 
 import cynthia.utils.Utils
 
-
 sealed trait DB {
   val defaultDbs: Set[String]
   def getURI(): String
   def getName(): String
 }
 
-case class Postgres (user: String, password: String, dbname: String) extends DB {
+case class Postgres(user: String, password: String, dbname: String) extends DB {
   val defaultDbs = Set(
     "postgres",
     "template0",
@@ -43,7 +42,7 @@ case class Postgres (user: String, password: String, dbname: String) extends DB 
     "postgres"
 }
 
-case class MySQL (user: String, password: String, dbname: String) extends DB {
+case class MySQL(user: String, password: String, dbname: String) extends DB {
   val defaultDbs = Set(
     "mysql",
     "information_schema",
@@ -59,7 +58,7 @@ case class MySQL (user: String, password: String, dbname: String) extends DB {
     "mysql"
 }
 
-case class SQLite (dbname: String) extends DB {
+case class SQLite(dbname: String) extends DB {
   val defaultDbs = Set()
 
   // We use this function in SQLAlchemy translator
@@ -70,7 +69,8 @@ case class SQLite (dbname: String) extends DB {
     "sqlite"
 }
 
-case class Cockroachdb (user: String, password: String, dbname: String) extends DB {
+case class Cockroachdb(user: String, password: String, dbname: String)
+    extends DB {
   val defaultDbs = Set(
     "defaultdb",
     "system",
@@ -85,7 +85,7 @@ case class Cockroachdb (user: String, password: String, dbname: String) extends 
     "cockroachdb"
 }
 
-case class MSSQL (user: String, password: String, dbname: String) extends DB {
+case class MSSQL(user: String, password: String, dbname: String) extends DB {
   val defaultDbs = Set(
     "master",
     "tempdb",
@@ -109,16 +109,16 @@ object DBSetup {
   def getHost(db: DB) = db match {
     case Postgres(user, password, dbname) =>
       "jdbc:postgresql://localhost:5432/" + dbname +
-          "?user=" + user + "&password=" + password
+        "?user=" + user + "&password=" + password
     case MySQL(user, password, dbname) =>
       "jdbc:mysql://localhost:3306/" + dbname +
-          "?user=" + user + "&password=" + password
+        "?user=" + user + "&password=" + password
     case Cockroachdb(user, _, dbname) =>
       "jdbc:postgresql://localhost:26257/" + dbname +
-          "?user=" + user
-    case MSSQL (user, password, dbname) =>
+        "?user=" + user
+    case MSSQL(user, password, dbname) =>
       "jdbc:sqlserver://localhost:1434;database=" + dbname +
-          ";user=" + user + ";password=" + password + ";"
+        ";user=" + user + ";password=" + password + ";"
     case SQLite(dbname) => "jdbc:sqlite:" + dbname
   }
 
@@ -150,8 +150,8 @@ object DBSetup {
         WHERE datistemplate = false;
         """
       case MySQL(_, _, _) | Cockroachdb(_, _, _) => "show databases;"
-      case MSSQL(_, _, _) => "select name from sys.databases"
-      case SQLite(_) => ??? // Unreachable case
+      case MSSQL(_, _, _)                        => "select name from sys.databases"
+      case SQLite(_)                             => ??? // Unreachable case
     }
     val stmt = dbcon.createStatement
     val rs = stmt.executeQuery(query)
@@ -162,13 +162,14 @@ object DBSetup {
     case SQLite(_) =>
       Utils.listFiles(Utils.getDBDir(), ext = "") match {
         case Some(files) => files foreach Utils.emptyFile
-        case None => ()
+        case None        => ()
       }
     case _ => {
       val stmt = dbcon.createStatement
       dbcon.setAutoCommit(true)
       getDatabases(db, dbcon) filter (x =>
-          !db.defaultDbs.contains(x) && x.startsWith("cynthia_")) foreach { x =>
+        !db.defaultDbs.contains(x) && x.startsWith("cynthia_")
+      ) foreach { x =>
         stmt.addBatch("DROP DATABASE IF EXISTS " + x)
       }
       stmt.executeBatch
@@ -190,10 +191,11 @@ object DBSetup {
           // Then, we construct ALTER TABLE XX NOCHECK CONSTRAINT ALL;
           // These statements are used to disable foreign key constraints.
           // We apply these statements before data insertion.
-          val source = Source.fromFile(schema).mkString.replaceAll(
-            pattern, "[$1]")
-          val stmts = (tableNameRegex.findAllIn(
-              source).matchData map { _.group(1) }).toSet map { x: String =>
+          val source =
+            Source.fromFile(schema).mkString.replaceAll(pattern, "[$1]")
+          val stmts = (tableNameRegex.findAllIn(source).matchData map {
+            _.group(1)
+          }).toSet map { x: String =>
             "ALTER TABLE [" + x + "] NOCHECK CONSTRAINT ALL;"
           }
           (stmts mkString "\n") + "\n" + source
@@ -205,7 +207,8 @@ object DBSetup {
             Source.fromFile(schema).mkString
         case _ => Source.fromFile(schema).mkString
       }
-      sql.replace("\n", "")
+      sql
+        .replace("\n", "")
         .split(";")
         .foreach { stmt.addBatch }
       stmt.executeBatch
@@ -217,7 +220,8 @@ object DBSetup {
       case Postgres(_, _, _) =>
         if (dbcon != null) {
           val preStmt = dbcon.prepareStatement(
-            "SELECT datname FROM pg_catalog.pg_database WHERE datname = ?")
+            "SELECT datname FROM pg_catalog.pg_database WHERE datname = ?"
+          )
           preStmt.setString(1, dbname.toLowerCase)
           if (!preStmt.executeQuery().next()) {
             val stmt = dbcon.createStatement()
@@ -227,7 +231,8 @@ object DBSetup {
       case MSSQL(_, _, _) =>
         if (dbcon != null) {
           val preStmt = dbcon.prepareStatement(
-            "SELECT name FROM sys.databases WHERE name = ?")
+            "SELECT name FROM sys.databases WHERE name = ?"
+          )
           preStmt.setString(1, dbname.toLowerCase)
           if (!preStmt.executeQuery().next()) {
             val stmt = dbcon.createStatement()

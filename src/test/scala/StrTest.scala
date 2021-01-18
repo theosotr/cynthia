@@ -9,4 +9,4 @@ class StrTest extends AnyFunSuite {
     val appendedStr = str << "bar"
     assert(appendedStr.toString == "foobar")
   }
-} 
+}

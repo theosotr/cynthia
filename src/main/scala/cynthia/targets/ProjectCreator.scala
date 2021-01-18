@@ -1,55 +1,55 @@
 /*
  * Copyright (c) 2020-2021 Thodoris Sotiropoulos, Stefanos Chaliasos
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package cynthia.targets
 
-
 import cynthia.utils.Utils
-
 
 object ProjectCreator {
 
   def createProject(orm: ORM, dbs: Seq[DB]) = dbs match {
     case Seq() => ()
-    case _     => {
+    case _ => {
       setupProject(orm, dbs)
       createModels(orm, dbs)
     }
   }
 
   def setupProject(orm: ORM, dbs: Seq[DB]) = orm match {
-    case Django(_, _, _)     => createDjangoProject(orm, dbs)
-    case SQLAlchemy(_, _)    => createSQLAlchemyProject(orm, dbs)
-    case Sequelize(_, _)     => createSequelizeProject(orm, dbs)
-    case Peewee(_, _)        => createPeeweeProject(orm, dbs)
-    case ActiveRecord(_, _)  => createActiveRecordProject(orm, dbs)
-    case Pony(_, _)          => createPonyProject(orm, dbs)
+    case Django(_, _, _)    => createDjangoProject(orm, dbs)
+    case SQLAlchemy(_, _)   => createSQLAlchemyProject(orm, dbs)
+    case Sequelize(_, _)    => createSequelizeProject(orm, dbs)
+    case Peewee(_, _)       => createPeeweeProject(orm, dbs)
+    case ActiveRecord(_, _) => createActiveRecordProject(orm, dbs)
+    case Pony(_, _)         => createPonyProject(orm, dbs)
   }
 
   def createModels(orm: ORM, dbs: Seq[DB]) = orm match {
     case Django(_, pdir, _) => {
       val models = Utils.runCmd("python3 manage.py inspectdb", Some(pdir))
       val models2 = models.replaceAll(
-        "id = models.AutoField\\(", "id = models.AutoField\\(primary_key=True,")
+        "id = models.AutoField\\(",
+        "id = models.AutoField\\(primary_key=True,"
+      )
       Utils.writeToFile(orm.getModelsPath(), models2)
     }
     case SQLAlchemy(_, pdir) => {
       // Use the first element of the db sequence.
-      val models = Utils.runCmd("sqlacodegen --noinflect " + dbs(0).getURI(),
-                                None)
+      val models =
+        Utils.runCmd("sqlacodegen --noinflect " + dbs(0).getURI(), None)
       Utils.writeToFile(orm.getModelsPath(), models)
     }
     case Peewee(_, pdir) => {
@@ -57,8 +57,9 @@ object ProjectCreator {
       // Generate a models.py file for each backend.
       dbs filter {
         case MSSQL(_, _, _) => false
-        case _         => true
-      } foreach { db => {
+        case _              => true
+      } foreach { db =>
+        {
           val cmd = db match {
             case Postgres(user, password, dbname) =>
               s" -e postgres -u $user -H localhost $dbname -P $password"
@@ -74,7 +75,8 @@ object ProjectCreator {
           val models = Utils.runCmd(bcmd + cmd, None)
           Utils.writeToFile(
             orm.getModelsPath().replace(".py", "_" + db.getName() + ".py"),
-            models)
+            models
+          )
         }
       }
     }
@@ -83,35 +85,75 @@ object ProjectCreator {
       val cmd = dbs(0) match {
         case Postgres(user, password, dbname) =>
           Seq(
-            bcmd, "-a", "postgresql",
-            "-d", dbname, "-u", user, "-p", password,
-            "-o", orm.getModelsPath()
+            bcmd,
+            "-a",
+            "postgresql",
+            "-d",
+            dbname,
+            "-u",
+            user,
+            "-p",
+            password,
+            "-o",
+            orm.getModelsPath()
           ).mkString(" ")
         case MySQL(user, password, dbname) =>
           Seq(
-            bcmd, "-a", "mysql2",
-            "-d", dbname.toLowerCase, "-u", user, "-p", password,
-            "-o", orm.getModelsPath()
+            bcmd,
+            "-a",
+            "mysql2",
+            "-d",
+            dbname.toLowerCase,
+            "-u",
+            user,
+            "-p",
+            password,
+            "-o",
+            orm.getModelsPath()
           ).mkString(" ")
         case SQLite(dbname) =>
           Seq(
-            bcmd, "-a", "postgresql",
-            "-d", dbname.split("/").last.toLowerCase,
-            "-u", "orm_testing", "-p", "orm_testing",
-            "-o", orm.getModelsPath()
+            bcmd,
+            "-a",
+            "postgresql",
+            "-d",
+            dbname.split("/").last.toLowerCase,
+            "-u",
+            "orm_testing",
+            "-p",
+            "orm_testing",
+            "-o",
+            orm.getModelsPath()
           ).mkString(" ")
         case Cockroachdb(user, password, dbname) =>
           Seq(
-            bcmd, "-a", "postgresql",
-            "-s", "localhost", "--port", "26257",
-            "-d", dbname, "-u", user,
-            "-o", orm.getModelsPath()
+            bcmd,
+            "-a",
+            "postgresql",
+            "-s",
+            "localhost",
+            "--port",
+            "26257",
+            "-d",
+            dbname,
+            "-u",
+            user,
+            "-o",
+            orm.getModelsPath()
           ).mkString(" ")
         case MSSQL(user, _, dbname) =>
           Seq(
-            bcmd, "-a", "postgresql",
-            "-d", dbname, "-u", user, "-p", "orm_testing",
-            "-o", orm.getModelsPath()
+            bcmd,
+            "-a",
+            "postgresql",
+            "-d",
+            dbname,
+            "-u",
+            user,
+            "-p",
+            "orm_testing",
+            "-o",
+            orm.getModelsPath()
           ).mkString(" ")
       }
       Utils.runCmd(cmd, None)
@@ -122,38 +164,79 @@ object ProjectCreator {
       val cmd = db match {
         case Postgres(user, password, dbname) =>
           Seq(
-            bcmd, "-h", "localhost",
-            "-u", user, "-x", password, "-d",
-            dbname, "--dialect", db.getName(),
-            "-o", pdir
+            bcmd,
+            "-h",
+            "localhost",
+            "-u",
+            user,
+            "-x",
+            password,
+            "-d",
+            dbname,
+            "--dialect",
+            db.getName(),
+            "-o",
+            pdir
           ).mkString(" ")
         case MySQL(user, password, dbname) =>
           Seq(
-            bcmd, "-h", "localhost",
-            "-u", user, "-x", password, "-d",
-            dbname, "--dialect", db.getName(),
-            "-o", pdir
+            bcmd,
+            "-h",
+            "localhost",
+            "-u",
+            user,
+            "-x",
+            password,
+            "-d",
+            dbname,
+            "--dialect",
+            db.getName(),
+            "-o",
+            pdir
           ).mkString(" ")
         case SQLite(dbname) =>
           Seq(
-            bcmd, "-h", "localhost",
-            "-u", "foo", "-d",
-            dbname, "--dialect", db.getName(),
-            "-o", pdir
+            bcmd,
+            "-h",
+            "localhost",
+            "-u",
+            "foo",
+            "-d",
+            dbname,
+            "--dialect",
+            db.getName(),
+            "-o",
+            pdir
           ).mkString(" ")
         case Cockroachdb(user, password, dbname) =>
           Seq(
-            bcmd, "-h", "localhost", "-p", "26257",
-            "-u", user, "-d", dbname,
-            "--dialect", db.getName(),
-            "-o", pdir
+            bcmd,
+            "-h",
+            "localhost",
+            "-p",
+            "26257",
+            "-u",
+            user,
+            "-d",
+            dbname,
+            "--dialect",
+            db.getName(),
+            "-o",
+            pdir
           ).mkString(" ")
         case MSSQL(user, password, dbname) =>
           Seq(
-            bcmd, "-h", "localhost",
-            "-u", "foo", "-d",
-            dbname, "--dialect", db.getName(),
-            "-o", pdir
+            bcmd,
+            "-h",
+            "localhost",
+            "-u",
+            "foo",
+            "-d",
+            dbname,
+            "--dialect",
+            db.getName(),
+            "-o",
+            pdir
           ).mkString(" ")
       }
       Utils.runCmd(cmd, None)
@@ -163,8 +246,9 @@ object ProjectCreator {
       // Generate a models.py file for each backend.
       dbs filter {
         case MSSQL(_, _, _) => false
-        case _         => true
-      } foreach { db => {
+        case _              => true
+      } foreach { db =>
+        {
           val cmd = db match {
             case Postgres(user, password, dbname) =>
               s" -e postgres -u $user -H localhost $dbname -P $password"
@@ -180,7 +264,8 @@ object ProjectCreator {
           val models = Utils.runCmd(bcmd + cmd, None)
           Utils.writeToFile(
             orm.getModelsPath().replace(".py", "_" + db.getName() + ".py"),
-            models)
+            models
+          )
         }
       }
     }
@@ -211,7 +296,7 @@ object ProjectCreator {
 
   def createPonyProject(orm: ORM, dbs: Seq[DB]) = orm match {
     case Pony(_, pdir) => Utils.emptyFile(pdir)
-    case _               => ()
+    case _             => ()
   }
 
   def createDjangoProject(orm: ORM, dbs: Seq[DB]) = orm match {
@@ -219,7 +304,8 @@ object ProjectCreator {
       Utils.emptyFile(pdir)
       Utils.runCmd("django-admin startproject djangoproject " + pdir, None)
       Utils.runCmd("python3 manage.py startapp " + name, Some(pdir))
-      val dbsettings = dbs.foldLeft("DATABASES = {\n") { (acc, db) => db match {
+      val dbsettings = dbs.foldLeft("DATABASES = {\n") { (acc, db) =>
+        db match {
           case Postgres(user, password, dbname) =>
             acc + "'postgres': {\n" +
               Map(
@@ -230,7 +316,7 @@ object ProjectCreator {
                 "'PORT'" -> "5432",
                 "'ENGINE'" -> "'django.db.backends.postgresql'"
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
-            "},"
+              "},"
           case MySQL(user, password, dbname) =>
             acc + "'mysql': {" +
               Map(
@@ -241,7 +327,7 @@ object ProjectCreator {
                 "'PORT'" -> "3306",
                 "'ENGINE'" -> "'django.db.backends.mysql'"
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
-            "},"
+              "},"
           case MSSQL(user, password, dbname) =>
             acc + "'mssql': {" +
               Map(
@@ -252,7 +338,7 @@ object ProjectCreator {
                 "'ENGINE'" -> "'sql_server.pyodbc'",
                 "'OPTIONS'" -> "{'driver': 'ODBC Driver 17 for SQL Server',}"
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
-            "},"
+              "},"
           case Cockroachdb(user, password, dbname) =>
             acc + "'cockroachdb': {" +
               Map(
@@ -263,9 +349,9 @@ object ProjectCreator {
                 "'PORT'" -> "26257",
                 "'ENGINE'" -> "'django_cockroachdb'"
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
-            "},"
+              "},"
           case SQLite(dbname) =>
-            acc +"'default': {" +
+            acc + "'default': {" +
               Map(
                 "'NAME'" -> ("'" + dbname + "'"),
                 "'HOST'" -> "''",
@@ -274,7 +360,7 @@ object ProjectCreator {
                 "'PORT'" -> "''",
                 "'ENGINE'" -> "'django.db.backends.sqlite3'"
               ).map(_.productIterator.mkString(":")).mkString(",\n") +
-            "},"
+              "},"
         }
       } + "}\n" + "INSTALLED_APPS += ['" + name + "']"
       Utils.appendToFile(orm.getSettingsPath(), dbsettings)

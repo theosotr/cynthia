@@ -1,25 +1,23 @@
 /*
  * Copyright (c) 2020-2021 Thodoris Sotiropoulos, Stefanos Chaliasos
  *
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package cynthia.lang
 
-
 final case class InvalidQuery(private val message: String)
-extends Exception(message)
-
+    extends Exception(message)
 
 case object QueryInterpreter {
 
@@ -36,53 +34,72 @@ case object QueryInterpreter {
   }
 
   def getConstants(fields: Seq[FieldDecl], store: Map[String, FieldDecl]) = {
-    def _getConstants(acc: Set[String], e: FieldExpr, as: String): Set[String] = e match {
-      case Constant(_, _) => acc + as
-      case F(f) => store get f match {
-        case None => acc
-        case Some(FieldDecl(e, _, _, _)) => _getConstants(acc, e, as)
+    def _getConstants(acc: Set[String], e: FieldExpr, as: String): Set[String] =
+      e match {
+        case Constant(_, _) => acc + as
+        case F(f) =>
+          store get f match {
+            case None                        => acc
+            case Some(FieldDecl(e, _, _, _)) => _getConstants(acc, e, as)
+          }
+        case _ => acc
       }
-      case _ => acc
-    }
-    (fields filter { !FieldDecl.hidden(_) }).foldLeft(Set[String]()) { (acc, x) =>
-      x match { case FieldDecl(e, as, _, _) => _getConstants(acc, e, as) }
+    (fields filter { !FieldDecl.hidden(_) }).foldLeft(Set[String]()) {
+      (acc, x) =>
+        x match { case FieldDecl(e, as, _, _) => _getConstants(acc, e, as) }
     }
   }
 
   def getAggregate(fields: Seq[FieldDecl], store: Map[String, FieldExpr]) = {
-    def _getAggregate(acc: Set[String], e: FieldExpr, as: String): Set[String] = e match {
-      case Constant(_, _) => acc
-      case Count(_) | Sum(_) | Avg(_) | Max(_) | Min(_) => acc + as
-      case F(f) => store get f match {
-        case None    => acc
-        case Some(e) => _getAggregate(acc, e, as)
+    def _getAggregate(acc: Set[String], e: FieldExpr, as: String): Set[String] =
+      e match {
+        case Constant(_, _)                               => acc
+        case Count(_) | Sum(_) | Avg(_) | Max(_) | Min(_) => acc + as
+        case F(f) =>
+          store get f match {
+            case None    => acc
+            case Some(e) => _getAggregate(acc, e, as)
+          }
+        case Add(e1, e2) =>
+          _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
+        case Sub(e1, e2) =>
+          _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
+        case Mul(e1, e2) =>
+          _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
+        case Div(e1, e2) =>
+          _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
       }
-      case Add(e1, e2) => _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
-      case Sub(e1, e2) => _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
-      case Mul(e1, e2) => _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
-      case Div(e1, e2) => _getAggregate(acc, e1, as) ++ _getAggregate(acc, e2, as)
-    }
-    (fields filter { !FieldDecl.hidden(_) }).foldLeft(Set[String]()) { (acc, x) =>
-      x match { case FieldDecl(e, as, _, _) => _getAggregate(acc, e, as) }
+    (fields filter { !FieldDecl.hidden(_) }).foldLeft(Set[String]()) {
+      (acc, x) =>
+        x match { case FieldDecl(e, as, _, _) => _getAggregate(acc, e, as) }
     }
   }
 
-  def groupFields(s: State, fields: Seq[FieldDecl]): (Set[String], Set[String]) = {
+  def groupFields(
+      s: State,
+      fields: Seq[FieldDecl]
+  ): (Set[String], Set[String]) = {
     val init = (
       Set[String](),
       Map[String, (FieldExpr, Boolean)]()
     )
     //  Compute a map of field names to their corresponding expression
     //  and an the initial sets of grouping fields.
-    val (groupBy, store) = fields.foldLeft(init) { (acc, x) => {
-      val (g, s) = acc
-      x match {
-        case FieldDecl(e, as, _, false) =>
-          (if (!e.isAggregate()) g + as else g, s + (as -> (e, false)))
-        case FieldDecl(e, as, _, true) => (g, s + (as -> (e, true)))
+    val (groupBy, store) = fields.foldLeft(init) { (acc, x) =>
+      {
+        val (g, s) = acc
+        x match {
+          case FieldDecl(e, as, _, false) =>
+            (if (!e.isAggregate()) g + as else g, s + (as -> (e, false)))
+          case FieldDecl(e, as, _, true) => (g, s + (as -> (e, true)))
+        }
       }
-    }}
-    def _handleComplexExpr(e: FieldExpr, as: String, g: Set[String]): Set[String] = {
+    }
+    def _handleComplexExpr(
+        e: FieldExpr,
+        as: String,
+        g: Set[String]
+    ): Set[String] = {
       val (e1, e2) = e match {
         case Add(e1, e2) => (e1, e2)
         case Sub(e1, e2) => (e1, e2)
@@ -91,35 +108,32 @@ case object QueryInterpreter {
         case _           => ???
       }
       if (e1.isNaiveAggregate()) _computeGroupBy(e2, as, g)
-      else if(e2.isNaiveAggregate()) _computeGroupBy(e1, as, g)
+      else if (e2.isNaiveAggregate()) _computeGroupBy(e1, as, g)
       else _computeGroupBy(e2, as, _computeGroupBy(e1, as, g))
     }
-    def _computeGroupBy(e: FieldExpr, as: String, g: Set[String]): Set[String] = e match {
-      case F(f) =>
-        store get f match {
-          case None         => g + f // the field is native
-          case Some((e, h)) => {
-            val g2 =
-              if (e.isAggregate())
-                if (h) g - as else (g - as) - f
-              else
-                if (h) g else g + f
-            _computeGroupBy(e, as, g2)
+    def _computeGroupBy(e: FieldExpr, as: String, g: Set[String]): Set[String] =
+      e match {
+        case F(f) =>
+          store get f match {
+            case None => g + f // the field is native
+            case Some((e, h)) => {
+              val g2 =
+                if (e.isAggregate())
+                  if (h) g - as else (g - as) - f
+                else if (h) g
+                else g + f
+              _computeGroupBy(e, as, g2)
+            }
           }
-        }
-      case Constant(_, _) |
-        Count(_) |
-        Sum(_) |
-        Avg(_) |
-        Max(_) |
-        Min(_) => g
-      case _   => _handleComplexExpr(e, as, g)
-    }
+        case Constant(_, _) | Count(_) | Sum(_) | Avg(_) | Max(_) | Min(_) => g
+        case _                                                             => _handleComplexExpr(e, as, g)
+      }
     // Compute all fields that must be included in the GROUP BY clause.
     // Examine recursively the fields that are not hidden.
     val groupedF = (fields filter { !FieldDecl.hidden(_) }).foldLeft(groupBy) {
-      (s, f) => { f match { case FieldDecl(e, as, _, h) => _computeGroupBy(e, as, s) }
-    }}
+      (s, f) =>
+        { f match { case FieldDecl(e, as, _, h) => _computeGroupBy(e, as, s) } }
+    }
     // Check if fields contain aggregate functions.
     val aggrF = getAggregate(fields, store map { case (k, v) => (k, v._1) })
     if (aggrF.isEmpty) (Set(), aggrF)
@@ -136,29 +150,37 @@ case object QueryInterpreter {
       case _ => s
     }
 
-  def traverseFieldExpr(s: State, e: FieldExpr,
-      updateGroup: Boolean = true): State = e match {
+  def traverseFieldExpr(
+      s: State,
+      e: FieldExpr,
+      updateGroup: Boolean = true
+  ): State = e match {
     case Constant(_, _) => s
-    case F(f) => s.fields get f match {
-      case None =>
-        if (updateGroup) setJoinAndGroup(f, s)
-        else updateJoins(f, s)
-      case Some(FieldDecl(e2, _, _, _)) => traverseFieldExpr(s, e2, false)
-    }
-    case Count(None) => s
+    case F(f) =>
+      s.fields get f match {
+        case None =>
+          if (updateGroup) setJoinAndGroup(f, s)
+          else updateJoins(f, s)
+        case Some(FieldDecl(e2, _, _, _)) => traverseFieldExpr(s, e2, false)
+      }
+    case Count(None)     => s
     case Count(Some(e2)) => traverseFieldExpr(s, e2, false)
-    case Sum(e2) => traverseFieldExpr(s, e2, false)
-    case Avg(e2) => traverseFieldExpr(s, e2, false)
-    case Max(e2) => traverseFieldExpr(s, e2, false)
-    case Min(e2) => traverseFieldExpr(s, e2, false)
-    case Add(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
-    case Sub(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
-    case Mul(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
-    case Div(e1, e2) => traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
+    case Sum(e2)         => traverseFieldExpr(s, e2, false)
+    case Avg(e2)         => traverseFieldExpr(s, e2, false)
+    case Max(e2)         => traverseFieldExpr(s, e2, false)
+    case Min(e2)         => traverseFieldExpr(s, e2, false)
+    case Add(e1, e2) =>
+      traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
+    case Sub(e1, e2) =>
+      traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
+    case Mul(e1, e2) =>
+      traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
+    case Div(e1, e2) =>
+      traverseFieldExpr(traverseFieldExpr(s, e1, updateGroup), e2, updateGroup)
   }
 
   def traverseDeclaredFields(s: State, fields: Seq[FieldDecl]): State =
-    (fields filter { !FieldDecl.hidden(_) } map FieldDecl.expr).foldLeft (s) {
+    (fields filter { !FieldDecl.hidden(_) } map FieldDecl.expr).foldLeft(s) {
       (acc, e) => traverseFieldExpr(acc, e)
     }
 
@@ -177,7 +199,7 @@ case object QueryInterpreter {
   }
 
   def traverseSortedFields(s: State, fields: Seq[String]): State =
-    fields.foldLeft (s) { (acc, x) => setJoinAndGroup(x, acc) }
+    fields.foldLeft(s) { (acc, x) => setJoinAndGroup(x, acc) }
 
   def interpretQuerySet(s: State, qs: QuerySet): State = qs match {
     case New(m, f) => { // Add source and fields to state
@@ -206,33 +228,41 @@ case object QueryInterpreter {
       val idField = s1.source + ".id"
       val spec2 =
         if (s1.combined) spec
-        else
-          if (spec exists { x =>
-            x._1.equals(idField) || x._1.equals("_default") }) spec
-          else spec :+ (idField, Desc)
-      val s2 = if (!s1.nonAggrF.isEmpty) s1 addGroupF (s1.source + ".id") else s1
-      spec2.foldLeft(s2) { (s, x) => {
-        // If this field is a constant, we do not add to the set of the sorted
-        // fields.
-        val s3 = if (s.constantF.contains(x._1)) s else s order x
-        val (f, _) = x
-        s3.fields get f match {
-          // the field is native so add it to grouping fields
-          case None => if (!s3.aggrF.isEmpty) s3 addGroupF f else s3
-          // we have already examined this field because is declared.
-          case _    => s3
+        else if (
+          spec exists { x =>
+            x._1.equals(idField) || x._1.equals("_default")
+          }
+        ) spec
+        else spec :+ (idField, Desc)
+      val s2 =
+        if (!s1.nonAggrF.isEmpty) s1 addGroupF (s1.source + ".id") else s1
+      spec2.foldLeft(s2) { (s, x) =>
+        {
+          // If this field is a constant, we do not add to the set of the sorted
+          // fields.
+          val s3 = if (s.constantF.contains(x._1)) s else s order x
+          val (f, _) = x
+          s3.fields get f match {
+            // the field is native so add it to grouping fields
+            case None => if (!s3.aggrF.isEmpty) s3 addGroupF f else s3
+            // we have already examined this field because is declared.
+            case _ => s3
+          }
         }
-      }}
+      }
     }
-    case Union (qs1, qs2) =>
+    case Union(qs1, qs2) =>
       UnionState.combine(interpretQuerySet(s, qs1), interpretQuerySet(s, qs2))
-    case Intersect (qs1, qs2) =>
-      IntersectState.combine(interpretQuerySet(s, qs1), interpretQuerySet(s, qs2))
+    case Intersect(qs1, qs2) =>
+      IntersectState.combine(
+        interpretQuerySet(s, qs1),
+        interpretQuerySet(s, qs2)
+      )
   }
 
   def interpretAggrQuery(s: State, q: Query): State = q match {
     case AggrRes(aggrs, qs) => interpretQuerySet(s, qs) aggr aggrs
-    case _ => ??? // Unreachable case
+    case _                  => ??? // Unreachable case
   }
 
   def apply(q: Query): State = q match {
@@ -240,18 +270,20 @@ case object QueryInterpreter {
       val s = interpretQuerySet(State(), qs)
       if (s.orders.isEmpty)
         throw new InvalidQuery(
-          "You have to make queryset ordered in order to perform safe comparisons")
+          "You have to make queryset ordered in order to perform safe comparisons"
+        )
       else s
     }
     case SubsetRes(_, _, qs) => {
       val s = interpretQuerySet(State(), qs)
       if (s.orders.isEmpty)
         throw new InvalidQuery(
-          "You have to make queryset ordered in order to perform safe comparisons")
+          "You have to make queryset ordered in order to perform safe comparisons"
+        )
       else s
     }
     case SetRes(qs) => interpretQuerySet(State(), qs)
-    case AggrRes(f, _) => traverseDeclaredFields(
-      interpretAggrQuery(State(), q), f)
+    case AggrRes(f, _) =>
+      traverseDeclaredFields(interpretAggrQuery(State(), q), f)
   }
 }

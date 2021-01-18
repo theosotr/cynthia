@@ -4,7 +4,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import cynthia.lang._
 
-
 class QueryInterpreterTest extends AnyFunSuite {
 
   def assertState(s1: State, s2: State) = {
@@ -41,7 +40,6 @@ class QueryInterpreterTest extends AnyFunSuite {
     val fields = Seq(
       FieldDecl(F("T1.id"), "id", IntF),
       FieldDecl(F("T1.col"), "col", IntF)
-      
     )
     val aql = SetRes(New("T1", fields))
     val s = QueryInterpreter(aql)
@@ -62,7 +60,6 @@ class QueryInterpreterTest extends AnyFunSuite {
     val fields = Seq(
       FieldDecl(F("T1.id"), "id", IntF),
       FieldDecl(F("T1.col"), "col", IntF)
-      
     )
     val aql = SetRes(
       Apply(
@@ -87,7 +84,8 @@ class QueryInterpreterTest extends AnyFunSuite {
   test("interpret query with predicates") {
     val pred1 = And(
       Eq("T1.col", Constant("val", Quoted)),
-      Lt("T1.col",Constant("v", UnQuoted)))
+      Lt("T1.col", Constant("v", UnQuoted))
+    )
     val pred2 = Gte("T1.col", Add(F("T1.col"), F("T1.col")))
     val aql = SetRes(
       Apply(
@@ -136,7 +134,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     val aql = SetRes(
       Apply(
         Sort(Seq(("T1.col", Desc))),
-        New("T1", Seq(f))    
+        New("T1", Seq(f))
       )
     )
     val s = QueryInterpreter(aql)
@@ -162,7 +160,7 @@ class QueryInterpreterTest extends AnyFunSuite {
         Filter(pred),
         Apply(
           Sort(Seq(("T1.col", Desc))),
-          New("T1", Seq(f, f2))    
+          New("T1", Seq(f, f2))
         )
       )
     )
@@ -186,7 +184,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     val aql = SetRes(
       Apply(
         Sort(Seq(("T1.col", Desc))),
-        New("T1", Seq(f, f2))    
+        New("T1", Seq(f, f2))
       )
     )
     val s = QueryInterpreter(aql)
@@ -209,7 +207,9 @@ class QueryInterpreterTest extends AnyFunSuite {
       Add(
         F("T1.col2"),
         Sub(F("T1.col5"), F("T1.col4"))
-      ), "col2", IntF
+      ),
+      "col2",
+      IntF
     )
     val pred = Eq("T1.col3", Constant("!", Quoted))
     val aql = SetRes(
@@ -217,7 +217,7 @@ class QueryInterpreterTest extends AnyFunSuite {
         Filter(pred),
         Apply(
           Sort(Seq(("T1.col", Desc))),
-          New("T1", Seq(f, f2))    
+          New("T1", Seq(f, f2))
         )
       )
     )
@@ -227,8 +227,17 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.orders == List(("T1.col", Desc), ("T1.id", Desc)))
     assert(s.preds == Set(pred))
     assert(s.aggrF == Set("sum"))
-    assert(s.nonAggrF == Set("col2", "T1.col", "T1.col2", "T1.id", "T1.col3",
-      "T1.col4", "T1.col5"))
+    assert(
+      s.nonAggrF == Set(
+        "col2",
+        "T1.col",
+        "T1.col2",
+        "T1.id",
+        "T1.col3",
+        "T1.col4",
+        "T1.col5"
+      )
+    )
     assert(s.constantF.isEmpty)
     assert(s.aggrs.isEmpty)
     assert(!s.combined)
@@ -279,15 +288,17 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.aggrs == Seq(aggrF))
     assert(!s.combined)
     assert(!s.distinct.isDefined)
-    assert(s.joins == Seq(
-      Seq("T1", "T2"),
-      Seq("T1", "T3"),
-      Seq("T1", "T4", "T5", "T6"),
-      Seq("T1", "T4", "T5"),
-      Seq("T1", "T4"),
-      Seq("T1", "T2", "T3"),
-      Seq("T1", "T2")
-    ))
+    assert(
+      s.joins == Seq(
+        Seq("T1", "T2"),
+        Seq("T1", "T3"),
+        Seq("T1", "T4", "T5", "T6"),
+        Seq("T1", "T4", "T5"),
+        Seq("T1", "T4"),
+        Seq("T1", "T2", "T3"),
+        Seq("T1", "T2")
+      )
+    )
   }
 
   test("interpret UNION query") {
@@ -299,7 +310,7 @@ class QueryInterpreterTest extends AnyFunSuite {
         Filter(pred),
         Apply(
           Sort(Seq(("T1.col", Desc))),
-          New("T1", Seq(f, f2))    
+          New("T1", Seq(f, f2))
         )
       )
     )
@@ -330,7 +341,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.joins.isEmpty)
     val (expS1, expS2) = s.from match {
       case Some(UnionState(s1, s2)) => (s1, s2)
-      case _ => ???
+      case _                        => ???
     }
     assertState(s1, expS1)
     assertState(s2, expS2)
@@ -345,7 +356,7 @@ class QueryInterpreterTest extends AnyFunSuite {
         Filter(pred),
         Apply(
           Sort(Seq(("T1.col", Desc))),
-          New("T1", Seq(f, f2))    
+          New("T1", Seq(f, f2))
         )
       )
     )
@@ -376,7 +387,7 @@ class QueryInterpreterTest extends AnyFunSuite {
     assert(s.joins.isEmpty)
     val (expS1, expS2) = s.from match {
       case Some(IntersectState(s1, s2)) => (s1, s2)
-      case _ => ???
+      case _                            => ???
     }
 
     assertState(s1, expS1)

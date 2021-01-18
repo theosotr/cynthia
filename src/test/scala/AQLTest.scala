@@ -2,14 +2,14 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import cynthia.lang._
 
-
 class AQLTest extends AnyFunSuite {
   test("check a field expression is an aggregate") {
     var expr: FieldExpr = Add(
       Mul(Div(F("foo"), F("bar")), F("baz")),
-      Sub(F("f"), Constant("1", UnQuoted)))
+      Sub(F("f"), Constant("1", UnQuoted))
+    )
     assert(!expr.isAggregate())
-    
+
     expr = Count(None)
     assert(expr.isAggregate())
 
@@ -32,9 +32,10 @@ class AQLTest extends AnyFunSuite {
   test("check a field expression is a naive aggregate") {
     var expr: FieldExpr = Add(
       Mul(Div(F("foo"), F("bar")), F("baz")),
-      Sub(F("f"), Constant("1", UnQuoted)))
+      Sub(F("f"), Constant("1", UnQuoted))
+    )
     assert(!expr.isNaiveAggregate())
-    
+
     expr = Count(None)
     assert(expr.isNaiveAggregate())
 
@@ -60,7 +61,7 @@ class AQLTest extends AnyFunSuite {
 
     expr = F("foo")
     assert(!expr.isConstant())
-    
+
     expr = Count(Some(Constant("foo", Quoted)))
     assert(!expr.isConstant())
 
@@ -107,9 +108,11 @@ class AQLTest extends AnyFunSuite {
 
   test("check predicate has aggregate") {
     val f1 = FieldDecl(
-      Add(F("foo"), Div(F("foo"), Constant("1", UnQuoted))), "f1", IntF)
-    val f2 = FieldDecl(
-      Add(Sum(F("col")), Constant("2", UnQuoted)), "f1", IntF)
+      Add(F("foo"), Div(F("foo"), Constant("1", UnQuoted))),
+      "f1",
+      IntF
+    )
+    val f2 = FieldDecl(Add(Sum(F("col")), Constant("2", UnQuoted)), "f1", IntF)
     val fields = Map("f1" -> f1, "f2" -> f2)
 
     var pred: Predicate = Eq("f1", Constant("v", Quoted))
@@ -167,7 +170,8 @@ class AQLTest extends AnyFunSuite {
     pred = Not(Lt("f1", Max(F("f1"))))
     assert(pred.hasAggregate(fields))
 
-    pred = And(Lt("f2", Constant("v", Quoted)), Eq("f1", Constant("v1", Quoted)))
+    pred =
+      And(Lt("f2", Constant("v", Quoted)), Eq("f1", Constant("v1", Quoted)))
     assert(pred.hasAggregate(fields))
     pred = Or(Lt("f2", Constant("v", Quoted)), Eq("f1", Constant("v1", Quoted)))
     assert(pred.hasAggregate(fields))
@@ -192,7 +196,7 @@ class AQLTest extends AnyFunSuite {
   test("check filtered query sets") {
     var qs: QuerySet = New("T1", Seq())
     assert(!qs.filtered())
-    
+
     qs = Apply(Sort(List(("T1", Asc))), New("T1", Seq()))
     assert(!qs.filtered())
 
@@ -215,7 +219,7 @@ class AQLTest extends AnyFunSuite {
   test("check ordered query sets") {
     var qs: QuerySet = New("T1", Seq())
     assert(!qs.ordered())
-    
+
     qs = Apply(Sort(List(("T1", Asc))), New("T1", Seq()))
     assert(qs.ordered())
 
@@ -246,5 +250,5 @@ class AQLTest extends AnyFunSuite {
     )
     assert(!qs.ordered())
   }
-  
+
 }
