@@ -149,9 +149,8 @@ case class UnionState(rs: State, ls: State) extends CombinedState(rs, ls)
 case object UnionState {
 
   def combine(s1: State, s2: State): State =
-    State(s1.source, s1.fields, Set(), Seq(), s1.nonAggrF, s1.aggrF,
-          s1.constantF,
-          s1.aggrs, s1.joins, s1.query, s1.distinct, true,
+    State(s1.source, s1.fields, Set(), Seq(), Set(), Set(),
+          Set(), Seq(), Seq(), s1.query, None, true,
           Some(UnionState(s1, s2)),
           s1.numGen)
 }
@@ -159,9 +158,8 @@ case class IntersectState(rs: State, ls: State) extends CombinedState(rs, ls)
 case object IntersectState {
 
   def combine(s1: State, s2: State): State =
-    State(s1.source, s1.fields, Set(), Seq(), s1.nonAggrF, s1.aggrF,
-          s1.constantF,
-          s1.aggrs, s1.joins, s1.query, s1.distinct, true,
+    State(s1.source, s1.fields, Set(), Seq(), Set(), Set(),
+          Set(), Seq(), Seq(), s1.query, None, true,
           Some(IntersectState(s1, s2)),
           s1.numGen)
 }
