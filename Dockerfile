@@ -124,7 +124,7 @@ RUN  bash -c "virtualenv -p python3 $HOME/.env && \
   $HOME/scripts/setup-orms.sh --django-version latest \
     --sqlalchemy-version latest --peewee-version latest"
 
-ADD ./examples ${HOME}/cynthia_src
+ADD ./examples ${HOME}/cynthia_src/examples
 ADD ./entrypoint/entrypoint.sh /usr/local/bin/
 
 # Set the locale

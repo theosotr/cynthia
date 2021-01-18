@@ -24,7 +24,7 @@ solver-based  approach for producing targeted
 database records with respect to the
 constraints of the generated queries.
 
-`Cynthia` currently supports the following popular ORM systems.
+`Cynthia` currently supports the following popular ORM systems
 
 * [Django](https://www.djangoproject.com/)
 * [SQLAlchemy](https://www.sqlalchemy.org/)
@@ -34,13 +34,14 @@ constraints of the generated queries.
 * [Pony](https://ponyorm.org/) (unstable)
 
 
-`Cynthia` can run the ORMs above on the following Database Systems.
+`Cynthia` is able to run ORMs on top of the following Database
+Management Systems
 
 * [SQLite](https://www.sqlite.org/index.html)
 * [MySQL](https://www.mysql.com/)
 * [PostgreSQL](https://www.postgresql.org/)
 * [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
-* [CockroachDB](https://www.cockroachlabs.com/)
+* [CockroachDB](https://www.cockroachlabs.com/) (unstable)
 
 
 ## Building
@@ -61,13 +62,14 @@ sudo apt update && sudo apt install sbt
 ```
 
 `Cynthia` employs the [Z3 theorem prover](https://github.com/Z3Prover/z3)
-for generating targeted data by solving the constraints of AQL queries.
+for generating targeted data by solving the constraints of
+the individual AQL queries.
 To install Z3, follow the instructions below
 
 ```bash
 git clone https://github.com/Z3Prover/z3
 cd z3
-python3 scripts/mk_make.py --java
+python scripts/mk_make.py --java
 cd build
 make -j 8
 sudo make install
@@ -103,6 +105,7 @@ sudo docker build -t cynthia .
 Otherwise, you can pull our "pre-baked" image from the Docker registry
 
 ```bash
+# TODO
 sudo docker pull <add docker image>
 ```
 
@@ -111,21 +114,26 @@ sudo docker pull <add docker image>
 
 To get started with `Cynthia`,
 we will use the previously created Docker image
-(i.e., `Cynthia`) as this image contains all the
+(namely, `cynthia`).
+Recall that this image contains all the
 required environment for testing ORMs
 (i.e., it contains installations of the corresponding
-ORMs and the underlying database management systems).
+ORM systems,
+as well as installations
+of the underlying database management systems).
 
 You can enter a new container by using the following command
 
 ```bash
-docker run -ti cynthia
+docker run -ti --rm cynthia
 ```
 
 ### Usage
 
 The CLI of `Cynthia` provides six sub-commands; `test`, 
 `generate`, `replay`, `run`, `inspect`, and `clean`.
+Below, we explain each sub-command by providing a set
+of examples and use cases.
 
 ```
 cynthia@0fbedf262c3d:~$ cynthia --help
@@ -138,59 +146,77 @@ Cynthia: Data-Oriented Differential Testing of Object-Relational Mapping Systems
   --version                Prints the current tool's version
 Command: test [options]
 
-  -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
-  -s, --schemas <value>    Number of schemas to generate (Default value: 1)
+  -n, --queries <value>    Number of queries to generate for each schema (default value: 200)
+  -s, --schemas <value>    Number of schemas to generate (default value: 1)
   --timeout <value>        Timeout for testing in seconds
   -o, --orms <value>       ORMs to differentially test
-  -d, --backends <value>   Database backends to store data (Default Value: sqlite)
-  -S, --store-matches      Save matches
+  -d, --backends <value>   Database backends to store data (default value: sqlite)
+  -u, --db-user <value>    The username to log in the database
+  -p, --db-pass <value>    The password used to log in the database
+  -S, --store-matches      Save matches into the 'sessions' directory
   --combined               Generate AQL queries consting of other simpler queries
   -r, --records <value>    Number of records to generate for each table
-  --min-depth <value>      Minimum depth of generated AQL queries
-  --max-depth <value>      Maximum depth of generated AQL queries
+  --min-depth <value>      Minimum depth of the generated AQL queries
+  --max-depth <value>      Maximum depth of the generated AQL queries
   --no-well-typed          Generate AQL queries that are type incorrect
   --solver                 Generate database records through a solver-based approach
   --solver-timeout <value>
                            Solver timeout for each query
   --random-seed <value>    Make the testing procedure deterministic by giving a random seed
+  --only-constrained-queries
+                           Generate only constrained queries
 Command: generate [options]
 
-  -n, --queries <value>    Number of queries to generate for each schema (Default value: 200)
+  -n, --queries <value>    Number of queries to generate for each schema (default value: 200)
   -s, --schemas <value>    Number of schemas to generate (Default value: 1)
   --combined               Generate AQL queries consting of other simpler queries
   -r, --records <value>    Number of records to generate for each table
-  --min-depth <value>      Minimum depth of generated AQL queries
-  --max-depth <value>      Maximum depth of generated AQL queries
+  --min-depth <value>      Minimum depth of the generated AQL queries
+  --max-depth <value>      Maximum depth of the generated AQL queries
   --no-well-typed          Generate AQL queries that are type incorrect
   --solver                 Generate database records through a solver-based approach
   --solver-timeout <value>
                            Solver timeout for each query
   --random-seed <value>    Make the testing procedure deterministic by giving a random seed
+  --only-constrained-queries
+                           Generate only constrained queries
 Command: replay [options]
 
-  -c, --cynthia <value>    cynthia directory for replaying missmatches (default .cynthia)
+  -c, --cynthia <value>    The cynthia directory for replaying missmatches (default value: .cynthia)
   -s, --schema <value>     schema to replay
-  -a, --all                Replay all queries. Always use it with --store-matches to not remove matches queries
+  -a, --all                Replay all queries.
   -m, --mismatches <value>
-                           Mismatches to replay
+                           Replay queries for which ORM previously produced different results
+  --generate-data          Re-generate data while replaying testing sessions
   -o, --orms <value>       ORMs to differentially test
-  -d, --backends <value>   Database backends to store data (Default Value: sqlite)
+  -d, --backends <value>   Database backends to store data (default value: sqlite)
+  -u, --db-user <value>    The username to log in the database
+  -p, --db-pass <value>    The password used to log in the database
+  -r, --records <value>    Number of records to generate for each table
+  --solver                 Generate database records through a solver-based approach
+  --solver-timeout <value>
+                           Solver timeout for each query
+  --random-seed <value>    Make the testing procedure deterministic by giving a random seed
 Command: run [options]
 
-  -s, --sql <value>        File with the sql script to generate and feed the Database
+  -s, --sql <value>        File with the sql script to generate and feed the database
   -a, --aql <value>        A file with an AQL query or a directory with many AQL queries
   -o, --orms <value>       ORMs to differentially test
-  -d, --backends <value>   Database backends to store data (Default Value: sqlite)
-  -S, --store-matches      Save matches
+  -d, --backends <value>   Database backends to store data (default value: sqlite)
+  -u, --db-user <value>    The username to log in the database
+  -p, --db-pass <value>    The password used to log in the database
+  -S, --store-matches      Save matches into the 'sessions' directory
 Command: inspect [options]
 
-  -c, --cynthia <value>    cynthia directory for inspecting missmatches (default .cynthia)
+  -c, --cynthia <value>    The cynthia directory for inspecting missmatches (default value: .cynthia)
   -s, --schema <value>     schema to inspect
   -m, --mismatches <value>
                            mismatches to inspect
 Command: clean [options]
 
-  --only-workdir           Clean only the working directory .cynthia
+  --only-workdir           Clean only the working directory '.cynthia'
+  -u, --db-user <value>    The username to log in the database
+  -p, --db-pass <value>    The password used to log in the database
 
 ```
 
@@ -205,24 +231,30 @@ Note that if `--backends` is not given,
 the `SQLite` database system is used by default.
 
 `cynthia test` first generates a number of relational database
-schemas specified by the `--schemas` option.
+schemas
+The number of the generated schemas is
+specified by the `--schemas` option.
 Every generated schema corresponds to a *testing session*.
 In every testing session, `cynthia test` generates a number of
 random AQL queries (given by the `--queries` option),
 translates every AQL query into the corresponding executable ORM query,
 and finally runs every ORM query on the given backends.
+Note that for a given AQL query,
+`Cynthia` generates multiple ORM queries,
+one for every backend.
 
 #### Example
 
 In the following scenario,
-we differentially test the `peewee` and `Django` ORMs
-agaist the `SQLite` and `PostgreSQL` databases,
-by using 5 testing sessions (`--schemas 5`).
+we differentially test the `peewee` and `Django` ORMs.
+The ORM queries are run
+on top of the `SQLite` and `PostgreSQL` databases,
+and we spawn 5 testing sessions (`--schemas 5`).
 In every testing session, we generate 100 AQL queries
 (`--queries 100`).
 Finally, to populate the underlying databases with data,
-we use an SMT solver (`--solver`) to generate five
-records (`--records 5`) by solving the contraints
+we use the Z3 solver (`--solver`) to generate five
+records (`--records 5`) by solving the constraints
 of every generated AQL query.
 
 ```bash
@@ -261,21 +293,23 @@ means that in the testing session named `Cucumbers`,
 
 * 95 / 100 queries passed (i.e., the ORMs under test produced exact results).
 * 0 / 100 queries failed (i.e., the ORMs under test produced different results).
-  Note that failed queries indicate a bug
+  Note that failed queries indicate a potential bug
   in at least one of the ORMs under test.
 * 2 / 100 queries were unsupported meaning that the ORMs were unable to execute
   these queries, because these queries contained features
   that are not currently supported by the ORMs under test.
 * 3 / 100 queries timed out, i.e., the SMT solver timed out and failed to
-  generate records for populating databases.
+  generate records for populating the underlying databases.
 
 #### The .cynthia working directory
 
 `Cynthia` also produces a directory named `.cynthia`
 (inside the current working directory)
-where it stores the complete output of each run.
+where it stores important information about each run.
 The `.cynthia` directory has the following structure.
 
+* `.cynthia/cynthia.log`: A file containing logs associated with the last
+  `cynthia` run.
 * `.cynthia/dbs/`: This is the directory where the `SQLite` database files
   of each testing session are stored.
 * `.cynthia/schemas/`: This directory contains SQL scripts corresponding to
@@ -295,10 +329,9 @@ directory, we have the following
   with data generated by the SMT solver. Note that these data are targeted,
   meaning that satisfy the constraints of the query specified by `<Query ID>`. 
 * `.cynthia/sessions/<Session Name>/<Query ID>/diff_test.out`:
-  The output of differential testing. Either "MATCH", "MISMATCH", "UNSUPPORTED",
-  or "TIMEOUT".
+  The output of differential testing. Either "MATCH", "MISMATCH", or "UNSUPPORTED".
 * `.cynthia/sessions/<Session Name>/<Query ID>/<orm>_<backend>.out`:
-  The output produced by the query written in ORM named `<orm>`,
+  The output produced by the query written by using the API of ORM named `<orm>`,
   and when this query is run on the backend `<backend>`.
 * `.cynthia/sessions/<Session Name>/<Query ID>/query.aql`:
   The AQL query in human readable format.
@@ -314,7 +347,7 @@ directory, we have the following
   ```
 
   You re-execute the Django query stemming from the AQL query
-  with id `22` on the PostgresSQL database.
+  with id `22`. This query is run on the PostgresSQL database.
 
 
 ### cynthia replay
@@ -498,11 +531,27 @@ This gives
 ```diff
 0a1,2
 > _default -1.00
-> _default 0.00
+> _default 2.00
 \ No newline at end of file
 ```
 
 ### cynthia clean
 
 `cynthia clean` simply cleans the `.cynthia` directory
-and the database servers from the generated databases.
+and all the tables and databases created
+by `Cynthia` in the underlying servers.
+This command is safe, as each database created by `Cynthia`
+has the prefix `'cynthia_'`, so `cynthia clean` does not remove
+any user-defined table or database.
+
+```bash
+cynthia@8461308e0af8:~$ cynthia clean
+Cleaning working directory .cynthia...
+Cleaning backend mysql...
+Cleaning backend mssql...
+Cleaning backend postgres...
+Cleaned database mssql successfully
+Cleaned database mysql successfully
+Cleaned database postgres successfully
+Command clean finished successfully.
+```
