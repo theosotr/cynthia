@@ -1,6 +1,6 @@
 import org.scalatest.funsuite.AnyFunSuite
 
-import cynthia.translators.QueryStr
+import cynthia.lang.QueryStr
 
 
 class QueryStrTest extends AnyFunSuite {

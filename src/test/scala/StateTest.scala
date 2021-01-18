@@ -3,7 +3,6 @@ import scala.collection.immutable.ListMap
 import org.scalatest.funsuite.AnyFunSuite
 
 import cynthia.lang._
-import cynthia.translators.{State, UnionState, IntersectState}
 
 
 class StateTest extends AnyFunSuite {

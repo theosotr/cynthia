@@ -32,12 +32,12 @@ import spray.json._
 import me.tongfei.progressbar.ProgressBar;
 
 import cynthia.Options
-import cynthia.lang.{Schema, Query}
+import cynthia.lang.{Schema, Query, QueryInterpreter, State}
 import cynthia.lang.AQLJsonProtocol._
 import cynthia.gen.{
   SolverDataGenerator, NaiveDataGenerator, DataGeneratorController,
   DataGenSucc, DataExists, DataGenFailed, QueryGenerator}
-import cynthia.translators.{QueryInterpreter, SchemaTranslator, State}
+import cynthia.translators.SchemaTranslator
 import cynthia.utils.{Utils, Str}
 
 

@@ -19,9 +19,8 @@ package cynthia.targets
 import scala.util.{Try, Success, Failure}
 import scala.sys.process._
 
-import cynthia.lang.Query
-import cynthia.translators.{ORMTranslator, UnsupportedException, InvalidQuery,
-  State}
+import cynthia.lang.{Query, InvalidQuery, State}
+import cynthia.translators.{ORMTranslator, UnsupportedException}
 import cynthia.utils.Utils
 
 

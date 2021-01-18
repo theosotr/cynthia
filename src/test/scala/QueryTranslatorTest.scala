@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import cynthia.lang._
 import cynthia.targets.{Peewee, Django, SQLAlchemy, Sequelize,
   ActiveRecord, SQLite, Target}
-import cynthia.translators.{QueryInterpreter, PeeweeTranslator,
+import cynthia.translators.{PeeweeTranslator,
   DjangoTranslator, SQLAlchemyTranslator, SequelizeTranslator,
   ActiveRecordTranslator, UnsupportedException}
 import cynthia.utils.{Utils, RUtils}

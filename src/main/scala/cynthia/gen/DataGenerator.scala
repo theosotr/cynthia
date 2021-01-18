@@ -25,7 +25,6 @@ import com.microsoft.z3.{Solver, Context, Status, Expr, ArithExpr, IntExpr,
 
 import cynthia.lang._
 import cynthia.targets.{DB, DBSetup}
-import cynthia.translators.{State, UnionState, IntersectState}
 import cynthia.utils.{Utils, RUtils, Str}
 
 

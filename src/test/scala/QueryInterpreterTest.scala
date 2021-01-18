@@ -3,8 +3,6 @@ import scala.collection.immutable.ListMap
 import org.scalatest.funsuite.AnyFunSuite
 
 import cynthia.lang._
-import cynthia.translators.{QueryInterpreter, State, InvalidQuery, UnionState,
-  IntersectState}
 
 
 class QueryInterpreterTest extends AnyFunSuite {
