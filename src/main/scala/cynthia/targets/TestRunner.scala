@@ -292,31 +292,44 @@ class TestRunner(
 
   // test and generate modes
   def genQuery(schema: Schema, limit: Int = 10) = {
-    def _genQuery(i: Int): LazyList[(Int, Query)] = {
-      val q = qGen(schema)
-      if (i >= limit) (i, q) #:: LazyList.empty
-      else (i, q) #:: _genQuery(i + 1)
+    // At this point, we generate queries lazily.
+    def _genQuery(i: Int, acc: LazyList[(Int, Query)]): LazyList[(Int, Query)] =
+      if (i > limit) acc
+      else _genQuery(i + 1, (i, qGen(schema)) #:: acc)
+    _genQuery(1, LazyList.empty)
+  }
+
+  // Load queries from a list of *.aql.json files lazily.
+  def loadQueriesFromFiles(qids: Seq[Int], files: List[String]) = {
+    def _loadQuery(
+        qids: Seq[Int], files: List[String],
+        acc: LazyList[(Int, Query)]
+    ): LazyList[(Int, Query)] = {
+      files match {
+        case Nil => acc
+        case h :: t => {
+          _loadQuery(qids.tail, t, (qids.head, Utils.loadQuery(h)) #:: acc)
+        }
+      }
     }
-    _genQuery(1)
+    _loadQuery(qids, files, LazyList.empty)
   }
 
-  // run mode
+  // Load queries from a file or a given directory (run mode)
   def getQueriesFromDisk(path: String) = {
-    if (Files.isDirectory(Paths.get(path)))
-      // Revisit We want to return a LazyList
-      (Utils
-        .getListOfFiles(path)
-        .foldLeft((1, List[(Int, Query)]())) { case ((c, l), p) =>
-          (c + 1, (c, Utils.loadQuery(p)) :: l)
-        })
-        ._2
-    else
+    if (Files.isDirectory(Paths.get(path))) {
+      val files = Utils.getListOfFiles(path)
+      pBar.maxHint(files.size)
+      loadQueriesFromFiles(LazyList.from(1), files)
+    }
+    else {
+      pBar.maxHint(1)
       LazyList((1, Utils.loadQuery(path)))
+    }
   }
 
-  // replay mode
+  // Load queries from the cynthia working directory (replay mode)
   def getQueriesFromCynthia() = {
-    // Revisit We want to return a LazyList
     val dirs =
       if (options.all) Utils.getListOfDirs(getQueriesDir())
       // We cannot have options.all and options.mismatches
@@ -330,18 +343,15 @@ class TestRunner(
           else
             options.mismatches.contains(p.split('/').last.toInt) && isMismatch
         })
-    // Get queries from mismatches and probably matches
-    val queries = dirs map (x => {
-      val queryJsonFile = Utils.joinPaths(List(x, "query.aql.json"))
-      val query = Utils.loadQuery(queryJsonFile)
-      // Remove old report
-      //Utils.deleteRecursively(new File(x))
-      (x.split('/').last.toInt, query)
-    })
-    queries
+    pBar.maxHint(dirs.size)
+    // Get files where queries from mismatches and probably matches are stored.
+    val (qids, files) = dirs.map(x =>
+      (x.split('/').last.toInt, Utils.joinPaths(List(x, "query.aql.json")))
+    ).unzip
+    loadQueriesFromFiles(qids, files)
   }
 
-  def getQueries(): Seq[(Int, Query)] = {
+  def getQueries(): LazyList[(Int, Query)] = {
     options.mode match {
       case Some("test") =>
         genQuery(schema, limit = options.nuqueries)
