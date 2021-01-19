@@ -256,7 +256,7 @@ case class Stats(
       else if (invd)
         Stats(pBar, totalQ + 1, mismatches, invalid + 1, solverTimeouts)
       else if (timedout)
-        Stats(pBar, totalQ, mismatches, invalid, solverTimeouts + 1)
+        Stats(pBar, totalQ + 1, mismatches, invalid, solverTimeouts + 1)
       else
         Stats(pBar, totalQ + 1, mismatches, invalid, solverTimeouts)
     pBar.setExtraMessage(" " + newStats.toString())
@@ -559,6 +559,9 @@ class TestRunner(
               stats
             }
             case e: Exception => {
+              logger.error(
+                s"Unexpected error in Query ${qid.toString}: ${e.getMessage}"
+              )
               stats ++ (invd = true)
             }
           }
