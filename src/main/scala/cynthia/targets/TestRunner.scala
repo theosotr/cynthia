@@ -302,7 +302,8 @@ class TestRunner(
   // Load queries from a list of *.aql.json files lazily.
   def loadQueriesFromFiles(qids: Seq[Int], files: List[String]) = {
     def _loadQuery(
-        qids: Seq[Int], files: List[String],
+        qids: Seq[Int],
+        files: List[String],
         acc: LazyList[(Int, Query)]
     ): LazyList[(Int, Query)] = {
       files match {
@@ -321,8 +322,7 @@ class TestRunner(
       val files = Utils.getListOfFiles(path)
       pBar.maxHint(files.size)
       loadQueriesFromFiles(LazyList.from(1), files)
-    }
-    else {
+    } else {
       pBar.maxHint(1)
       LazyList((1, Utils.loadQuery(path)))
     }
@@ -345,9 +345,11 @@ class TestRunner(
         })
     pBar.maxHint(dirs.size)
     // Get files where queries from mismatches and probably matches are stored.
-    val (qids, files) = dirs.map(x =>
-      (x.split('/').last.toInt, Utils.joinPaths(List(x, "query.aql.json")))
-    ).unzip
+    val (qids, files) = dirs
+      .map(x =>
+        (x.split('/').last.toInt, Utils.joinPaths(List(x, "query.aql.json")))
+      )
+      .unzip
     loadQueriesFromFiles(qids, files)
   }
 

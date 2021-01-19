@@ -478,18 +478,18 @@ case class SolverDataGenerator(
         s1.fields.view.keys.toSeq,
         s2.fields.view.keys.toSeq
       )
-      val eqs = List.range(0, nuRecords) map {
-        i => {
-          val cons = List.range(0, s1keys.size) map {
-            keyIndex => ctx.mkEq(
+      val eqs = List.range(0, nuRecords) map { i =>
+        {
+          val cons = List.range(0, s1keys.size) map { keyIndex =>
+            ctx.mkEq(
               getVariable(s1keys(keyIndex), i),
               getVariable(s2keys(keyIndex), i)
             )
           }
-          ctx.mkAnd(cons:_*)
+          ctx.mkAnd(cons: _*)
         }
       }
-      Seq(ctx.mkAnd(cons: _*), ctx.mkOr(eqs:_*))
+      Seq(ctx.mkAnd(cons: _*), ctx.mkOr(eqs: _*))
     }
   }
 
