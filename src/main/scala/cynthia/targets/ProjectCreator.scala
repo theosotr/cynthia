@@ -37,6 +37,12 @@ object ProjectCreator {
     case Pony(_, _)         => createPonyProject(orm, dbs)
   }
 
+  def findPostgresDB(dbs: Seq[DB]): Option[DB] = dbs match {
+    case Seq()                      => None
+    case Seq(Postgres(_, _, _), _*) => Some(dbs(0))
+    case _                          => findPostgresDB(dbs.tail)
+  }
+
   def createModels(orm: ORM, dbs: Seq[DB]) = orm match {
     case Django(_, pdir, _) => {
       val models = Utils.runCmd("python3 manage.py inspectdb", Some(pdir))
@@ -82,80 +88,27 @@ object ProjectCreator {
     }
     case ActiveRecord(_, pdir) => {
       val bcmd = "rmre"
-      val cmd = dbs(0) match {
-        case Postgres(user, password, dbname) =>
-          Seq(
-            bcmd,
-            "-a",
-            "postgresql",
-            "-d",
-            dbname,
-            "-u",
-            user,
-            "-p",
-            password,
-            "-o",
-            orm.getModelsPath()
-          ).mkString(" ")
-        case MySQL(user, password, dbname) =>
-          Seq(
-            bcmd,
-            "-a",
-            "mysql2",
-            "-d",
-            dbname.toLowerCase,
-            "-u",
-            user,
-            "-p",
-            password,
-            "-o",
-            orm.getModelsPath()
-          ).mkString(" ")
-        case SQLite(dbname) =>
-          Seq(
-            bcmd,
-            "-a",
-            "postgresql",
-            "-d",
-            dbname.split("/").last.toLowerCase,
-            "-u",
-            "orm_testing",
-            "-p",
-            "orm_testing",
-            "-o",
-            orm.getModelsPath()
-          ).mkString(" ")
-        case Cockroachdb(user, password, dbname) =>
-          Seq(
-            bcmd,
-            "-a",
-            "postgresql",
-            "-s",
-            "localhost",
-            "--port",
-            "26257",
-            "-d",
-            dbname,
-            "-u",
-            user,
-            "-o",
-            orm.getModelsPath()
-          ).mkString(" ")
-        case MSSQL(user, _, dbname) =>
-          Seq(
-            bcmd,
-            "-a",
-            "postgresql",
-            "-d",
-            dbname,
-            "-u",
-            user,
-            "-p",
-            "orm_testing",
-            "-o",
-            orm.getModelsPath()
-          ).mkString(" ")
+      val (user, password, dbname) = findPostgresDB(dbs) match {
+        case None =>
+          throw new Exception(
+            "ActiveRecord works only by providing the '--backends postgres' option"
+          )
+        case Some(Postgres(user, password, dbname)) => (user, password, dbname)
+        case _                                      => ??? // unreachable case
       }
+      val cmd = Seq(
+        bcmd,
+        "-a",
+        "postgresql",
+        "-d",
+        dbname,
+        "-u",
+        user,
+        "-p",
+        password,
+        "-o",
+        orm.getModelsPath()
+      ).mkString(" ")
       Utils.runCmd(cmd, None)
     }
     case Sequelize(_, pdir) => {
