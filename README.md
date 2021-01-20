@@ -283,7 +283,6 @@ Testing Serially 100% [========================= Passed ✔: 95, Failed ✘: 0, 
 Testing Cucumbers 100% [======================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 3
 Testing Mumbles 100% [========================== Passed ✔: 97, Failed ✘: 0, Unsp: 3, Timeouts: 3
 Testing Subhead 100% [========================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 2
-Testing Subhead 100% [========================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 2
 Testing Wild 100% [============================= Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
 ```
 
