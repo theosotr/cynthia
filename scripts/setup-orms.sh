@@ -1,8 +1,6 @@
 #! /bin/bash
 
-
-OPTS=`getopt --long django-version:,peewee-version:,sqlalchemy-version: \
-             activerecord-version:,sequelize-version: "$@"`
+OPTS=`getopt --long django-version:,peewee-version:,sqlalchemy-version:,sequelize-version:,activerecord-version: -n 'setup-orms.sh' -o '' --  "$@"`
 
 if [ $? != 0 ]; then
   exit 1
