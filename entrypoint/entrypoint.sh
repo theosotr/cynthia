@@ -7,7 +7,8 @@ echo "Initialize Backends"
 
 source $HOME/.env/bin/activate
 nohup sudo /opt/mssql/bin/sqlservr start &
-sudo sh -c "echo "[mysqld]\nskip-grant-tables" >> /etc/mysql/my.cnf"
+sudo sh -c "echo "[mysqld]" >> /etc/mysql/my.cnf"
+sudo sh -c "echo "skip-grant-tables" >> /etc/mysql/my.cnf"
 sudo /etc/init.d/mysql start
 sudo mysql --execute "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
 
