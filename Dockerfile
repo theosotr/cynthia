@@ -77,7 +77,7 @@ WORKDIR ${HOME}/cynthia_src
 RUN make
 RUN sudo make install
 
-ENV CYNTHIA_JAR_FILE ${HOME}/cynthia_src/scripts/cynthia-assembly-0.1.0-SNAPSHOT.jar
+ENV CYNTHIA_JAR_FILE ${HOME}/cynthia_src/target/scala-2.13/cynthia.jar
 
 WORKDIR ${HOME}
 ADD ./scripts/setup-orms.sh ${HOME}/scripts/setup-orms.sh

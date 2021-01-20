@@ -42,7 +42,7 @@ install_py_package()
 
   cd $HOME/$base
   git checkout .
-  git pull origin
+  git checkout master
   if [ "$version" != "latest" ]; then
     git checkout $version
   fi
@@ -55,6 +55,18 @@ install_py_package()
   pip uninstall $base -y
   python setup.py install
   cd ..
+}
+
+
+install_sequelize()
+{
+  version=$1
+
+  if [ "$version" = "latest" ]; then
+    npm install --save sequelize
+  else
+    npm install --save sequelize@$version
+  fi
 }
 
 
@@ -71,6 +83,10 @@ setup()
 
   if [ ! -z $peewee_v ]; then
     install_py_package https://github.com/coleifer/peewee $peewee_v
+  fi
+
+  if [ ! -z $sequelize_v ]; then
+    install_sequelize "$sequelize_v"
   fi
 }
 
