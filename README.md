@@ -34,7 +34,7 @@ constraints of the generated queries.
 * [Pony](https://ponyorm.org/) (unstable)
 
 
-`Cynthia` is able to run ORMs on top of the following Database
+`Cynthia` is able to run ORM queries on top of the following Database
 Management Systems
 
 * [SQLite](https://www.sqlite.org/index.html)
@@ -46,13 +46,8 @@ Management Systems
 
 ## Building
 
-To build `Cynthia`, you must have installed the Scala programming language.
-
-```bash
-sudo apt install scala
-```
-
-Install [sbt](https://www.scala-sbt.org/) which is the
+To build `Cynthia`, you must install
+[sbt](https://www.scala-sbt.org/) which is the
 build system for compiling the project.
 
 ```bash
@@ -89,7 +84,7 @@ the environment variable `CYNTHIA_JAR_FILE` that points to the
 `JAR` file created by `sbt`.
 
 ```bash
-export CYNTHIA_JAR_FILE=$(pwd)/target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT.jar
+export CYNTHIA_JAR_FILE=$(pwd)/target/scala-2.13/cynthia.jar
 ```
 
 ## Docker Image
@@ -99,14 +94,14 @@ export CYNTHIA_JAR_FILE=$(pwd)/target/scala-2.13/cynthia-assembly-0.1.0-SNAPSHOT
 To build the docker image from source, run
 
 ```bash
-sudo docker build -t cynthia .
+docker build -t cynthia .
 ```
 
 Otherwise, you can pull our "pre-baked" image from the Docker registry
 
 ```bash
-# TODO
-sudo docker pull <add docker image>
+docker pull theosot/cynthia
+docker tag theosot/cynthia cynthia
 ```
 
 
@@ -137,20 +132,22 @@ of examples and use cases.
 
 ```
 cynthia@0fbedf262c3d:~$ cynthia --help
-cynthia 0.1
+Cynthia version: 0.1
 Usage: cynthia [test|generate|replay|run|inspect|clean] [options]
 
 Cynthia: Data-Oriented Differential Testing of Object-Relational Mapping Systems
 
   --help                   Prints this usage text
-  --version                Prints the current tool's version
+  --version                Prints the version of Cynthia
 Command: test [options]
 
   -n, --queries <value>    Number of queries to generate for each schema (default value: 200)
   -s, --schemas <value>    Number of schemas to generate (default value: 1)
   --timeout <value>        Timeout for testing in seconds
   -o, --orms <value>       ORMs to differentially test
-  -d, --backends <value>   Database backends to store data (default value: sqlite)
+                           (Available options: 'django', 'sqlalchemy', 'sequelize', 'peewee', 'activerecord', or 'pony')
+  -d, --backends <value>   Database backends to store data
+                           (Available options: 'sqlite', 'postgres', 'mysql',  'mssql', 'cockroachdb', default value: sqlite)
   -u, --db-user <value>    The username to log in the database
   -p, --db-pass <value>    The password used to log in the database
   -S, --store-matches      Save matches into the 'sessions' directory
@@ -189,7 +186,9 @@ Command: replay [options]
                            Replay queries for which ORM previously produced different results
   --generate-data          Re-generate data while replaying testing sessions
   -o, --orms <value>       ORMs to differentially test
-  -d, --backends <value>   Database backends to store data (default value: sqlite)
+                           (Available options: 'django', 'sqlalchemy', 'sequelize', 'peewee', 'activerecord', or 'pony')
+  -d, --backends <value>   Database backends to store data
+                           (Available options: 'sqlite', 'postgres', 'mysql',  'mssql', 'cockroachdb', default value: sqlite)
   -u, --db-user <value>    The username to log in the database
   -p, --db-pass <value>    The password used to log in the database
   -r, --records <value>    Number of records to generate for each table
@@ -202,7 +201,9 @@ Command: run [options]
   -s, --sql <value>        File with the sql script to generate and feed the database
   -a, --aql <value>        A file with an AQL query or a directory with many AQL queries
   -o, --orms <value>       ORMs to differentially test
-  -d, --backends <value>   Database backends to store data (default value: sqlite)
+                           (Available options: 'django', 'sqlalchemy', 'sequelize', 'peewee', 'activerecord', or 'pony')
+  -d, --backends <value>   Database backends to store data
+                           (Available options: 'sqlite', 'postgres', 'mysql',  'mssql', 'cockroachdb', default value: sqlite)
   -u, --db-user <value>    The username to log in the database
   -p, --db-pass <value>    The password used to log in the database
   -S, --store-matches      Save matches into the 'sessions' directory
@@ -252,10 +253,16 @@ on top of the `SQLite` and `PostgreSQL` databases,
 and we spawn 5 testing sessions (`--schemas 5`).
 In every testing session, we generate 100 AQL queries
 (`--queries 100`).
-Finally, to populate the underlying databases with data,
+To populate the underlying databases with data,
 we use the Z3 solver (`--solver`) to generate five
 records (`--records 5`) by solving the constraints
 of every generated AQL query.
+Finally, the option `--store-matches` is used to store the information
+coming from all AQL query runs inside the `.cynthia/sessions/`
+directory (see below).
+If this option is not provided, `Cynthia`
+stores only the AQL queries for which the ORMs under test produced
+different results.
 
 ```bash
 cynthia@0fbedf262c3d:~$ cynthia test \
@@ -272,26 +279,26 @@ cynthia@0fbedf262c3d:~$ cynthia test \
 The above command will produce an output similar to the following
 
 ```
-Testing Serially 100% [===================== Passed ✔: 93, Failed ✘: 0, Unsp: 5, Timeouts: 2
-Testing Cucumbers 100% [==================== Passed ✔: 95, Failed ✘: 0, Unsp: 2, Timeouts: 3
-Testing Mumbles 100% [====================== Passed ✔: 94, Failed ✘: 0, Unsp: 3, Timeouts: 3
-Testing Subhead 100% [====================== Passed ✔: 96, Failed ✘: 0, Unsp: 2, Timeouts: 2
-Testing Wild 100% [========================= Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
-Command test finished successfully.
+Testing Serially 100% [========================= Passed ✔: 95, Failed ✘: 0, Unsp: 5, Timeouts: 1
+Testing Cucumbers 100% [======================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 3
+Testing Mumbles 100% [========================== Passed ✔: 97, Failed ✘: 0, Unsp: 3, Timeouts: 3
+Testing Subhead 100% [========================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 2
+Testing Subhead 100% [========================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 2
+Testing Wild 100% [============================= Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
 ```
 
-Note that `Cynthia` processes testing sessions in parallel by using Scala
+Note that `Cynthia` processes testing sessions in parallel by using the Scala
 futures. `Cynthia` also dumps some statistics for every testing session.
 
 ```
-Testing Cucumbers 100% [==================== Passed ✔: 95, Failed ✘: 0, Unsp: 2, Timeouts: 3
+Testing Cucumbers 100% [======================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 3
 ```
 
 For example, the above message
 means that in the testing session named `Cucumbers`,
 `Cynthia` generated 100 AQL queries of which
 
-* 95 / 100 queries passed (i.e., the ORMs under test produced exact results).
+* 98 / 100 queries passed (i.e., the ORMs under test produced exact results).
 * 0 / 100 queries failed (i.e., the ORMs under test produced different results).
   Note that failed queries indicate a potential bug
   in at least one of the ORMs under test.
@@ -301,6 +308,14 @@ means that in the testing session named `Cucumbers`,
 * 3 / 100 queries timed out, i.e., the SMT solver timed out and failed to
   generate records for populating the underlying databases.
 
+**NOTE**: When solver times out, `Cynthia` still tests the ORM implementations
+under test against the generated AQL query. However this time, the underlying
+database contains the data stemming from the previous AQL query,
+as the solver did not manage to generate records that satisfy the constraints
+of the current AQL query in a reasonable time limit. This is why the number of
+`Passed` + `Failed` + `Unsp` + `Timeouts` > 100.
+
+
 #### The .cynthia working directory
 
 `Cynthia` also produces a directory named `.cynthia`
@@ -308,7 +323,7 @@ means that in the testing session named `Cucumbers`,
 where it stores important information about each run.
 The `.cynthia` directory has the following structure.
 
-* `.cynthia/cynthia.log`: A file containing logs associated with the last
+* `.cynthia/cynthia.log`: A file containing logs associated with the current
   `cynthia` run.
 * `.cynthia/dbs/`: This is the directory where the `SQLite` database files
   of each testing session are stored.
@@ -316,7 +331,7 @@ The `.cynthia` directory has the following structure.
 the database schema of each testing session. Every SQL script contains
 all the necessary `CREATE TABLE` statements for creating the relational
 tables defined in each schema.
-* `.cynthia/projects/`: A directory where `Cynthia` creates and runs
+* `.cynthia/projects/`: A directory where `Cynthia` creates and executes
 the corresponding ORM queries.
 * `.cynthia/sessions/`: This directory contains complete information about
 the runs taken place at every testing session. 
@@ -327,7 +342,7 @@ directory, we have the following
 * `.cynthia/sessions/<Session Name>/<Query ID>/data.sql`:
   This is the SQL script that populates the underlying database
   with data generated by the SMT solver. Note that these data are targeted,
-  meaning that satisfy the constraints of the query specified by `<Query ID>`. 
+  meaning that satisfy the constraints of the query identified by `<Query ID>`. 
 * `.cynthia/sessions/<Session Name>/<Query ID>/diff_test.out`:
   The output of differential testing. Either "MATCH", "MISMATCH", or "UNSUPPORTED".
 * `.cynthia/sessions/<Session Name>/<Query ID>/<orm>_<backend>.out`:
@@ -336,7 +351,8 @@ directory, we have the following
 * `.cynthia/sessions/<Session Name>/<Query ID>/query.aql`:
   The AQL query in human readable format.
 * `.cynthia/sessions/<Session Name>/<Query ID>/query.aql.json`:
-  The AQL query in JSON format. This is what `Cynthia` understands.
+  The AQL query in JSON format. This is the format that `Cynthia` expects
+  as input when replaying an AQL query.
 * `.cynthia/sessions/<Session Name>/<Query ID>/<orm>/`:
   This directory contains all ORM-specific files for executing
   the ORM queries written in ORM named `<orm>`.
@@ -372,12 +388,13 @@ cynthia@0fbedf262c3d:~$ cynthia replay \
 This produces the exact results as `cynthia test`
 
 ```
-Replaying Serially  ? % [     =              Passed ✔: 95, Failed ✘: 0, Unsp: 5, Timeouts: 0
-Replaying Cucumbers  ? % [          =        Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
-Replaying Subhead  ? % [=                    Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
-Replaying Mumbles  ? % [=                    Passed ✔: 97, Failed ✘: 0, Unsp: 3, Timeouts: 0
-Replaying Wild  ? % [        =               Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
+Replaying Serially 100% [======================= Passed ✔: 95, Failed ✘: 0, Unsp: 5, Timeouts: 0
+Replaying Cucumbers 100% [====================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
+Replaying Subhead 100% [======================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
+Replaying Mumbles 100% [======================== Passed ✔: 97, Failed ✘: 0, Unsp: 3, Timeouts: 0
+Replaying Wild 100% [=========================== Passed ✔: 96, Failed ✘: 0, Unsp: 4, Timeouts: 0
 Command replay finished successfully.
+
 ```
 
 Replay the execution of a specific testing session
@@ -393,7 +410,7 @@ cynthia@0fbedf262c3d:~$ cynthia replay \
 This produces
 
 ```
-Replaying Cucumbers  ? % [          =        Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
+Replaying Cucumbers 100% [====================== Passed ✔: 98, Failed ✘: 0, Unsp: 2, Timeouts: 0
 Command replay finished successfully.
 ```
 
@@ -423,7 +440,8 @@ cynthia@0fbedf262c3d:~$ cynthia replay \
 
 The sub-command `cynthia run` tests the given ORMs against
 certain AQL queries (provided by the user)
-based on a given database schema.
+based on a given database schema,
+which is also provided by the user (not generated by `Cynthia`).
 
 
 #### Example
@@ -438,13 +456,14 @@ The underlying database system is `SQLite`.
 cynthia@0fbedf262c3d:~$ cynthia run \
   --sql cynthia_src/examples/books.sql \
   --aql cynthia_src/examples/books/10.aql.json \
-  --orms django,peewee -S
+  --orms django,peewee \
+  --store-matches
 ```
 
 This produces
 
-```bash
-Running books  ? % [ =                         Passed ✔: 1, Failed ✘: 0, Unsp: 0, Timeouts: 0
+```
+Running books 100% [========================== Passed ✔: 1, Failed ✘: 0, Unsp: 0, Timeouts: 0
 Command run finished successfully.
 ```
 
@@ -459,8 +478,9 @@ generated AQL queries into concrete ORM queries.
 Every generated query is stored
 inside the `.cynthia/sessions/` directory.
 
-In order to test ORMs, the generated queries can be later executed
-using the `cynthia replay` command as documented above.
+In order to test ORMs, the queries generated by `cynthia generate`
+can be later executed using the `cynthia replay`
+command as documented above.
 
 
 #### Example
@@ -479,7 +499,7 @@ cynthia@0fbedf262c3d:~$ cynthia generate \
 
 ### cynthia inspect
 
-This sub-command inspects the results, and reports
+This helper sub-command inspects the results, and reports
 the queries for which the ORMs under test produced different results.
 To do so, `cynthia inspect` extracts information
 from the `.cynthia` directory.
