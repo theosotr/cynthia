@@ -100,8 +100,8 @@ docker build -t cynthia .
 Otherwise, you can pull our "pre-baked" image from the Docker registry
 
 ```bash
-docker pull theosot/cynthia
-docker tag theosot/cynthia cynthia
+docker pull theosotr/cynthia
+docker tag theosotr/cynthia cynthia
 ```
 
 
