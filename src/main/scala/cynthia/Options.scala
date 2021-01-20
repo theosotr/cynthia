@@ -112,32 +112,51 @@ case class Options(
 object OptionParser {
   val builder = OParser.builder[Options]
   val cliParser = new scopt.OptionParser[Options]("cynthia") {
-    head("cynthia", "0.1")
+    head("Cynthia", "version: 0.1")
 
     // General options
     def ormsOption() =
       opt[Seq[String]]('o', "orms")
         .required()
         .action((x, o) => o.copy(orms = x))
-        .text("ORMs to differentially test")
+        .text(
+          "ORMs to differentially test\n"
+            + "(Available options: 'django', 'sqlalchemy', "
+            + "'sequelize', 'peewee', 'activerecord', or 'pony')"
+        )
         .validate(_.foldLeft(success) { (acc, x) =>
           x match {
             case "django" | "sqlalchemy" | "sequelize" | "peewee" |
                 "activerecord" | "pony" =>
               acc
-            case _ => failure("ORM '" + x + "' is not supported")
+            case _ =>
+              failure(
+                "ORM '" + x + "' is not supported. Available options are: "
+                  + "'django', 'sqlalchemy', 'sequelize', 'peewee', "
+                  + "and 'activerecord'."
+              )
           }
         })
 
     def backendsOption() =
       opt[Seq[String]]('d', "backends")
         .action((x, o) => o.copy(dbs = o.dbs ++ x))
-        .text("Database backends to store data (default value: sqlite)")
+        .text(
+          "Database backends to store data\n"
+            + "(Available options: 'sqlite', 'postgres', 'mysql', "
+            + " 'mssql', 'cockroachdb', default value: sqlite)"
+        )
         .validate(_.foldLeft(success) { (acc, x) =>
           x match {
             case "mysql" | "postgres" | "cockroachdb" | "mssql" => acc
-            case "sqlite"                                       => failure("SQLite is used by default")
-            case _                                              => failure("Database backend '" + x + "' is not supported")
+            case "sqlite" =>
+              failure("SQLite is used by default")
+            case _ =>
+              failure(
+                "Database backend '" + x + "' is not supported. "
+                  + "Available options are: 'sqlite', 'postgres', 'mysql', "
+                  + "'mssql', and 'cockroachdb'."
+              )
           }
         })
 
@@ -223,7 +242,7 @@ object OptionParser {
       "Cynthia: Data-Oriented Differential Testing of Object-Relational Mapping Systems\n"
     )
     help("help").text("Prints this usage text")
-    version("version").text("Prints the current tool's version")
+    version("version").text("Prints the version of Cynthia")
 
     // Sub-commands
     cmd("test") action { (_, c) => c.copy(mode = Some("test")) } children (
