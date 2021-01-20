@@ -56,6 +56,9 @@ RUN ${HOME}/scripts/setup-mysql.sh
 ADD ./scripts/setup-z3.sh ${HOME}/scripts/setup-z3.sh
 RUN ${HOME}/scripts/setup-z3.sh
 
+# Now cleanup helper scripts
+RUN sudo rm -rf ${HOME}/scripts
+
 USER cynthia
 
 ADD ./patches/ ${HOME}/patches
@@ -65,7 +68,8 @@ RUN mkdir ${HOME}/cynthia_src
 RUN mkdir ${HOME}/cynthia_src/scripts
 ADD ./build.sbt  ${HOME}/cynthia_src
 ADD ./src  ${HOME}/cynthia_src/src
-ADD ./project  ${HOME}/cynthia_src/project
+ADD ./project/plugins.sbt  ${HOME}/cynthia_src/project/plugins.sbt
+ADD ./project/build.properties ${HOME}/cynthia_src/project/build.properties
 ADD ./Makefile ${HOME}/cynthia_src/Makefile
 ADD ./scripts/cynthia ${HOME}/cynthia_src/scripts/
 ADD ./lib ${HOME}/cynthia_src/lib
@@ -80,7 +84,6 @@ RUN sudo make install
 ENV CYNTHIA_JAR_FILE ${HOME}/cynthia_src/target/scala-2.13/cynthia.jar
 
 WORKDIR ${HOME}
-ADD ./scripts/setup-orms.sh ${HOME}/scripts/setup-orms.sh
 
 # Setup a Python3 virtual environment.
 RUN sudo pip3 install virtualenv
@@ -115,13 +118,16 @@ RUN sudo gem install sqlite3 mysql2 postgres activerecord pg \
 RUN git clone https://github.com/theosotr/rmre && \
   cd rmre && \
   gem build rmre.gemspec && \
-  sudo gem install rmre-0.0.9.gem
+  sudo gem install rmre-0.0.9.gem && \
+  cd .. && \
+  rm -rf rmre
 
+ADD ./scripts/setup-orms.sh /usr/local/bin
 RUN sudo chown cynthia:cynthia -R $HOME/.config
 RUN  bash -c "virtualenv -p python3 $HOME/.env && \
   source $HOME/.env/bin/activate && \
   pip install mysqlclient psycopg2 sqlacodegen pyodbc django-mssql-backend && \
-  $HOME/scripts/setup-orms.sh --django-version latest \
+  setup-orms.sh --django-version latest \
     --sqlalchemy-version latest --peewee-version latest"
 
 ADD ./examples ${HOME}/cynthia_src/examples

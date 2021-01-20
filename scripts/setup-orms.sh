@@ -30,7 +30,6 @@ done
 workdir=$HOME
 patch_dir=$HOME/patches
 
-
 install_py_package()
 {
   base=$(echo "$1" | sed -r "s/.+\/github.com\/.+\/(.+)/\1/")
@@ -70,6 +69,7 @@ install_sequelize()
 
 setup()
 {
+  cd $workdir
   # Get the master version of Python ORMs from Github.
   if [ ! -z $django_v ]; then
     install_py_package https://github.com/django/django $django_v
