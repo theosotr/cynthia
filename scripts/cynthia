@@ -2,6 +2,7 @@
 
 if [ -z $CYNTHIA_JAR_FILE ]; then
   dir=$(dirname $0)
+  cynthia_jar=$dir/../target/scala-2.13/cynthia.jar
   java -jar $dir/cynthia-assembly-0.1.0-SNAPSHOT.jar "$@"
 else
   java -jar $CYNTHIA_JAR_FILE "$@"
