@@ -46,9 +46,10 @@ object Controller {
       options: Options,
       s: Schema,
       pBar: ProgressBar,
+      logger: Logger,
       x: TestRunner => Unit
   ) =
-    TestRunnerCreator(Logger("Session " + s.name))(options, s, pBar) match {
+    TestRunnerCreator(logger)(options, s, pBar) match {
       case Success(testRunner) => x(testRunner)
       case Failure(e) => {
         pBar.close()
@@ -61,7 +62,11 @@ object Controller {
       val schemaPath =
         Utils.joinPaths(List(Utils.getSchemaDir(), s"${s.name}.schema.json"))
       Utils.writeToFile(schemaPath, s.toJson.prettyPrint)
-      (s, Utils.buildProgressBar(prefix + " " + s.name, Some(nQueries)))
+      (
+        s,
+        Utils.buildProgressBar(prefix + " " + s.name, Some(nQueries)),
+        Logger("Session " + s.name)
+      )
     })
 
   def apply(options: Options) = {
@@ -77,7 +82,7 @@ object Controller {
                   out._1.getSchemaPath(),
                   SchemaTranslator(out._1)
                 )
-                _run(options, out._1, out._2, { _.start() })
+                _run(options, out._1, out._2, out._3, { _.start() })
               }
           )
         case Some("generate") =>
@@ -89,7 +94,7 @@ object Controller {
                   out._1.getSchemaPath(),
                   SchemaTranslator(out._1)
                 )
-                _run(options, out._1, out._2, { _.generate() })
+                _run(options, out._1, out._2, out._3, { _.generate() })
               }
           )
         case Some("run") =>
@@ -112,6 +117,7 @@ object Controller {
                 options,
                 s,
                 Utils.buildProgressBar("Running " + dst, None),
+                Logger("Session " + s.name),
                 { _.start() }
               )
             }
@@ -124,13 +130,21 @@ object Controller {
                   val schemaPath = Utils.joinPaths(
                     List(Utils.getSchemaDir(), s"$x.schema.json")
                   )
-                  val s = Utils.loadSchema(schemaPath)
-                  _run(
-                    options,
-                    s,
-                    Utils.buildProgressBar("Replaying " + x, None),
-                    { _.start() }
-                  )
+                  if (new File(schemaPath).exists()) {
+                    val s = Utils.loadSchema(schemaPath)
+                    _run(
+                      options,
+                      s,
+                      Utils.buildProgressBar("Replaying " + x, None),
+                      Logger("Session " + s.name),
+                      { _.start() }
+                    )
+                  } else {
+                    println(
+                      s"Cannot replay testing session ${x}: "
+                        + s" The file ${schemaPath} not found."
+                    )
+                  }
                 }
               }
             }
@@ -141,14 +155,27 @@ object Controller {
               ) filter (x => !x.endsWith(".sql") && !x.endsWith(".json"))
 
               schemaFiles map (_.split('/').last) map (s =>
-                (s, Utils.buildProgressBar("Replaying " + s, None))
+                (
+                  s,
+                  Utils.buildProgressBar("Replaying " + s, None),
+                  Logger("Session " + s)
+                )
               ) map (out =>
                 Future {
                   val schemaPath = Utils.joinPaths(
                     List(Utils.getSchemaDir(), s"${out._1}.schema.json")
                   )
-                  val schema = Utils.loadSchema(schemaPath)
-                  _run(options, schema, out._2, { _.start() })
+                  if (new File(schemaPath).exists()) {
+                    val schema = Utils.loadSchema(schemaPath)
+                    _run(options, schema, out._2, out._3, { _.start() })
+                  } else {
+                    out._2.setExtraMessage("Cannot replay, see cynthia.log.")
+                    out._2.close()
+                    out._3.error(
+                      s"Cannot replay testing session: "
+                        + s"File ${schemaPath} not found."
+                    )
+                  }
                 }
               )
           }
