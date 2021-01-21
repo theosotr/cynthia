@@ -245,7 +245,6 @@ object Controller {
     try {
       Await.result(
         Future.sequence(f) map { _ =>
-          Thread.sleep(51)
           println(s"Command ${options.mode.get} finished successfully.")
         },
         options.timeout match {
