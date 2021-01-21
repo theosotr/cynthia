@@ -6,6 +6,7 @@ set +e
 echo "Initialize Backends"
 
 source $HOME/.env/bin/activate
+echo "  * Starting MSSQL database server"
 nohup sudo /opt/mssql/bin/sqlservr start &
 sudo sh -c "echo "[mysqld]" >> /etc/mysql/my.cnf"
 sudo sh -c "echo "skip-grant-tables" >> /etc/mysql/my.cnf"
