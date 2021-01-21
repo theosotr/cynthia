@@ -508,6 +508,7 @@ class TestRunner(
       ) {
         storeResults(q, oks ++ failed, sessionDir, mismatchTxt)
         evalThunk(dataThunk)
+        logger.info(s"Mismatch found in query ${qid}")
         stats ++ (mism = true)
       } else if (failed.size == 0 && oks.size == 0) {
         storeResults(q, oks ++ failed, sessionDir, unsupportedTxt)
@@ -568,5 +569,6 @@ class TestRunner(
         }
       }
     logger.info("Testing session ended")
+    pBar.close()
   }
 }
