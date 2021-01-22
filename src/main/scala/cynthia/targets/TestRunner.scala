@@ -427,6 +427,7 @@ class TestRunner(
     }
 
   def generate() = {
+    logger.info("Generating testing session")
     generateInitialData()
     getQueries().foreach { case (qid, q) =>
       pBar.step()
@@ -452,6 +453,8 @@ class TestRunner(
           case _                  => ()
         }
     }
+    pBar.close()
+    logger.info("Generation ended")
   }
 
   def loadInitialData() =
