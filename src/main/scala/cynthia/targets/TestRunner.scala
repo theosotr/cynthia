@@ -450,7 +450,9 @@ class TestRunner(
           options.regenerateData
         ) populateDBs dbs match {
           case DataGenSucc(thunk) => thunk()
-          case _                  => ()
+          case DataGenFailed =>
+            logger.info("Z3 timed out for query " + qid)
+          case _ => ()
         }
     }
     pBar.close()
@@ -515,6 +517,7 @@ class TestRunner(
         stats ++ (mism = true)
       } else if (failed.size == 0 && oks.size == 0) {
         storeResults(q, oks ++ failed, sessionDir, unsupportedTxt)
+        logger.info(s"Query ${qid} is unsupported")
         stats ++ (invd = true)
       } else {
         if (options.storeMatches || options.mode.get.equals("replay")) {
@@ -553,7 +556,10 @@ class TestRunner(
                   else None,
                   options.regenerateData
                 ) populateDBs dbs match {
-                  case DataGenFailed      => (stats ++ (timedout = true), None)
+                  case DataGenFailed => {
+                    logger.info("Z3 timed out for query " + qid)
+                    (stats ++ (timedout = true), None)
+                  }
                   case DataExists         => (stats, None)
                   case DataGenSucc(thunk) => (stats, Some(thunk))
                 }
