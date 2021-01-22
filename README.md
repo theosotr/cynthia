@@ -43,6 +43,11 @@ Management Systems
 * [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
 * [CockroachDB](https://www.cockroachlabs.com/) (unstable)
 
+You can cite `Cynthia` as follows.
+Thodoris Sotiropoulos, Stefanos Chaliasos, Vaggelis Atlidakis, Dimitris Mitropoulos and Diomidis Spinellis.
+Data-Oriented Differential Testing of Object-Relational Mapping Systems.
+In _43rd International Conference on Software Engineering, ICSE '21_,
+25–28 May 2021.
 
 ## Building
 
