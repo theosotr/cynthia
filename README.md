@@ -574,3 +574,158 @@ Cleaned database mysql successfully
 Cleaned database postgres successfully
 Command clean finished successfully.
 ```
+
+## Extending Cynthia
+
+You can extend `Cynthia` by implementing
+support for a new ORM system.
+To do so, you have to follow the next steps.
+
+### 1. Adding ORM case class
+
+As first step, you need to create a case class for
+the new ORM inside the `cynthia.targets.ORMs.scala` file.
+This case class needs to inherit from the
+abstract class `ORM` and implement the
+following abstract methods.
+You can consult the existing ORM case classes
+for more details.
+
+```scala
+
+sealed abstract class ORM(
+    /** The name of ORM. */
+    val ormName: String,
+
+    /**
+     * The name of the project that relies on this ORM.
+     * Typically, the name of the project corresponds to
+     * the name of the current testing session.
+     */
+    val projectName: String,
+
+    /** The directory where the ORM project is located. */
+    val projectDir: String
+) {
+
+  /**
+   * Get the path where the file containing the models of
+   * the project is located.
+   */
+  def getModelsPath(): String
+
+  /**
+   * Get the path where the file containing the settings of the
+   * project is located.
+   */
+  def getSettingsPath(): String
+
+  /**
+   * Get the path where the executable ORM query, which runs on top of the
+   * given database, is located.
+   */
+  def getDriverPath(db: DB): String
+}
+```
+
+### 2. Extending ProjectCreator to support the new ORM
+
+The next step is to extend the `cynthia.targets.ProjectCreator.scala`
+class.
+In particular, you need to extend the following two methods:
+
+```scala
+setupProject(orm: ORM, dbs: Seq[DB]): Unit
+createModels(orm: ORM, dbs: Seq[DB]): Unit
+```
+
+The first method (`setupProject()`) is used to create all
+the necessary ORM-specific directories
+and files in order to set up a new project
+that relies on the ORM.
+
+The second method (`createModels()`) creates a file containing
+the model classes using the API of the given ORM.
+As you notice, the existing implementation use external tools
+for automatically deriving the models classes from an existing
+database. For example, to generate the `SQLAlchemy` models,
+we use a tool called `sqlacodegen`. 
+Therefore, you have to use an external tool
+(if such a tool does not exist for your ORM, you have to implement your own)
+that expects a database
+connection and generates the ORM models automatically.
+
+
+### 3. Implementing a translator for the new ORM
+
+As a final step, you have to implement a translator
+for your ORM inside the `cynthia.translators` package.
+This translator is responsible for translating an AQL query into
+a concrete, executable query,
+and needs to inherit from the
+`cynthia.translators.Translator` base class.
+Your translator has to provide implementations
+for the following
+
+#### 1
+
+```scala
+val preamble: String
+```
+
+This string contains all the boilerplate code needed for executing
+an ORM query (e.g., necessary imports, creating connection with the database,
+etc.).
+
+#### 2
+```scala
+  def constructNaiveQuery(
+      s: State,
+      first: Boolean,
+      offset: Int,
+      limit: Option[Int]
+  ): QueryStr
+```
+
+This translates the state of an AQL query into a `QueryStr`.
+
+#### 3
+
+```scala
+def constructCombinedQuery(s: State): QueryStr
+```
+
+The above translates the state coming a combined AQL query
+(which consists of other simpler AQL queries)
+into a `QueryStr`.
+
+#### 4
+
+```scala
+def unionQueries(s1: State, s2: State): State
+```
+
+The above handles the union of two states. Every state stems from a specific
+AQL query.
+
+#### 5
+
+```scala
+def intersectQueries(s1: State, s2: State): State
+```
+This handles the intersection of two states. Every state stems from a specific
+AQL query.
+
+
+#### 6
+
+```scala
+def emitPrint(q: Query, dFields: Seq[String], ret: String): String
+```
+
+The method above is responsible for dumping
+the results of the given query to standard output, by using the API
+of the ORM.
+The variable `dFields` gives the names of the fields that you need to print
+to the standard output, while the variable `ret` stands for the variable
+holding the results of the query.
